@@ -17,22 +17,15 @@ type ChatEvent = {
   errorMessage?: string;
 };
 
-function toWsUrl(httpUrl: string): string {
-  const u = new URL(httpUrl);
-  u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-  // Gateway WS is on the same host/port.
-  u.pathname = "/";
-  u.search = "";
-  u.hash = "";
-  return u.toString();
-}
-
 function extractText(msg: unknown): string {
   try {
     if (!msg || typeof msg !== "object") {
-      return "";
+      return typeof msg === "string" ? msg : "";
     }
-    const m = msg as { content?: unknown };
+    const m = msg as { content?: unknown; text?: unknown };
+    if (typeof m.text === "string" && m.text.trim()) {
+      return m.text;
+    }
     const content = m.content;
     if (!Array.isArray(content)) {
       return "";
@@ -55,14 +48,58 @@ function extractText(msg: unknown): string {
   }
 }
 
+type UiMessage = {
+  id: string;
+  role: "user" | "assistant" | "system" | "unknown";
+  text: string;
+  ts?: number;
+  runId?: string;
+  pending?: boolean;
+};
+
+function parseRole(value: unknown): UiMessage["role"] {
+  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (raw === "user" || raw === "assistant" || raw === "system") {
+    return raw;
+  }
+  return "unknown";
+}
+
+function parseHistoryMessages(raw: unknown[]): UiMessage[] {
+  const out: UiMessage[] = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const item = raw[i];
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+    const msg = item as { role?: unknown; timestamp?: unknown };
+    const role = parseRole(msg.role);
+    const text = extractText(item);
+    if (!text) {
+      continue;
+    }
+    const ts =
+      typeof msg.timestamp === "number" && Number.isFinite(msg.timestamp) ? Math.floor(msg.timestamp) : undefined;
+    out.push({
+      id: `h-${ts ?? 0}-${i}`,
+      role,
+      text,
+      ts,
+    });
+  }
+  return out;
+}
+
 export function ChatPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
-  const [sessionKey, setSessionKey] = React.useState("main");
+  const sessionKey = "main";
   const [input, setInput] = React.useState("");
-  const [history, setHistory] = React.useState<ChatHistoryResult | null>(null);
-  const [events, setEvents] = React.useState<ChatEvent[]>([]);
+  const [messages, setMessages] = React.useState<UiMessage[]>([]);
+  const [streamByRun, setStreamByRun] = React.useState<Record<string, UiMessage>>({});
+  const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const gw = useGatewayRpc();
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     return gw.onEvent((evt) => {
@@ -70,7 +107,62 @@ export function ChatPage({ state }: { state: Extract<GatewayState, { kind: "read
         return;
       }
       const payload = evt.payload as ChatEvent;
-      setEvents((prev) => [...prev, payload]);
+      if (payload.sessionKey !== sessionKey) {
+        return;
+      }
+      if (payload.state === "delta") {
+        const text = extractText(payload.message);
+        setStreamByRun((prev) => ({
+          ...prev,
+          [payload.runId]: {
+            id: `s-${payload.runId}`,
+            role: "assistant",
+            text,
+            runId: payload.runId,
+            ts: Date.now(),
+          },
+        }));
+        return;
+      }
+      if (payload.state === "final") {
+        const text = extractText(payload.message);
+        setStreamByRun((prev) => {
+          const next = { ...prev };
+          delete next[payload.runId];
+          return next;
+        });
+        if (text) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `a-${payload.runId}-${payload.seq}`,
+              role: "assistant",
+              text,
+              runId: payload.runId,
+              ts: Date.now(),
+            },
+          ]);
+        }
+        return;
+      }
+      if (payload.state === "error") {
+        setStreamByRun((prev) => {
+          const next = { ...prev };
+          delete next[payload.runId];
+          return next;
+        });
+        if (payload.errorMessage) {
+          setError(payload.errorMessage);
+        }
+        return;
+      }
+      if (payload.state === "aborted") {
+        setStreamByRun((prev) => {
+          const next = { ...prev };
+          delete next[payload.runId];
+          return next;
+        });
+      }
     });
   }, [gw]);
 
@@ -78,7 +170,8 @@ export function ChatPage({ state }: { state: Extract<GatewayState, { kind: "read
     setError(null);
     try {
       const res = (await gw.request("chat.history", { sessionKey, limit: 200 })) as ChatHistoryResult;
-      setHistory(res);
+      setMessages(parseHistoryMessages(res.messages));
+      setStreamByRun({});
     } catch (err) {
       setError(String(err));
     }
@@ -88,6 +181,15 @@ export function ChatPage({ state }: { state: Extract<GatewayState, { kind: "read
     void refresh();
   }, [refresh]);
 
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+    // Keep the latest content in view, like Control UI.
+    el.scrollTop = el.scrollHeight;
+  }, [messages, streamByRun]);
+
   const send = React.useCallback(async () => {
     const message = input.trim();
     if (!message) {
@@ -95,98 +197,107 @@ export function ChatPage({ state }: { state: Extract<GatewayState, { kind: "read
     }
     setInput("");
     setError(null);
+    setSending(true);
+    const localId = `u-${crypto.randomUUID()}`;
+    const runId = crypto.randomUUID();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: localId,
+        role: "user",
+        text: message,
+        ts: Date.now(),
+        pending: true,
+      },
+    ]);
+    // Show "typing" immediately, even before the first delta arrives.
+    setStreamByRun((prev) => ({
+      ...prev,
+      [runId]: {
+        id: `s-${runId}`,
+        role: "assistant",
+        text: "",
+        runId,
+        ts: Date.now(),
+      },
+    }));
     try {
       await gw.request("chat.send", {
         sessionKey,
         message,
         deliver: false,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: runId,
       });
+      setMessages((prev) =>
+        prev.map((m) => (m.id === localId ? { ...m, pending: false } : m)),
+      );
     } catch (err) {
       setError(String(err));
+      setMessages((prev) =>
+        prev.map((m) => (m.id === localId ? { ...m, pending: false } : m)),
+      );
+      setStreamByRun((prev) => {
+        const next = { ...prev };
+        delete next[runId];
+        return next;
+      });
+    } finally {
+      setSending(false);
     }
   }, [gw, input, sessionKey]);
 
   return (
-    <div className="Centered" style={{ alignItems: "stretch", padding: 12 }}>
-      <div className="Card" style={{ width: "min(1100px, 96vw)", height: "calc(100vh - 68px)" }}>
-        <div className="CardTitle">Chat (native)</div>
-        <div className="CardSubtitle" style={{ marginBottom: 10 }}>
-          This talks to the Gateway over WS using <code>chat.history</code>/<code>chat.send</code>.
-        </div>
+    <div className="ChatShell">
+      {error ? <div className="ChatInlineError">{error}</div> : null}
 
-        <div className="Meta" style={{ marginTop: 0 }}>
-          <div className="Pill">ws: {toWsUrl(state.url)}</div>
-          <div className="Pill">sessionKey: {sessionKey}</div>
-        </div>
+      <div className="ChatTranscript" ref={scrollRef}>
+          {messages.map((m) => (
+            <div key={m.id} className={`ChatRow ChatRow-${m.role}`}>
+              <div className={`ChatBubble ChatBubble-${m.role}`}>
+                <div className="ChatBubbleMeta">
+                  <span className="ChatRole">{m.role}</span>
+                  {m.pending ? <span className="ChatPending">sending…</span> : null}
+                </div>
+                <div className="ChatText">{m.text}</div>
+              </div>
+            </div>
+          ))}
+          {Object.values(streamByRun).map((m) => (
+            <div key={m.id} className="ChatRow ChatRow-assistant">
+              <div className="ChatBubble ChatBubble-assistant ChatBubble-stream">
+                <div className="ChatBubbleMeta">
+                  <span className="ChatRole">assistant</span>
+                  <span className="ChatPending">
+                    <span className="ChatTypingDots" aria-label="typing">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  </span>
+                </div>
+                {m.text ? <div className="ChatText">{m.text}</div> : null}
+              </div>
+            </div>
+          ))}
+      </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <input
-            value={sessionKey}
-            onChange={(e) => setSessionKey(e.target.value)}
-            placeholder="sessionKey (e.g. main)"
-            style={{
-              flex: "0 0 220px",
-              borderRadius: 10,
-              border: "1px solid rgba(230,237,243,0.16)",
-              background: "rgba(230,237,243,0.06)",
-              color: "var(--text)",
-              padding: "8px 10px",
-            }}
-          />
-          <button onClick={() => void refresh()}>Refresh</button>
-        </div>
-
-        {error ? (
-          <div className="CardSubtitle" style={{ color: "rgba(255, 122, 0, 0.95)" }}>
-            {error}
-          </div>
-        ) : null}
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, height: "70%" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
-            <div className="Pill">History</div>
-            <pre style={{ flex: 1 }}>
-              {history
-                ? history.messages
-                    .map((m) => {
-                      const role = (m as { role?: unknown }).role;
-                      const text = extractText(m);
-                      return `${typeof role === "string" ? role : "?"}: ${text || JSON.stringify(m)}`;
-                    })
-                    .join("\n\n")
-                : "Loading…"}
-            </pre>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
-            <div className="Pill">Events (chat)</div>
-            <pre style={{ flex: 1 }}>{events.map((e) => JSON.stringify(e)).join("\n") || "—"}</pre>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message…"
-            style={{
-              flex: 1,
-              borderRadius: 10,
-              border: "1px solid rgba(230,237,243,0.16)",
-              background: "rgba(230,237,243,0.06)",
-              color: "var(--text)",
-              padding: "8px 10px",
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                void send();
-              }
-            }}
-          />
-          <button className="primary" onClick={() => void send()}>
-            Send
-          </button>
-        </div>
+      <div className="ChatComposer">
+        <textarea
+          className="ChatInput"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Write a message…"
+          rows={2}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+        />
+        <button className="primary" onClick={() => void send()} disabled={sending || !input.trim()}>
+          {sending ? "Sending…" : "Send"}
+        </button>
       </div>
     </div>
   );

@@ -49,9 +49,6 @@ function Topbar() {
         <a href="#/chat" style={{ textDecoration: "none" }}>
           <button>Chat</button>
         </a>
-        <a href="#/wizard" style={{ textDecoration: "none" }}>
-          <button>Wizard</button>
-        </a>
         <a href="#/settings" style={{ textDecoration: "none" }}>
           <button>Settings</button>
         </a>
@@ -162,7 +159,7 @@ export function App() {
         const onboarded =
           typeof localStorage !== "undefined" &&
           localStorage.getItem("openclaw.desktop.onboarded.v1") === "1";
-        navigate(onboarded ? "/legacy" : "/welcome", { replace: true });
+        navigate(onboarded ? "/chat" : "/welcome", { replace: true });
       }
       return;
     }
@@ -182,13 +179,13 @@ export function App() {
           <GatewayRpcProvider url={state.url} token={state.token}>
             <Routes>
               <Route path="/loading" element={<LoadingScreen state={state} />} />
-              <Route path="/error" element={<Navigate to="/legacy" replace />} />
+              <Route path="/error" element={<Navigate to="/chat" replace />} />
               <Route path="/welcome" element={<WelcomePage state={state} />} />
               <Route path="/legacy" element={<LegacyScreen state={state} />} />
               <Route path="/chat" element={<ChatPage state={state} />} />
               <Route path="/wizard" element={<WizardPage state={state} />} />
               <Route path="/settings" element={<SettingsPage state={state} />} />
-              <Route path="*" element={<Navigate to="/legacy" replace />} />
+              <Route path="*" element={<Navigate to="/chat" replace />} />
             </Routes>
           </GatewayRpcProvider>
         ) : (

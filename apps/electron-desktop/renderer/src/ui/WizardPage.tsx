@@ -162,7 +162,6 @@ export function WizardPage({ state }: { state: Extract<GatewayState, { kind: "re
 
         <div className="Meta">
           <div className="Pill">mode: {mode}</div>
-          <div className="Pill">sessionId: {sessionId ?? "—"}</div>
           <div className="Pill">status: {status ?? "—"}</div>
         </div>
 

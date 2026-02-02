@@ -291,5 +291,8 @@
       "apps/macos/.build/**",
       "dist/OpenClaw.app/**"
     ]
+  },
+  "volta": {
+    "node": "22.22.0"
   }
 }

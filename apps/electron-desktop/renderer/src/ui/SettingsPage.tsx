@@ -46,7 +46,6 @@ function inferWorkspaceDirFromConfigPath(configPath: string | undefined): string
 export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const [telegramToken, setTelegramToken] = React.useState("");
   const [anthropicKey, setAnthropicKey] = React.useState("");
-  const [showSecrets, setShowSecrets] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [configSnap, setConfigSnap] = React.useState<ConfigSnapshot | null>(null);
@@ -297,13 +296,6 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
     <div className="Centered" style={{ alignItems: "stretch", padding: 12 }}>
       <div className="Card" style={{ width: "min(980px, 96vw)" }}>
         <div className="CardTitle">Settings</div>
-        <div className="CardSubtitle">Configure local credentials for the embedded Gateway.</div>
-
-        <div className="Meta">
-          <div className="Pill">status: {status ?? "—"}</div>
-          <button onClick={() => void reload()}>Reload</button>
-          <button onClick={() => setShowSecrets((v) => !v)}>{showSecrets ? "Hide" : "Show"}</button>
-        </div>
 
         {error ? (
           <div className="CardSubtitle" style={{ color: "rgba(255, 122, 0, 0.95)" }}>
@@ -355,7 +347,7 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <input
-              type={showSecrets ? "text" : "password"}
+              type="password"
               value={telegramToken}
               onChange={(e) => setTelegramToken(e.target.value)}
               placeholder="123456:ABCDEF"
@@ -385,7 +377,7 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <input
-              type={showSecrets ? "text" : "password"}
+              type="password"
               value={anthropicKey}
               onChange={(e) => setAnthropicKey(e.target.value)}
               placeholder="Anthropic API key"
