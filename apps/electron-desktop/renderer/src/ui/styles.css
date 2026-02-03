@@ -361,6 +361,16 @@ button:disabled {
   user-select: none;
 }
 
+.UiBrandIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 16px rgba(194, 255, 64, 0.16));
+}
+
 .UiBrandMark {
   width: 18px;
   height: 18px;
@@ -386,6 +396,18 @@ button:disabled {
   padding: 52px 18px 24px;
 }
 
+.UiHero-align-center {
+  place-items: center;
+}
+
+.UiHero-align-start {
+  place-items: start center;
+}
+
+.UiHero-compact {
+  padding: 22px 18px 24px;
+}
+
 .UiHeroTitle {
   font-size: clamp(40px, 6vw, 72px);
   line-height: 0.92;
@@ -397,11 +419,20 @@ button:disabled {
   text-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 
+.UiHero-compact .UiHeroTitle {
+  font-size: clamp(34px, 4.4vw, 54px);
+  margin: 0 0 10px;
+}
+
 .UiHeroSubtitle {
   text-align: center;
   color: rgba(230, 237, 243, 0.70);
   font-size: 14px;
   margin: 0 0 24px;
+}
+
+.UiHero-compact .UiHeroSubtitle {
+  margin: 0 0 18px;
 }
 
 .UiGlassCard {
@@ -412,6 +443,33 @@ button:disabled {
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
   padding: 18px 18px 16px;
   animation: gatewaySplashEnter 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.UiGlassCard-wide {
+  width: min(980px, 96vw);
+}
+
+.UiGlassCard-intro {
+  padding: 36px 32px;
+  width: min(540px, 90vw);
+}
+
+.UiIntroInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.UiIntroInner .UiSectionTitle {
+  font-size: 24px;
+  margin: 0;
+}
+
+.UiIntroInner .UiSectionSubtitle {
+  margin: 0;
+  max-width: 400px;
 }
 
 .UiScrollBox {
@@ -447,6 +505,102 @@ button:disabled {
   width: 18px;
   height: 18px;
   accent-color: var(--lime);
+}
+
+.UiInput {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 237, 243, 0.16);
+  background: rgba(230, 237, 243, 0.06);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.UiInput:focus {
+  outline: none;
+  border-color: rgba(194, 255, 64, 0.35);
+}
+
+.UiButtonRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.UiActionButton {
+  appearance: none;
+  border: 1px solid rgba(230, 237, 243, 0.16);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(230, 237, 243, 0.92);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.UiActionButton:hover:enabled {
+  border-color: rgba(230, 237, 243, 0.22);
+  background: rgba(0, 0, 0, 0.26);
+  transform: translateY(-1px);
+}
+
+.UiActionButton:active:enabled {
+  transform: translateY(0);
+}
+
+.UiActionButton-primary {
+  border-color: rgba(194, 255, 64, 0.35);
+  background: rgba(194, 255, 64, 0.20);
+  color: rgba(0, 0, 0, 0.86);
+  font-weight: 800;
+}
+
+.UiActionButton-primary:hover:enabled {
+  border-color: rgba(194, 255, 64, 0.50);
+  background: rgba(194, 255, 64, 0.28);
+}
+
+.UiActionButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.UiSectionTitle {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.UiSectionSubtitle {
+  font-size: 13px;
+  color: rgba(230, 237, 243, 0.70);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.UiMetaRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 10px 0 14px;
+}
+
+.UiPill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 237, 243, 0.14);
+  background: rgba(230, 237, 243, 0.05);
 }
 
 .UiPrimaryButton {
@@ -520,71 +674,159 @@ button:disabled {
 
 .UiAppTopbar {
   height: 56px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(230, 237, 243, 0.10);
+  background: rgba(11, 15, 20, 0.55);
+  backdrop-filter: blur(18px);
 }
 
-.UiAppTopbarNav {
+.UiAppTopbarCenter {
   display: flex;
-  gap: 10px;
-  align-items: center;
   justify-content: center;
-  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
 }
 
 .UiAppTopbarActions {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
   flex: 0 0 auto;
 }
 
-.UiNavLink {
+.UiTabs {
+  display: inline-flex;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 237, 243, 0.12);
+  background: rgba(0, 0, 0, 0.20);
+  box-shadow:
+    0 18px 55px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.UiTab {
   appearance: none;
-  border: 1px solid rgba(230, 237, 243, 0.16);
-  background: rgba(230, 237, 243, 0.06);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(230, 237, 243, 0.82);
+  border-radius: 999px;
+  padding: 8px 14px;
   font-size: 13px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   user-select: none;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
-.UiNavLink-active {
-  border-color: rgba(194, 255, 64, 0.35);
-  background: rgba(194, 255, 64, 0.12);
+.UiTab:hover {
+  color: rgba(230, 237, 243, 0.95);
+  background: rgba(230, 237, 243, 0.06);
+}
+
+.UiTab-active {
+  background: var(--lime);
+  color: rgba(0, 0, 0, 0.86);
+  font-weight: 800;
 }
 
 .UiToolbarButton {
   appearance: none;
-  border: 1px solid rgba(230, 237, 243, 0.16);
-  background: rgba(230, 237, 243, 0.06);
+  border: 1px solid rgba(230, 237, 243, 0.14);
+  background: rgba(0, 0, 0, 0.18);
   color: rgba(230, 237, 243, 0.92);
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 13px;
   cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
 }
 
 .UiToolbarButton-primary {
   border-color: rgba(194, 255, 64, 0.35);
-  background: rgba(194, 255, 64, 0.14);
+  background: rgba(194, 255, 64, 0.20);
   color: rgba(0, 0, 0, 0.86);
   font-weight: 800;
+}
+
+.UiToolbarButton:hover:enabled {
+  border-color: rgba(230, 237, 243, 0.22);
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.UiToolbarButton-primary:hover:enabled {
+  border-color: rgba(194, 255, 64, 0.50);
+  background: rgba(194, 255, 64, 0.28);
 }
 
 .UiToolbarButton:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+.UiMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 190px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(230, 237, 243, 0.14);
+  background: rgba(11, 15, 20, 0.78);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55);
+  z-index: 20;
+}
+
+.UiMenuItem {
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(230, 237, 243, 0.92);
+  border-radius: 12px;
+  padding: 10px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.UiMenuItem:hover {
+  background: rgba(230, 237, 243, 0.06);
+  border-color: rgba(230, 237, 243, 0.10);
+}
+
+.UiMenuItem-primary {
+  background: rgba(194, 255, 64, 0.16);
+  border-color: rgba(194, 255, 64, 0.26);
+  color: rgba(0, 0, 0, 0.86);
+  font-weight: 800;
+}
+
+.UiMenuItem-primary:hover {
+  background: rgba(194, 255, 64, 0.24);
+  border-color: rgba(194, 255, 64, 0.38);
+}
+
+.UiMenuSep {
+  height: 1px;
+  margin: 6px 2px;
+  background: rgba(230, 237, 243, 0.10);
 }
 
 .Card {

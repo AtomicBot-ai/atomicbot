@@ -9,6 +9,13 @@ export const routes = {
 } as const;
 
 export function isBootstrapPath(pathname: string): boolean {
-  return pathname === "/" || pathname === routes.consent || pathname === routes.loading || pathname === routes.error;
+  return (
+    pathname === "/" ||
+    pathname === routes.consent ||
+    pathname === routes.loading ||
+    pathname === routes.error ||
+    pathname === routes.welcome ||
+    pathname.startsWith(`${routes.welcome}/`)
+  );
 }
 

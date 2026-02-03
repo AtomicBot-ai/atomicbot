@@ -15,52 +15,114 @@ import { isBootstrapPath, routes } from "./routes";
 
 function Topbar() {
   const api = window.openclawDesktop;
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const brandIconUrl = React.useMemo(() => {
+    // Renderer lives at renderer/dist/index.html; the app's assets are at ../../assets/
+    return new URL("../../assets/icon-simple-splash.png", document.baseURI).toString();
+  }, []);
+
+  React.useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+    const onDown = (evt: MouseEvent) => {
+      const el = menuRef.current;
+      if (!el) {
+        setMenuOpen(false);
+        return;
+      }
+      const target = evt.target as Node | null;
+      if (target && el.contains(target)) {
+        return;
+      }
+      setMenuOpen(false);
+    };
+    const onKey = (evt: KeyboardEvent) => {
+      if (evt.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   return (
     <div className="UiAppTopbar">
-      <Brand text="ATOMIC BOT" />
-      <div className="UiAppTopbarNav">
-        <NavLink
-          to={routes.legacy}
-          className={({ isActive }) => `UiNavLink${isActive ? " UiNavLink-active" : ""}`}
-        >
-          Legacy
-        </NavLink>
-        <NavLink
-          to={routes.chat}
-          className={({ isActive }) => `UiNavLink${isActive ? " UiNavLink-active" : ""}`}
-        >
-          Chat
-        </NavLink>
-        <NavLink
-          to={routes.settings}
-          className={({ isActive }) => `UiNavLink${isActive ? " UiNavLink-active" : ""}`}
-        >
-          Settings
-        </NavLink>
+      <Brand text="ATOMIC BOT" iconSrc={brandIconUrl} iconAlt="" />
+      <div className="UiAppTopbarCenter">
+        <div className="UiTabs" role="tablist" aria-label="Navigation">
+          <NavLink
+            to={routes.legacy}
+            role="tab"
+            className={({ isActive }) => `UiTab${isActive ? " UiTab-active" : ""}`}
+          >
+            Legacy
+          </NavLink>
+          <NavLink
+            to={routes.chat}
+            role="tab"
+            className={({ isActive }) => `UiTab${isActive ? " UiTab-active" : ""}`}
+          >
+            Chat
+          </NavLink>
+          <NavLink
+            to={routes.settings}
+            role="tab"
+            className={({ isActive }) => `UiTab${isActive ? " UiTab-active" : ""}`}
+          >
+            Settings
+          </NavLink>
+        </div>
       </div>
       <div className="UiAppTopbarActions">
         <ToolbarButton
           onClick={() => {
-            void api?.openLogs();
+            setMenuOpen((v) => !v);
           }}
         >
-          Open logs
+          ⋯
         </ToolbarButton>
-        <ToolbarButton
-          onClick={() => {
-            void api?.toggleDevTools();
-          }}
-        >
-          DevTools
-        </ToolbarButton>
-        <ToolbarButton
-          variant="primary"
-          onClick={() => {
-            void api?.retry();
-          }}
-        >
-          Retry
-        </ToolbarButton>
+
+        {menuOpen ? (
+          <div className="UiMenu" ref={menuRef} role="menu" aria-label="Actions">
+            <button
+              className="UiMenuItem"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                void api?.openLogs();
+              }}
+            >
+              Open logs
+            </button>
+            <button
+              className="UiMenuItem"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                void api?.toggleDevTools();
+              }}
+            >
+              DevTools
+            </button>
+            <div className="UiMenuSep" role="separator" />
+            <button
+              className="UiMenuItem UiMenuItem-primary"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                void api?.retry();
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -119,7 +181,7 @@ function ReadyRoutes({ state }: { state: Extract<GatewayState, { kind: "ready" }
       <Routes>
         <Route path={routes.loading} element={<LoadingScreen state={state} />} />
         <Route path={routes.error} element={<Navigate to={routes.chat} replace />} />
-        <Route path={routes.welcome} element={<WelcomePage state={state} />} />
+        <Route path={`${routes.welcome}/*`} element={<WelcomePage state={state} />} />
         <Route path={routes.legacy} element={<LegacyScreen state={state} />} />
         <Route path={routes.chat} element={<ChatPage state={state} />} />
         <Route path={routes.settings} element={<SettingsPage state={state} />} />
@@ -218,18 +280,45 @@ export function App() {
     );
   }
 
-  // Render the loading screen outside the App shell so it has no header/topbar.
-  if (location.pathname === routes.loading) {
-    return <LoadingScreen state={state ?? null} />;
+  // After consent is accepted, route fullscreen pages explicitly so nested routing works correctly
+  // (especially onboarding, which relies on an index route).
+  if (state?.kind === "ready") {
+    return (
+      <Routes>
+        <Route path={routes.loading} element={<LoadingScreen state={state} />} />
+        <Route
+          path={`${routes.welcome}/*`}
+          element={
+            <GatewayRpcProvider url={state.url} token={state.token}>
+              <WelcomePage state={state} />
+            </GatewayRpcProvider>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <div className="UiAppShell">
+              <Topbar />
+              <div className="UiAppPage">
+                <ReadyRoutes state={state} />
+              </div>
+            </div>
+          }
+        />
+      </Routes>
+    );
   }
 
   return (
-    <div className="UiAppShell">
-      <Topbar />
-      <div className="UiAppPage">
-        {state?.kind === "ready" ? <ReadyRoutes state={state} /> : <BootstrapRoutes state={state} />}
-      </div>
-    </div>
+    <Routes>
+      <Route path={routes.loading} element={<LoadingScreen state={state ?? null} />} />
+      <Route
+        path={routes.error}
+        element={state?.kind === "failed" ? <ErrorScreen state={state} /> : <Navigate to={routes.loading} replace />}
+      />
+      <Route path={`${routes.welcome}/*`} element={<Navigate to={routes.loading} replace />} />
+      <Route path="*" element={<Navigate to={routes.loading} replace />} />
+    </Routes>
   );
 }
 

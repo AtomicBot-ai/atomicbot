@@ -1,9 +1,16 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useGatewayRpc } from "../gateway/context";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setOnboarded } from "../store/slices/onboardingSlice";
+import { ActionButton, ButtonRow, GlassCard, HeroPageLayout, InlineError, PrimaryButton, TextInput } from "./kit";
 import type { GatewayState } from "../../../src/main/types";
+import { routes } from "./routes";
+import { AnthropicPage } from "./onboarding/AnthropicPage";
+import { GogPage } from "./onboarding/GogPage";
+import { IntroPage } from "./onboarding/IntroPage";
+import { TelegramTokenPage } from "./onboarding/TelegramTokenPage";
+import { TelegramUserPage } from "./onboarding/TelegramUserPage";
 
 type ConfigSnapshot = {
   path?: string;
@@ -59,15 +66,13 @@ function unique(list: string[]): string[] {
   return Array.from(new Set(list));
 }
 
-type StepId = "config" | "anthropic" | "telegramToken" | "telegramUser" | "gog" | "done";
-
 export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const gw = useGatewayRpc();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const onboarded = useAppSelector((s) => s.onboarding.onboarded);
 
-  const [step, setStep] = React.useState<StepId>("config");
+  const [startBusy, setStartBusy] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -166,11 +171,11 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
     setStatus("Config updated.");
   }, [gw, loadConfig, state.port, state.token]);
 
-  const saveAnthropic = React.useCallback(async () => {
+  const saveAnthropic = React.useCallback(async (): Promise<boolean> => {
     const key = anthropicKey.trim();
     if (!key) {
       setError("Anthropic API key is required.");
-      return;
+      return false;
     }
     setError(null);
     setStatus("Saving Anthropic API key…");
@@ -210,13 +215,14 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
     });
     setAnthropicKey("");
     setStatus("Anthropic configured.");
+    return true;
   }, [anthropicKey, gw, loadConfig]);
 
-  const saveTelegramToken = React.useCallback(async () => {
+  const saveTelegramToken = React.useCallback(async (): Promise<boolean> => {
     const token = telegramToken.trim();
     if (!token) {
       setError("Telegram bot token is required.");
-      return;
+      return false;
     }
     setError(null);
     setStatus("Saving Telegram bot token…");
@@ -243,13 +249,14 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
     });
     setTelegramToken("");
     setStatus("Telegram token saved.");
+    return true;
   }, [gw, loadConfig, telegramToken]);
 
-  const saveTelegramAllowFrom = React.useCallback(async () => {
+  const saveTelegramAllowFrom = React.useCallback(async (): Promise<boolean> => {
     const raw = telegramUserId.trim();
     if (!raw) {
       setError("Telegram user id is required.");
-      return;
+      return false;
     }
     // Accept numeric id or prefixed forms; normalize to digits when possible.
     const stripped = raw.replace(/^(telegram|tg):/i, "").trim();
@@ -292,6 +299,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
       // ignore probe failures; config patch is the primary action
     }
     setStatus("Telegram allowlist updated.");
+    return true;
   }, [gw, loadConfig, telegramUserId]);
 
   const runGog = React.useCallback(async (fn: () => Promise<GogExecResult>) => {
@@ -360,288 +368,170 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
 
   const finish = React.useCallback(() => {
     void dispatch(setOnboarded(true));
-    navigate("/chat", { replace: true });
+    navigate(routes.chat, { replace: true });
   }, [dispatch, navigate]);
 
-  const skip = React.useCallback(() => {
-    // "Skip" should skip the current step (not exit onboarding) for Telegram steps,
-    // so users can continue the setup flow without configuring Telegram right now.
+  const start = React.useCallback(async () => {
     setError(null);
     setStatus(null);
-    if (step === "telegramToken" || step === "telegramUser") {
-      setStep("gog");
-      return;
-    }
-    if (step === "done") {
-      navigate("/chat", { replace: true });
-      return;
-    }
-    finish();
-  }, [finish, navigate, step]);
-
-  const next = React.useCallback(async () => {
+    setStartBusy(true);
     try {
-      if (step === "config") {
-        await ensureExtendedConfig();
-        setStep("anthropic");
-        return;
-      }
-      if (step === "anthropic") {
-        await saveAnthropic();
-        setStep("telegramToken");
-        return;
-      }
-      if (step === "telegramToken") {
-        await saveTelegramToken();
-        setStep("telegramUser");
-        return;
-      }
-      if (step === "telegramUser") {
-        await saveTelegramAllowFrom();
-        setStep("gog");
-        return;
-      }
-      if (step === "gog") {
-        // Do not auto-run gog auth here. This step is optional and should be driven by explicit buttons.
-        finish();
-        return;
-      }
-      if (step === "done") {
-        navigate("/chat", { replace: true });
+      await ensureExtendedConfig();
+      navigate(`${routes.welcome}/anthropic`);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setStartBusy(false);
+    }
+  }, [ensureExtendedConfig, navigate]);
+
+  const goTelegramToken = React.useCallback(() => navigate(`${routes.welcome}/telegram-token`), [navigate]);
+  const goTelegramUser = React.useCallback(() => navigate(`${routes.welcome}/telegram-user`), [navigate]);
+  const goGog = React.useCallback(() => navigate(`${routes.welcome}/gog`), [navigate]);
+
+  const onAnthropicNext = React.useCallback(async () => {
+    setError(null);
+    setStatus(null);
+    try {
+      const ok = await saveAnthropic();
+      if (ok) {
+        goTelegramToken();
       }
     } catch (err) {
       setError(String(err));
       setStatus(null);
     }
-  }, [
-    ensureExtendedConfig,
-    finish,
-    navigate,
-    saveAnthropic,
-    saveTelegramAllowFrom,
-    saveTelegramToken,
-    step,
-  ]);
+  }, [goTelegramToken, saveAnthropic]);
+
+  const onTelegramTokenNext = React.useCallback(async () => {
+    setError(null);
+    setStatus(null);
+    try {
+      const ok = await saveTelegramToken();
+      if (ok) {
+        goTelegramUser();
+      }
+    } catch (err) {
+      setError(String(err));
+      setStatus(null);
+    }
+  }, [goTelegramUser, saveTelegramToken]);
+
+  const onTelegramUserNext = React.useCallback(async () => {
+    setError(null);
+    setStatus(null);
+    try {
+      const ok = await saveTelegramAllowFrom();
+      if (ok) {
+        goGog();
+      }
+    } catch (err) {
+      setError(String(err));
+      setStatus(null);
+    }
+  }, [goGog, saveTelegramAllowFrom]);
 
   return (
-    <div className="Centered" style={{ alignItems: "stretch", padding: 12 }}>
-      <div className="Card" style={{ width: "min(980px, 96vw)" }}>
-        <div className="CardTitle">Welcome</div>
-        <div className="CardSubtitle">
-          First-time setup for the embedded OpenClaw Gateway. This will patch missing config keys and help you
-          configure Anthropic + Telegram + gog safely.
-        </div>
-
-        <div className="Meta">
-          <div className="Pill">step: {step}</div>
-          <div className="Pill">gateway port: {state.port}</div>
-          <div className="Pill">config: {configPath ?? "—"}</div>
-          {status ? <div className="Pill">status: {status}</div> : null}
-        </div>
-
-        {error ? (
-          <div className="CardSubtitle" style={{ color: "rgba(255, 122, 0, 0.95)" }}>
-            {error}
-          </div>
-        ) : null}
-
-        {step === "config" ? (
-          <div>
-            <div className="CardTitle">1) Create / extend config</div>
-            <div className="CardSubtitle">
-              Ensures <code>gateway</code> settings match the embedded app and sets a default workspace if missing.
-            </div>
-          </div>
-        ) : null}
-
-        {step === "anthropic" ? (
-          <div>
-            <div className="CardTitle">2) Anthropic API key</div>
-            <div className="CardSubtitle">
-              Stored locally in <code>auth-profiles.json</code>. The config will reference the default profile and
-              set a default model.
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-              <input
-                type="password"
-                value={anthropicKey}
-                onChange={(e) => setAnthropicKey(e.target.value)}
-                placeholder="Anthropic API key"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(230,237,243,0.16)",
-                  background: "rgba(230,237,243,0.06)",
-                  color: "var(--text)",
-                  padding: "8px 10px",
-                }}
-              />
-            </div>
-          </div>
-        ) : null}
-
-        {step === "telegramToken" ? (
-          <div>
-            <div className="CardTitle">3) Telegram bot token</div>
-            <div className="CardSubtitle">
-              Paste the token from BotFather. It will be stored as <code>channels.telegram.botToken</code>.
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-              <input
-                type="password"
-                value={telegramToken}
-                onChange={(e) => setTelegramToken(e.target.value)}
-                placeholder="123456:ABCDEF"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(230,237,243,0.16)",
-                  background: "rgba(230,237,243,0.06)",
-                  color: "var(--text)",
-                  padding: "8px 10px",
-                }}
-              />
-            </div>
-          </div>
-        ) : null}
-
-        {step === "telegramUser" ? (
-          <div>
-            <div className="CardTitle">4) Telegram allowlist (your user id)</div>
-            <div className="CardSubtitle">
-              DM your bot first, then obtain your Telegram numeric user id (message.from.id). Paste it here to
-              allow direct messages.
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-              <input
-                value={telegramUserId}
-                onChange={(e) => setTelegramUserId(e.target.value)}
-                placeholder="e.g. 123456789"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(230,237,243,0.16)",
-                  background: "rgba(230,237,243,0.06)",
-                  color: "var(--text)",
-                  padding: "8px 10px",
-                }}
-              />
-            </div>
-            {channelsProbe ? (
-              <div style={{ marginTop: 10 }}>
-                <div className="Pill">channels.status (probe)</div>
-                <pre style={{ maxHeight: 240 }}>{JSON.stringify(channelsProbe, null, 2)}</pre>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {step === "gog" ? (
-          <div>
-            <div className="CardTitle">5) gog (Gmail hooks)</div>
-            <div className="CardSubtitle">
-              Optional: authorize your Google account for Gmail hooks via the embedded <code>gog</code> binary.
-              This will open a browser for consent. If you skip, you can do it later in Settings.
-            </div>
-            {gogError ? (
-              <div className="CardSubtitle" style={{ color: "rgba(255, 122, 0, 0.95)" }}>
-                {gogError}
-              </div>
-            ) : null}
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-              <input
-                type="text"
-                value={gogAccount}
-                onChange={(e) => setGogAccount(e.target.value)}
-                placeholder="you@gmail.com"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(230,237,243,0.16)",
-                  background: "rgba(230,237,243,0.06)",
-                  color: "var(--text)",
-                  padding: "8px 10px",
-                }}
-              />
-              <button
-                className="primary"
-                disabled={gogBusy || !gogAccount.trim()}
-                onClick={() =>
-                  void runGog(async () => {
-                    const api = window.openclawDesktop;
-                    if (!api) {
-                      throw new Error("Desktop API not available");
-                    }
-                    const res = await api.gogAuthAdd({
-                      account: gogAccount.trim(),
-                      services: DEFAULT_GOG_SERVICES,
-                    });
-                    if (res.ok) {
-                      await ensureGogExecDefaults();
-                    }
-                    return res;
-                  })
-                }
-              >
-                {gogBusy ? "Running…" : "Run gog auth add"}
-              </button>
-              <button
-                disabled={gogBusy}
-                onClick={() =>
-                  void runGog(async () => {
-                    const api = window.openclawDesktop;
-                    if (!api) {
-                      throw new Error("Desktop API not available");
-                    }
-                    return await api.gogAuthList();
-                  })
-                }
-              >
-                {gogBusy ? "Running…" : "Run gog auth list"}
-              </button>
-            </div>
-            <div className="CardSubtitle" style={{ marginTop: 8, opacity: 0.8 }}>
-              Services: <code>{DEFAULT_GOG_SERVICES}</code>
-            </div>
-            {gogOutput ? <pre style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>{gogOutput}</pre> : null}
-          </div>
-        ) : null}
-
-        {step === "done" ? (
-          <div>
-            <div className="CardTitle">Done</div>
-            <div className="CardSubtitle">
-              Setup complete. You can now DM your Telegram bot and use the app normally.
-            </div>
-          </div>
-        ) : null}
-
-        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-          <button className="primary" onClick={() => void next()}>
-            {step === "gog" ? "Finish" : step === "done" ? "Go to dashboard" : "Next"}
-          </button>
-          <button
-            onClick={() => {
-              skip();
+    <Routes>
+      <Route
+        index
+        element={
+          <IntroPage
+            startBusy={startBusy}
+            error={error}
+            onStart={() => {
+              void start();
             }}
-          >
-            Skip
-          </button>
-        </div>
-      </div>
-    </div>
+          />
+        }
+      />
+
+      <Route
+        path="anthropic"
+        element={
+          <AnthropicPage
+            status={status}
+            error={error}
+            anthropicKey={anthropicKey}
+            setAnthropicKey={setAnthropicKey}
+            onNext={() => void onAnthropicNext()}
+            onSkip={() => finish()}
+          />
+        }
+      />
+
+      <Route
+        path="telegram-token"
+        element={
+          <TelegramTokenPage
+            status={status}
+            error={error}
+            telegramToken={telegramToken}
+            setTelegramToken={setTelegramToken}
+            onNext={() => void onTelegramTokenNext()}
+            onSkip={() => void goGog()}
+          />
+        }
+      />
+
+      <Route
+        path="telegram-user"
+        element={
+          <TelegramUserPage
+            status={status}
+            error={error}
+            telegramUserId={telegramUserId}
+            setTelegramUserId={setTelegramUserId}
+            channelsProbe={channelsProbe}
+            onNext={() => void onTelegramUserNext()}
+            onSkip={() => void goGog()}
+          />
+        }
+      />
+
+      <Route
+        path="gog"
+        element={
+          <GogPage
+            status={status}
+            error={error}
+            gogBusy={gogBusy}
+            gogError={gogError}
+            gogOutput={gogOutput}
+            gogAccount={gogAccount}
+            setGogAccount={setGogAccount}
+            onRunAuthAdd={() =>
+              void runGog(async () => {
+                const api = window.openclawDesktop;
+                if (!api) {
+                  throw new Error("Desktop API not available");
+                }
+                const res = await api.gogAuthAdd({
+                  account: gogAccount.trim(),
+                  services: DEFAULT_GOG_SERVICES,
+                });
+                if (res.ok) {
+                  await ensureGogExecDefaults();
+                }
+                return res;
+              })
+            }
+            onRunAuthList={() =>
+              void runGog(async () => {
+                const api = window.openclawDesktop;
+                if (!api) {
+                  throw new Error("Desktop API not available");
+                }
+                return await api.gogAuthList();
+              })
+            }
+            onFinish={() => finish()}
+          />
+        }
+      />
+
+      <Route path="*" element={<Navigate to={routes.welcome} replace />} />
+    </Routes>
   );
 }
 
