@@ -1,6 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGatewayRpc } from "../gateway/context";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { setOnboarded } from "../store/slices/onboardingSlice";
+import type { GatewayState } from "../../../src/main/types";
 
 type ConfigSnapshot = {
   path?: string;
@@ -21,7 +24,6 @@ type GogExecResult = {
   stderr: string;
 };
 
-const ONBOARDED_KEY = "openclaw.desktop.onboarded.v1";
 const DEFAULT_ANTHROPIC_MODEL = "anthropic/claude-sonnet-4-5";
 const DEFAULT_GOG_SERVICES = "gmail,calendar,drive,docs,sheets,contacts";
 
@@ -61,7 +63,9 @@ type StepId = "config" | "anthropic" | "telegramToken" | "telegramUser" | "gog" 
 
 export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const gw = useGatewayRpc();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const onboarded = useAppSelector((s) => s.onboarding.onboarded);
 
   const [step, setStep] = React.useState<StepId>("config");
   const [status, setStatus] = React.useState<string | null>(null);
@@ -79,11 +83,10 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   const [channelsProbe, setChannelsProbe] = React.useState<ChannelsStatusResult | null>(null);
 
   React.useEffect(() => {
-    const already = typeof localStorage !== "undefined" && localStorage.getItem(ONBOARDED_KEY) === "1";
-    if (already) {
+    if (onboarded) {
       navigate("/chat", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, onboarded]);
 
   const loadConfig = React.useCallback(async () => {
     const snap = (await gw.request("config.get", {})) as ConfigSnapshot;
@@ -356,9 +359,9 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   }, [gw]);
 
   const finish = React.useCallback(() => {
-    localStorage.setItem(ONBOARDED_KEY, "1");
+    void dispatch(setOnboarded(true));
     navigate("/chat", { replace: true });
-  }, [navigate]);
+  }, [dispatch, navigate]);
 
   const skip = React.useCallback(() => {
     // "Skip" should skip the current step (not exit onboarding) for Telegram steps,

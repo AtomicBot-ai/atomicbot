@@ -1,13 +1,9 @@
 import React from "react";
 import { useGatewayRpc } from "../gateway/context";
-
-type ConfigSnapshot = {
-  path?: string;
-  exists?: boolean;
-  valid?: boolean;
-  hash?: string;
-  config?: unknown;
-};
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { reloadConfig } from "../store/slices/configSlice";
+import type { ConfigSnapshot } from "../store/slices/configSlice";
+import type { GatewayState } from "../../../src/main/types";
 
 type GogExecResult = {
   ok: boolean;
@@ -17,15 +13,6 @@ type GogExecResult = {
 };
 
 const DEFAULT_ANTHROPIC_MODEL = "anthropic/claude-sonnet-4-5";
-
-function toWsUrl(httpUrl: string): string {
-  const u = new URL(httpUrl);
-  u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-  u.pathname = "/";
-  u.search = "";
-  u.hash = "";
-  return u.toString();
-}
 
 function getTelegramBotToken(cfg: unknown): string {
   const obj = cfg as {
@@ -53,9 +40,7 @@ function inferWorkspaceDirFromConfigPath(configPath: string | undefined): string
 export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const [telegramToken, setTelegramToken] = React.useState("");
   const [anthropicKey, setAnthropicKey] = React.useState("");
-  const [status, setStatus] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [configSnap, setConfigSnap] = React.useState<ConfigSnapshot | null>(null);
+  const [pageError, setPageError] = React.useState<string | null>(null);
   const [configActionStatus, setConfigActionStatus] = React.useState<string | null>(null);
 
   const [gogAccount, setGogAccount] = React.useState("");
@@ -65,33 +50,30 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
   const [gogOutput, setGogOutput] = React.useState<string | null>(null);
   const [resetBusy, setResetBusy] = React.useState(false);
 
-  const lastConfigHashRef = React.useRef<string | null>(null);
+  const dispatch = useAppDispatch();
+  const configSnap = useAppSelector((s) => s.config.snap);
+  const configError = useAppSelector((s) => s.config.error);
   const gw = useGatewayRpc();
 
   const reload = React.useCallback(async () => {
-    setError(null);
-    setStatus("loading");
-    try {
-      const snap = (await gw.request("config.get", {})) as ConfigSnapshot;
-      const hash = typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
-      lastConfigHashRef.current = hash;
-      setConfigSnap(snap);
-      setTelegramToken(getTelegramBotToken(snap.config));
-      setStatus("ready");
-    } catch (err) {
-      setError(String(err));
-      setStatus("error");
-    }
-  }, [gw]);
+    setPageError(null);
+    await dispatch(reloadConfig({ request: gw.request }));
+  }, [dispatch, gw.request]);
 
   React.useEffect(() => {
     void reload();
   }, [reload]);
 
+  React.useEffect(() => {
+    setTelegramToken(getTelegramBotToken(configSnap?.config));
+  }, [configSnap]);
+
+  const error = pageError ?? configError;
+
   const resetAndClose = React.useCallback(async () => {
     const api = window.openclawDesktop;
     if (!api) {
-      setError("Desktop API not available");
+      setPageError("Desktop API not available");
       return;
     }
     const ok = window.confirm(
@@ -100,21 +82,19 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
     if (!ok) {
       return;
     }
-    setError(null);
-    setStatus("resetting");
+    setPageError(null);
     setResetBusy(true);
     try {
       await api.resetAndClose();
     } catch (err) {
       // If reset fails, keep the app running and show the error.
-      setError(String(err));
-      setStatus(null);
+      setPageError(String(err));
       setResetBusy(false);
     }
   }, []);
 
   const createConfigFile = React.useCallback(async () => {
-    setError(null);
+    setPageError(null);
     setConfigActionStatus("creating");
     try {
       const minimal = {
@@ -133,12 +113,12 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
       setConfigActionStatus("created");
     } catch (err) {
       setConfigActionStatus("error");
-      setError(String(err));
+      setPageError(String(err));
     }
   }, [gw, reload, state.port, state.token]);
 
   const seedOnboardingDefaults = React.useCallback(async () => {
-    setError(null);
+    setPageError(null);
     setConfigActionStatus("seeding");
     try {
       const snap = (await gw.request("config.get", {})) as ConfigSnapshot;
@@ -235,7 +215,7 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
       setConfigActionStatus("seeded");
     } catch (err) {
       setConfigActionStatus("error");
-      setError(String(err));
+      setPageError(String(err));
     }
   }, [gw, reload, state.port, state.token]);
 
@@ -251,15 +231,15 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
         setAnthropicKey(text.trim());
       }
     } catch (err) {
-      setError(`Clipboard paste failed: ${String(err)}`);
+      setPageError(`Clipboard paste failed: ${String(err)}`);
     }
   }, []);
 
   const saveTelegram = React.useCallback(async () => {
-    setError(null);
-    setStatus("saving");
+    setPageError(null);
     try {
-      const baseHash = lastConfigHashRef.current;
+      const baseHash =
+        typeof configSnap?.hash === "string" && configSnap.hash.trim() ? configSnap.hash.trim() : null;
       if (!baseHash) {
         throw new Error("Missing config base hash. Click Reload and try again.");
       }
@@ -275,16 +255,13 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
         note: "Settings: update Telegram bot token",
       });
       await reload();
-      setStatus("saved");
     } catch (err) {
-      setError(String(err));
-      setStatus("error");
+      setPageError(String(err));
     }
-  }, [gw, telegramToken, reload]);
+  }, [configSnap?.hash, gw, telegramToken, reload]);
 
   const saveAnthropic = React.useCallback(async () => {
-    setError(null);
-    setStatus("saving");
+    setPageError(null);
     try {
       const key = anthropicKey.trim();
       if (!key) {
@@ -293,7 +270,8 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
       await window.openclawDesktop?.setAnthropicApiKey(key);
 
       // Ensure the config references the default profile id (does not store the secret).
-      const baseHash = lastConfigHashRef.current;
+      const baseHash =
+        typeof configSnap?.hash === "string" && configSnap.hash.trim() ? configSnap.hash.trim() : null;
       if (!baseHash) {
         throw new Error("Missing config base hash. Click Reload and try again.");
       }
@@ -324,12 +302,10 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
 
       await reload();
       setAnthropicKey("");
-      setStatus("saved");
     } catch (err) {
-      setError(String(err));
-      setStatus("error");
+      setPageError(String(err));
     }
-  }, [gw, anthropicKey, reload]);
+  }, [anthropicKey, configSnap?.hash, gw, reload]);
 
   const runGog = React.useCallback(async (fn: () => Promise<GogExecResult>) => {
     setGogError(null);

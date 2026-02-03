@@ -1,5 +1,6 @@
 import React from "react";
 import { useGatewayRpc } from "../gateway/context";
+import type { GatewayState } from "../../../src/main/types";
 
 type WizardStep = {
   id: string;

@@ -62,6 +62,26 @@ a {
   gap: 8px;
 }
 
+.TopbarLink {
+  appearance: none;
+  border: 1px solid rgba(230, 237, 243, 0.16);
+  background: rgba(230, 237, 243, 0.06);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+.TopbarLink-active {
+  border-color: rgba(255, 122, 0, 0.35);
+  background: rgba(255, 122, 0, 0.14);
+}
+
 button {
   appearance: none;
   border: 1px solid rgba(230, 237, 243, 0.16);

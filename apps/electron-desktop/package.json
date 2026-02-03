@@ -23,6 +23,7 @@
     "dist": "npm run build && npm run build:renderer && npm run prepare:openclaw && npm run prepare:node && npm run fetch:gog && npm run prepare:gog:credentials && npm run prepare:gog && electron-builder"
   },
   "devDependencies": {
+    "@reduxjs/toolkit": "^2.9.0",
     "@types/node": "^25.2.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
@@ -32,6 +33,7 @@
     "electron-builder": "^26.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.13.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"

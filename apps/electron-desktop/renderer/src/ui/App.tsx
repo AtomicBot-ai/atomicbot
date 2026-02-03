@@ -1,41 +1,15 @@
 import React from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { ChatPage } from "./ChatPage";
 import { SettingsPage } from "./SettingsPage";
 import { WizardPage } from "./WizardPage";
 import { WelcomePage } from "./WelcomePage";
 import { GatewayRpcProvider } from "../gateway/context";
-
-function useGatewayState() {
-  const [state, setState] = React.useState<GatewayState | null>(null);
-
-  React.useEffect(() => {
-    let unsub: (() => void) | null = null;
-    let cancelled = false;
-    (async () => {
-      const api = window.openclawDesktop;
-      if (!api) {
-        return;
-      }
-      try {
-        const info = await api.getGatewayInfo();
-        if (!cancelled) {
-          setState(info.state ?? null);
-        }
-      } catch {
-        // ignore
-      }
-      unsub = api.onGatewayState((next) => setState(next));
-    })();
-
-    return () => {
-      cancelled = true;
-      unsub?.();
-    };
-  }, []);
-
-  return state;
-}
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { initGatewayState } from "../store/slices/gatewaySlice";
+import { loadOnboardingFromStorage } from "../store/slices/onboardingSlice";
+import type { GatewayState } from "../../../src/main/types";
+import { isBootstrapPath, routes } from "./routes";
 
 function Topbar() {
   const api = window.openclawDesktop;
@@ -43,15 +17,24 @@ function Topbar() {
     <div className="Topbar">
       <div className="TopbarTitle">Atomic Bot</div>
       <div className="TopbarActions">
-        <a href="#/legacy" style={{ textDecoration: "none" }}>
-          <button>Legacy</button>
-        </a>
-        <a href="#/chat" style={{ textDecoration: "none" }}>
-          <button>Chat</button>
-        </a>
-        <a href="#/settings" style={{ textDecoration: "none" }}>
-          <button>Settings</button>
-        </a>
+        <NavLink
+          to={routes.legacy}
+          className={({ isActive }) => `TopbarLink${isActive ? " TopbarLink-active" : ""}`}
+        >
+          Legacy
+        </NavLink>
+        <NavLink
+          to={routes.chat}
+          className={({ isActive }) => `TopbarLink${isActive ? " TopbarLink-active" : ""}`}
+        >
+          Chat
+        </NavLink>
+        <NavLink
+          to={routes.settings}
+          className={({ isActive }) => `TopbarLink${isActive ? " TopbarLink-active" : ""}`}
+        >
+          Settings
+        </NavLink>
         <button
           onClick={() => {
             void api?.openLogs();
@@ -135,11 +118,48 @@ function LegacyScreen({ state }: { state: Extract<GatewayState, { kind: "ready" 
   );
 }
 
+function BootstrapRoutes({ state }: { state: GatewayState | null }) {
+  return (
+    <Routes>
+      <Route path={routes.loading} element={<LoadingScreen state={state} />} />
+      <Route
+        path={routes.error}
+        element={state?.kind === "failed" ? <ErrorScreen state={state} /> : <Navigate to={routes.loading} replace />}
+      />
+      <Route path="*" element={<Navigate to={routes.loading} replace />} />
+    </Routes>
+  );
+}
+
+function ReadyRoutes({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
+  return (
+    <GatewayRpcProvider url={state.url} token={state.token}>
+      <Routes>
+        <Route path={routes.loading} element={<LoadingScreen state={state} />} />
+        <Route path={routes.error} element={<Navigate to={routes.chat} replace />} />
+        <Route path={routes.welcome} element={<WelcomePage state={state} />} />
+        <Route path={routes.legacy} element={<LegacyScreen state={state} />} />
+        <Route path={routes.chat} element={<ChatPage state={state} />} />
+        <Route path={routes.wizard} element={<WizardPage state={state} />} />
+        <Route path={routes.settings} element={<SettingsPage state={state} />} />
+        <Route path="*" element={<Navigate to={routes.chat} replace />} />
+      </Routes>
+    </GatewayRpcProvider>
+  );
+}
+
 export function App() {
-  const state = useGatewayState();
+  const dispatch = useAppDispatch();
+  const state = useAppSelector((s) => s.gateway.state);
+  const onboarded = useAppSelector((s) => s.onboarding.onboarded);
   const navigate = useNavigate();
   const location = useLocation();
   const didAutoNavRef = React.useRef(false);
+
+  React.useEffect(() => {
+    void dispatch(initGatewayState());
+    void dispatch(loadOnboardingFromStorage());
+  }, [dispatch]);
 
   React.useEffect(() => {
     if (!state) {
@@ -153,51 +173,26 @@ export function App() {
         return;
       }
       const path = location.pathname || "/";
-      const isBootstrap = path === "/" || path === "/loading" || path === "/error";
+      const isBootstrap = isBootstrapPath(path);
       if (isBootstrap) {
         didAutoNavRef.current = true;
-        const onboarded =
-          typeof localStorage !== "undefined" &&
-          localStorage.getItem("openclaw.desktop.onboarded.v1") === "1";
-        navigate(onboarded ? "/chat" : "/welcome", { replace: true });
+        navigate(onboarded ? routes.chat : routes.welcome, { replace: true });
       }
       return;
     }
     if (state.kind === "failed") {
-      navigate("/error", { replace: true });
+      navigate(routes.error, { replace: true });
     }
     if (state.kind === "starting") {
-      navigate("/loading", { replace: true });
+      navigate(routes.loading, { replace: true });
     }
-  }, [state, navigate, location.pathname]);
+  }, [state, onboarded, navigate, location.pathname]);
 
   return (
     <div className="AppShell">
       <Topbar />
       <div className="Page">
-        {state?.kind === "ready" ? (
-          <GatewayRpcProvider url={state.url} token={state.token}>
-            <Routes>
-              <Route path="/loading" element={<LoadingScreen state={state} />} />
-              <Route path="/error" element={<Navigate to="/chat" replace />} />
-              <Route path="/welcome" element={<WelcomePage state={state} />} />
-              <Route path="/legacy" element={<LegacyScreen state={state} />} />
-              <Route path="/chat" element={<ChatPage state={state} />} />
-              <Route path="/wizard" element={<WizardPage state={state} />} />
-              <Route path="/settings" element={<SettingsPage state={state} />} />
-              <Route path="*" element={<Navigate to="/chat" replace />} />
-            </Routes>
-          </GatewayRpcProvider>
-        ) : (
-          <Routes>
-            <Route path="/loading" element={<LoadingScreen state={state} />} />
-            <Route
-              path="/error"
-              element={state?.kind === "failed" ? <ErrorScreen state={state} /> : <Navigate to="/loading" replace />}
-            />
-            <Route path="*" element={<Navigate to="/loading" replace />} />
-          </Routes>
-        )}
+        {state?.kind === "ready" ? <ReadyRoutes state={state} /> : <BootstrapRoutes state={state} />}
       </div>
     </div>
   );

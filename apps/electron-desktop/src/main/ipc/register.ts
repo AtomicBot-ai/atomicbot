@@ -1,6 +1,6 @@
 import { app, ipcMain, shell, type BrowserWindow } from "electron";
 
-import { writeAuthProfilesAnthropicApiKey } from "../auth/anthropic";
+import { upsertApiKeyProfile } from "../keys/apiKeys";
 import { registerGogIpcHandlers } from "../gog/ipc";
 import { registerResetAndCloseIpcHandler } from "../reset/ipc";
 import type { GatewayState } from "../types";
@@ -55,7 +55,7 @@ export function registerIpcHandlers(params: {
 
   ipcMain.handle("auth-set-anthropic-api-key", async (_evt, p: { apiKey?: unknown }) => {
     const apiKey = typeof p?.apiKey === "string" ? p.apiKey : "";
-    writeAuthProfilesAnthropicApiKey({ stateDir: params.stateDir, apiKey });
+    upsertApiKeyProfile({ stateDir: params.stateDir, provider: "anthropic", key: apiKey, profileName: "default" });
     return { ok: true } as const;
   });
 
