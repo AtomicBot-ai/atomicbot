@@ -1,10 +1,9 @@
 import React from "react";
 
-import { ActionButton, ButtonRow, GlassCard, HeroPageLayout, InlineError, TextInput } from "../kit";
+import { GlassCard, HeroPageLayout, InlineError, PrimaryButton, TextInput } from "../kit";
 import type { Provider } from "./ProviderSelectPage";
 
 type ProviderMeta = {
-  title: string;
   placeholder: string;
   helpUrl?: string;
   helpText?: string;
@@ -12,28 +11,34 @@ type ProviderMeta = {
 
 const PROVIDER_META: Record<Provider, ProviderMeta> = {
   anthropic: {
-    title: "Anthropic API Key",
     placeholder: "sk-ant-...",
     helpUrl: "https://console.anthropic.com/settings/keys",
     helpText: "Get your API key from the Anthropic Console.",
   },
   google: {
-    title: "Google Gemini API Key",
     placeholder: "AIza...",
     helpUrl: "https://aistudio.google.com/apikey",
     helpText: "Get your API key from Google AI Studio.",
   },
   openai: {
-    title: "OpenAI API Key",
     placeholder: "sk-...",
     helpUrl: "https://platform.openai.com/api-keys",
     helpText: "Get your API key from the OpenAI Platform.",
   },
   openrouter: {
-    title: "OpenRouter API Key",
     placeholder: "sk-or-...",
     helpUrl: "https://openrouter.ai/keys",
     helpText: "Get your API key from OpenRouter.",
+  },
+  zai: {
+    placeholder: "sk-...",
+    helpUrl: "https://z.ai/manage-apikey/apikey-list",
+    helpText: "Get your API key from the Z.AI Platform.",
+  },
+  minimax: {
+    placeholder: "sk-...",
+    helpUrl: "https://platform.minimax.io/user-center/basic-information/interface-key",
+    helpText: "Get your API key from the MiniMax Platform.",
   },
 };
 
@@ -47,6 +52,8 @@ export function ApiKeyPage(props: {
 }) {
   const [apiKey, setApiKey] = React.useState("");
   const meta = PROVIDER_META[props.provider];
+  const totalSteps = 5;
+  const activeStep = 1;
 
   const handleSubmit = () => {
     const trimmed = apiKey.trim();
@@ -56,12 +63,23 @@ export function ApiKeyPage(props: {
   };
 
   return (
-    <HeroPageLayout title="API KEY" variant="compact" align="center" aria-label="API key setup">
-      <GlassCard>
-        <div className="UiSectionTitle">{meta.title}</div>
-        <div className="UiSectionSubtitle">
+    <HeroPageLayout variant="compact" align="center" aria-label="API key setup">
+      <GlassCard className="UiApiKeyCard">
+        <div className="UiOnboardingDots" aria-label="Onboarding progress">
+          {Array.from({ length: totalSteps }).map((_, idx) => (
+            <span
+              // eslint-disable-next-line react/no-array-index-key
+              key={idx}
+              className={`UiOnboardingDot ${idx === activeStep ? "UiOnboardingDot--active" : ""}`}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+
+        <div className="UiApiKeyTitle">Enter API Key</div>
+        <div className="UiApiKeySubtitle">
           {meta.helpText}{" "}
-          {meta.helpUrl && (
+          {meta.helpUrl ? (
             <a
               href={meta.helpUrl}
               target="_blank"
@@ -72,30 +90,37 @@ export function ApiKeyPage(props: {
                 window.openclawDesktop?.openExternal(meta.helpUrl!);
               }}
             >
-              Get API key →
+              Get API key ↗
             </a>
-          )}
+          ) : null}
         </div>
-        {props.status && <div className="UiSectionSubtitle">{props.status}</div>}
-        {props.error && <InlineError>{props.error}</InlineError>}
-        <TextInput
-          type="password"
-          value={apiKey}
-          onChange={setApiKey}
-          placeholder={meta.placeholder}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          disabled={props.busy}
-        />
-        <ButtonRow>
-          <ActionButton variant="primary" disabled={!apiKey.trim() || props.busy} onClick={handleSubmit}>
-            {props.busy ? "Saving..." : "Next"}
-          </ActionButton>
-          <ActionButton disabled={props.busy} onClick={props.onBack}>
+
+        {props.status ? <div className="UiSectionSubtitle">{props.status}</div> : null}
+        {props.error ? <InlineError>{props.error}</InlineError> : null}
+
+        <div className="UiApiKeyInputRow">
+          <TextInput
+            type="password"
+            value={apiKey}
+            onChange={setApiKey}
+            placeholder={meta.placeholder}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            disabled={props.busy}
+          />
+        </div>
+
+        <div className="UiApiKeySpacer" aria-hidden="true" />
+
+        <div className="UiApiKeyButtonRow">
+          <button className="UiTextButton" disabled={props.busy} onClick={props.onBack} type="button">
             Back
-          </ActionButton>
-        </ButtonRow>
+          </button>
+          <PrimaryButton disabled={!apiKey.trim() || props.busy} onClick={handleSubmit}>
+            {props.busy ? "Saving..." : "Continue"}
+          </PrimaryButton>
+        </div>
       </GlassCard>
     </HeroPageLayout>
   );

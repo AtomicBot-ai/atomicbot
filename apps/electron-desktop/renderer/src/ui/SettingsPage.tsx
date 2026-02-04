@@ -44,6 +44,8 @@ function inferWorkspaceDirFromConfigPath(configPath: string | undefined): string
 export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const [telegramToken, setTelegramToken] = React.useState("");
   const [anthropicKey, setAnthropicKey] = React.useState("");
+  const [zaiKey, setZaiKey] = React.useState("");
+  const [minimaxKey, setMinimaxKey] = React.useState("");
   const [pageError, setPageError] = React.useState<string | null>(null);
   const [configActionStatus, setConfigActionStatus] = React.useState<string | null>(null);
 
@@ -223,7 +225,7 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
     }
   }, [gw, reload, state.port, state.token]);
 
-  const pasteFromClipboard = React.useCallback(async (target: "telegram" | "anthropic") => {
+  const pasteFromClipboard = React.useCallback(async (target: "telegram" | "anthropic" | "zai" | "minimax") => {
     try {
       const text = await navigator.clipboard.readText();
       if (!text) {
@@ -231,8 +233,12 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
       }
       if (target === "telegram") {
         setTelegramToken(text.trim());
-      } else {
+      } else if (target === "anthropic") {
         setAnthropicKey(text.trim());
+      } else if (target === "zai") {
+        setZaiKey(text.trim());
+      } else {
+        setMinimaxKey(text.trim());
       }
     } catch (err) {
       setPageError(`Clipboard paste failed: ${String(err)}`);
@@ -310,6 +316,88 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
       setPageError(String(err));
     }
   }, [anthropicKey, configSnap?.hash, gw, reload]);
+
+  const saveZai = React.useCallback(async () => {
+    setPageError(null);
+    try {
+      const key = zaiKey.trim();
+      if (!key) {
+        throw new Error("Z.AI API key is required.");
+      }
+      await window.openclawDesktop?.setApiKey("zai", key);
+
+      // Ensure the config references the default profile id (does not store the secret).
+      const baseHash =
+        typeof configSnap?.hash === "string" && configSnap.hash.trim() ? configSnap.hash.trim() : null;
+      if (!baseHash) {
+        throw new Error("Missing config base hash. Click Reload and try again.");
+      }
+      await gw.request("config.patch", {
+        baseHash,
+        raw: JSON.stringify(
+          {
+            auth: {
+              profiles: {
+                "zai:default": { provider: "zai", mode: "api_key" },
+              },
+              order: {
+                zai: ["zai:default"],
+              },
+            },
+          },
+          null,
+          2,
+        ),
+        note: "Settings: enable Z.AI api_key profile",
+      });
+
+      await reload();
+      setZaiKey("");
+    } catch (err) {
+      setPageError(String(err));
+    }
+  }, [configSnap?.hash, gw, reload, zaiKey]);
+
+  const saveMinimax = React.useCallback(async () => {
+    setPageError(null);
+    try {
+      const key = minimaxKey.trim();
+      if (!key) {
+        throw new Error("MiniMax API key is required.");
+      }
+      await window.openclawDesktop?.setApiKey("minimax", key);
+
+      // Ensure the config references the default profile id (does not store the secret).
+      const baseHash =
+        typeof configSnap?.hash === "string" && configSnap.hash.trim() ? configSnap.hash.trim() : null;
+      if (!baseHash) {
+        throw new Error("Missing config base hash. Click Reload and try again.");
+      }
+      await gw.request("config.patch", {
+        baseHash,
+        raw: JSON.stringify(
+          {
+            auth: {
+              profiles: {
+                "minimax:default": { provider: "minimax", mode: "api_key" },
+              },
+              order: {
+                minimax: ["minimax:default"],
+              },
+            },
+          },
+          null,
+          2,
+        ),
+        note: "Settings: enable MiniMax api_key profile",
+      });
+
+      await reload();
+      setMinimaxKey("");
+    } catch (err) {
+      setPageError(String(err));
+    }
+  }, [configSnap?.hash, gw, minimaxKey, reload]);
 
   const runGog = React.useCallback(async (fn: () => Promise<GogExecResult>) => {
     setGogError(null);
@@ -475,6 +563,60 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
           <div className="UiSectionSubtitle" style={{ marginTop: 8 }}>
             Note: this writes the key locally and sets config metadata + default model. It does not expose the key to
             the Gateway config file. Default model will be set to <code>{DEFAULT_ANTHROPIC_MODEL}</code>.
+          </div>
+        </section>
+
+        {/* Z.AI Section */}
+        <section className="UiSettingsSection">
+          <div className="UiSectionTitle">Z.AI</div>
+          <div className="UiSectionSubtitle">
+            Stored in <code>auth-profiles.json</code> (not in <code>openclaw.json</code>).
+          </div>
+          <div className="UiInputRow">
+            <TextInput
+              type="password"
+              value={zaiKey}
+              onChange={setZaiKey}
+              placeholder="Z.AI API key"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <ActionButton onClick={() => void pasteFromClipboard("zai")}>Paste</ActionButton>
+            <ActionButton variant="primary" onClick={() => void saveZai()}>
+              Save
+            </ActionButton>
+          </div>
+          <div className="UiSectionSubtitle" style={{ marginTop: 8 }}>
+            Note: this writes the key locally and sets config metadata. It does not expose the key to the Gateway config
+            file.
+          </div>
+        </section>
+
+        {/* MiniMax Section */}
+        <section className="UiSettingsSection">
+          <div className="UiSectionTitle">MiniMax</div>
+          <div className="UiSectionSubtitle">
+            Stored in <code>auth-profiles.json</code> (not in <code>openclaw.json</code>).
+          </div>
+          <div className="UiInputRow">
+            <TextInput
+              type="password"
+              value={minimaxKey}
+              onChange={setMinimaxKey}
+              placeholder="MiniMax API key"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <ActionButton onClick={() => void pasteFromClipboard("minimax")}>Paste</ActionButton>
+            <ActionButton variant="primary" onClick={() => void saveMinimax()}>
+              Save
+            </ActionButton>
+          </div>
+          <div className="UiSectionSubtitle" style={{ marginTop: 8 }}>
+            Note: this writes the key locally and sets config metadata. It does not expose the key to the Gateway config
+            file.
           </div>
         </section>
 

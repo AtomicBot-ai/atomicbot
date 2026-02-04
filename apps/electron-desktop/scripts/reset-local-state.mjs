@@ -30,8 +30,14 @@ function safeRmrf(target) {
     throw new Error("invalid target path");
   }
   const normalized = path.resolve(target);
-  // Safety guard: only allow deleting paths that clearly belong to OpenClaw/Electron wrapper.
-  const allowedMarkers = [path.sep + ".openclaw", path.sep + "openclaw-electron-desktop"];
+  // Safety guard: only allow deleting paths that clearly belong to this Electron wrapper.
+  // Note: the embedded OpenClaw state is stored under Electron's `userData` dir.
+  const allowedMarkers = [
+    path.sep + "atomicbot-desktop",
+    // Back-compat / legacy names.
+    path.sep + "openclaw-electron-desktop",
+    path.sep + "Atomic Bot",
+  ];
   if (!allowedMarkers.some((m) => normalized.includes(m))) {
     throw new Error(`refusing to delete unexpected path: ${normalized}`);
   }
@@ -126,11 +132,9 @@ function clearGogAuth(gogBin) {
   }
 }
 
-const openclawStateDir = path.join(os.homedir(), ".openclaw");
-const electronUserDataDir = resolveElectronUserDataDir("openclaw-electron-desktop");
+const electronUserDataDir = resolveElectronUserDataDir("atomicbot-desktop");
 
 const targets = [
-  { label: "OpenClaw state", path: openclawStateDir },
   { label: "Electron userData", path: electronUserDataDir },
   // Project-local gog artifacts (downloaded runtime + prepared vendor bundle).
   { label: "gog runtime (project)", path: path.join(appRoot, ".gog-runtime"), kind: "project" },

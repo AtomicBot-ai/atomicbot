@@ -1,6 +1,6 @@
 import React from "react";
 
-import { GlassCard, HeroPageLayout, InlineError, PrimaryButton } from "./kit";
+import { CheckboxRow, FooterText, HeroPageLayout, InlineError, PrimaryButton, SplashLogo } from "./kit";
 import { LoadingScreen } from "./LoadingScreen";
 
 export type ConsentDesktopApi = NonNullable<Window["openclawDesktop"]> & {
@@ -16,6 +16,7 @@ export function ConsentScreen({ onAccepted }: { onAccepted: () => void }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const termsUrl = "https://atomicbot.ai/terms";
+  const appVersion = api?.version?.trim() ? api.version.trim() : "0.0.0";
 
   const accept = React.useCallback(async () => {
     if (busy) {
@@ -49,35 +50,33 @@ export function ConsentScreen({ onAccepted }: { onAccepted: () => void }) {
     return <LoadingScreen state={null} />;
   }
 
-  const checkRowClassName = `UiCheckRow${agreeRequired && !checked ? " UiCheckRow--error" : ""}`;
-
   return (
     <HeroPageLayout
       role="dialog"
       aria-label="User agreement"
-      title="WELCOME"
       variant="compact"
       align="center"
+      hideTopbar
     >
-      <GlassCard className="UiGlassCard-intro">
-        <div className="UiIntroInner">
-          <div className="UiSectionTitle">Hi.</div>
-          <div className="UiSectionSubtitle">Before we start, please accept the Terms of Use.</div>
+      <div className="UiConsentStage">
+        <div className="UiConsentCenter">
+          <SplashLogo iconAlt="Atomic Bot" />
+          <div className="UiConsentTitle">Welcome to Atomic Bot</div>
+          <div className="UiConsentSubtitle">Your Personal AI Agent based on OpenClaw</div>
 
-          <label className={checkRowClassName}>
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setChecked(next);
-                if (next) {
-                  setAgreeRequired(false);
-                }
-              }}
-            />
+          <CheckboxRow
+            checked={checked}
+            error={agreeRequired && !checked}
+            className="UiConsentAgreement"
+            onChange={(next) => {
+              setChecked(next);
+              if (next) {
+                setAgreeRequired(false);
+              }
+            }}
+          >
             <span>
-              I agree to the{" "}
+              By clicking &quot;Start&quot;, you agree to the{" "}
               <a
                 className="UiLink"
                 href={termsUrl}
@@ -100,7 +99,7 @@ export function ConsentScreen({ onAccepted }: { onAccepted: () => void }) {
               </a>
               .
             </span>
-          </label>
+          </CheckboxRow>
 
           {error ? <InlineError>{error}</InlineError> : null}
 
@@ -108,7 +107,9 @@ export function ConsentScreen({ onAccepted }: { onAccepted: () => void }) {
             Start
           </PrimaryButton>
         </div>
-      </GlassCard>
+
+        <FooterText>Version {appVersion}</FooterText>
+      </div>
     </HeroPageLayout>
   );
 }

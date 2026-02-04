@@ -1,8 +1,8 @@
 import React from "react";
 
-import { ActionButton, ButtonRow, GlassCard, HeroPageLayout, InlineError } from "../kit";
+import { ButtonRow, GlassCard, HeroPageLayout, InlineError, PrimaryButton } from "../kit";
 
-export type Provider = "anthropic" | "google" | "openai" | "openrouter";
+export type Provider = "anthropic" | "google" | "openai" | "openrouter" | "zai" | "minimax";
 
 type ProviderInfo = {
   id: Provider;
@@ -10,6 +10,20 @@ type ProviderInfo = {
   description: string;
   recommended?: boolean;
 };
+
+const PROVIDER_ICONS: Record<Provider, string> = {
+  anthropic: "anthropic.svg",
+  openai: "opeanai.svg",
+  google: "gemini.svg",
+  minimax: "minimax.svg",
+  zai: "zai.svg",
+  openrouter: "openrouter.svg",
+};
+
+function resolveProviderIconUrl(provider: Provider): string {
+  // Resolve relative to renderer's index.html (renderer/dist/index.html -> ../../assets/)
+  return new URL(`../../assets/ai-providers/${PROVIDER_ICONS[provider]}`, document.baseURI).toString();
+}
 
 const PROVIDERS: ProviderInfo[] = [
   {
@@ -33,14 +47,39 @@ const PROVIDERS: ProviderInfo[] = [
     name: "OpenRouter",
     description: "Access to 200+ models from multiple providers through a single API.",
   },
+  {
+    id: "zai",
+    name: "Z.ai (GLM)",
+    description: "Budget-friendly models built for efficient, scalable AI workloads.",
+  },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    description: "Models designed for strong conversational AI and creative generation.",
+  },
 ];
 
-export function ProviderSelectPage(props: { error: string | null; onSelect: (provider: Provider) => void }) {
+export function ProviderSelectPage(props: {
+  error: string | null;
+  onSelect: (provider: Provider) => void;
+}) {
   const [selected, setSelected] = React.useState<Provider | null>(null);
+  const totalSteps = 5;
+  const activeStep = 0;
 
   return (
-    <HeroPageLayout title="AI PROVIDER" variant="compact" align="center" aria-label="Provider selection">
+    <HeroPageLayout variant="compact" align="center" aria-label="Provider selection">
       <GlassCard>
+        <div className="UiOnboardingDots" aria-label="Onboarding progress">
+          {Array.from({ length: totalSteps }).map((_, idx) => (
+            <span
+              // eslint-disable-next-line react/no-array-index-key
+              key={idx}
+              className={`UiOnboardingDot ${idx === activeStep ? "UiOnboardingDot--active" : ""}`}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
         <div className="UiSectionTitle">Select AI Provider</div>
         <div className="UiSectionSubtitle">
           Choose your preferred AI provider. You can configure additional providers later.
@@ -60,21 +99,24 @@ export function ProviderSelectPage(props: { error: string | null; onSelect: (pro
                 onChange={() => setSelected(provider.id)}
                 className="UiProviderRadio"
               />
+              <span className="UiProviderIconWrap" aria-hidden="true">
+                <img className="UiProviderIcon" src={resolveProviderIconUrl(provider.id)} alt="" />
+              </span>
               <div className="UiProviderContent">
                 <div className="UiProviderHeader">
                   <span className="UiProviderName">{provider.name}</span>
-                  {provider.recommended && <span className="UiProviderBadge">Recommended</span>}
+                  {provider.recommended && <span className="UiProviderBadge">Popular</span>}
                 </div>
                 <div className="UiProviderDescription">{provider.description}</div>
               </div>
             </label>
           ))}
         </div>
-        <ButtonRow>
-          <ActionButton variant="primary" disabled={!selected} onClick={() => selected && props.onSelect(selected)}>
-            Next
-          </ActionButton>
-        </ButtonRow>
+        <div className="UiProviderContinueRow">
+          <PrimaryButton disabled={!selected} onClick={() => selected && props.onSelect(selected)}>
+            Continue
+          </PrimaryButton>
+        </div>
       </GlassCard>
     </HeroPageLayout>
   );
