@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import {
+  createReplyPrefixOptions,
   logAckFailure,
   logInboundDrop,
   logTypingFailure,
@@ -2167,17 +2168,23 @@ async function processMessage(
       sendBlueBubblesTyping(chatGuidForActions, true, {
         cfg: config,
         accountId: account.accountId,
-      })
-        .catch((err) => {
-          runtime.error?.(`[bluebubbles] typing restart failed: ${String(err)}`);
-        });
+      }).catch((err) => {
+        runtime.error?.(`[bluebubbles] typing restart failed: ${String(err)}`);
+      });
     }, typingRestartDelayMs);
   };
   try {
+    const { onModelSelected, ...prefixOptions } = createReplyPrefixOptions({
+      cfg: config,
+      agentId: route.agentId,
+      channel: "bluebubbles",
+      accountId: account.accountId,
+    });
     await core.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
       ctx: ctxPayload,
       cfg: config,
       dispatcherOptions: {
+        ...prefixOptions,
         deliver: async (payload, info) => {
           const rawReplyToId =
             typeof payload.replyToId === "string" ? payload.replyToId.trim() : "";
@@ -2289,6 +2296,7 @@ async function processMessage(
         },
       },
       replyOptions: {
+        onModelSelected,
         disableBlockStreaming:
           typeof account.config.blockStreaming === "boolean"
             ? !account.config.blockStreaming
