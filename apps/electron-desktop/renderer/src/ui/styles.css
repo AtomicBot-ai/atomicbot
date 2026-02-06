@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --bg: #0b0f14;
+  --bg: #171717;
   --panel: rgba(255, 255, 255, 0.03);
   --border: rgba(230, 237, 243, 0.12);
   --text: #e6edf3;
@@ -486,12 +486,10 @@ button:disabled {
 }
 
 .UiGlassCard {
-  width: min(720px, 92vw);
-  border: 1px solid rgba(230, 237, 243, 0.12);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
-  padding: 18px 18px 16px;
+  width: 566px;
+  border-radius: 16px;
+  background: #1E1E1E;
+  padding: 24px 24px 16px;
   animation: gatewaySplashEnter 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
@@ -725,16 +723,18 @@ button:disabled {
 }
 
 .UiSectionTitle {
-  font-size: 18px;
-  font-weight: 800;
-  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 32px;
+  margin-bottom: 2px;
+  font-weight: 700;
 }
 
 .UiSectionSubtitle {
+  font-weight: 400;
   font-size: 13px;
-  color: rgba(230, 237, 243, 0.70);
-  margin: 0 0 12px;
-  line-height: 1.5;
+  line-height: 16px;
+  color: #A0A0A0;
+  margin-bottom: 24px;
 }
 
 .UiMetaRow {
@@ -767,9 +767,19 @@ button:disabled {
   line-height: 22px;
 }
 
+.UiPrimaryButtonSm {
+  padding: 8px;
+  width: 84px;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 16px;
+  text-align: center;
+}
+
 .UiPrimaryButton:disabled {
-  opacity: 0.55;
+  background: #FFFFFF12;
   cursor: default;
+  color: #FFFFFF80;
 }
 
 .UiSecondaryButton {
@@ -1209,7 +1219,7 @@ pre {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 2px 0 14px 0;
+  margin: 2px 0 10px 0;
 }
 
 .UiOnboardingDot {
@@ -1226,13 +1236,14 @@ pre {
 .UiApiKeyCard {
   display: flex;
   flex-direction: column;
-  min-height: 635px;
+  height: 500px;
 }
 
 .UiProviderCard {
   display: flex;
   flex-direction: column;
-  min-height: 635px;
+  height: 500px;
+  box-sizing: border-box;
 }
 
 .UiProviderCard .UiProviderList {
@@ -1301,1106 +1312,1111 @@ pre {
 .UiProviderList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 18px 0;
-}
-
-.UiProviderOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: border-color 0.15s ease,
-  background-color 0.15s ease;
-}
-
-.UiProviderOption:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.UiProviderOption--selected {
-  border-color: var(--accent-color, #a3e635);
-  background-color: rgba(163, 230, 53, 0.06);
-}
-
-.UiProviderRadio {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.36);
-  border-radius: 50%;
-  margin: 0;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: border-color 0.15s ease,
-  background-color 0.15s ease;
-}
-
-.UiProviderRadio:checked {
-  border-color: var(--accent-color, #a3e635);
-  background: radial-gradient(circle, var(--accent-color, #a3e635) 40%, transparent 45%);
-}
-
-.UiProviderIconWrap {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.UiProviderIcon {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-.UiProviderContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.UiProviderHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.UiProviderName {
-  font-weight: 600;
-  font-size: 14px;
-  color: #fff;
-}
-
-.UiProviderBadge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(49, 134, 255, 0.16);
-  border: 1px solid rgba(49, 134, 255, 0.28);
-  color: rgba(198, 222, 255, 0.92);
-}
-
-.UiProviderDescription {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.4;
-}
-
-.UiProviderContinueRow {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
-}
-
-.UiProviderContinueRow .UiPrimaryButton {
-  margin-top: 0;
-  margin-left: 0;
-  margin-right: 0;
-  width: auto;
-  min-width: 140px;
-}
-
-/* Link styles */
-.UiLink {
-  color: var(--accent-color, #a3e635);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.UiLink:hover {
-  text-decoration: underline;
-}
-
-/* Model selection styles */
-.UiModelCard {
-  display: flex;
-  flex-direction: column;
-  min-height: 635px;
-}
-
-.UiModelCard .UiModelList {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Skills setup styles */
-.UiSkillsCard {
-  display: flex;
-  flex-direction: column;
-  min-height: 635px;
-}
-
-.UiSkillsScroll {
-  flex: 1;
-  min-height: 0;
-  margin: 18px 0;
-  max-height: 440px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.UiSkillsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.UiSkillCard {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.18);
-  padding: 12px 14px;
-  transition: border-color 0.15s ease,
-  background-color 0.15s ease;
-}
-
-.UiSkillCard:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.UiSkillCard--connected {
-  border-color: rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.06);
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.10) inset;
-}
-
-.UiSkillCard--connected:hover {
-  border-color: rgba(34, 197, 94, 0.62);
-  background: rgba(34, 197, 94, 0.08);
-}
-
-.UiSkillTopRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.UiSkillTopRight {
-  display: flex;
-  justify-content: flex-end;
-  flex: 1;
-}
-
-.UiSkillIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(0, 0, 0, 0.22);
-  display: grid;
-  place-items: center;
-  font-weight: 850;
-  font-size: 12px;
-  color: rgba(230, 237, 243, 0.92);
-  flex-shrink: 0;
-  letter-spacing: 0.02em;
-}
-
-.UiSkillIcon--google {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(16, 185, 129, 0.18));
-}
-
-.UiSkillIcon--notion {
-  background: rgba(255, 255, 255, 0.10);
-}
-
-.UiSkillIcon--trello {
-  background: rgba(59, 130, 246, 0.22);
-}
-
-.UiSkillIcon--apple {
-  background: linear-gradient(135deg, rgba(230, 237, 243, 0.16), rgba(230, 237, 243, 0.06));
-}
-
-.UiSkillIcon--reminders {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(34, 197, 94, 0.12));
-}
-
-.UiSkillIcon--obsidian {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(99, 102, 241, 0.14));
-}
-
-.UiSkillIcon--github {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10));
-}
-
-.UiSkillIcon--slack {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.20), rgba(34, 197, 94, 0.12));
-}
-
-.UiSkillIcon--telegram {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(34, 197, 94, 0.10));
-}
-
-.UiSkillIcon--gemini {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(59, 130, 246, 0.18));
-}
-
-.UiSkillIcon--nano-banana {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.20), rgba(194, 255, 64, 0.12));
-}
-
-.UiSkillIcon--sag {
-  background: rgba(230, 237, 243, 0.06);
-}
-
-.UiSkillName {
-  margin-top: 10px;
-  font-weight: 650;
-  font-size: 14px;
-  color: #fff;
-}
-
-.UiSkillDescription {
-  margin-top: 4px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.60);
-  line-height: 1.4;
-}
-
-.UiSkillConnectButton {
-  appearance: none;
-  border: 1px solid rgba(230, 237, 243, 0.16);
-  background: rgba(230, 237, 243, 0.06);
-  color: rgba(230, 237, 243, 0.92);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.UiSkillConnectButton:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.UiSkillStatus {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(230, 237, 243, 0.12);
-  background: rgba(230, 237, 243, 0.06);
-  color: rgba(230, 237, 243, 0.82);
-}
-
-.UiSkillStatus--connected {
-  border-color: rgba(34, 197, 94, 0.28);
-  background: rgba(34, 197, 94, 0.18);
-  color: rgba(208, 255, 224, 0.98);
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.14);
-}
-
-.UiSkillStatus--soon {
-  border-color: rgba(230, 237, 243, 0.10);
-  background: rgba(230, 237, 243, 0.04);
-  color: rgba(230, 237, 243, 0.55);
-}
-
-.UiSkillsBottomRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.UiSkillsBottomActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.UiSkillsBottomActions .UiPrimaryButton,
-.UiSkillsBottomActions .UiSecondaryButton {
-  margin: 0;
-  width: auto;
-  min-width: 120px;
-  padding: 10px 16px;
-}
-
-/* Google Workspace setup */
-.UiGoogleWorkspaceCard {
-  display: flex;
-  flex-direction: column;
-  min-height: 635px;
-}
-
-.UiGoogleWorkspaceConnected {
-  margin-top: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 750;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.12);
-  color: rgba(208, 255, 224, 0.98);
-}
-
-.UiGoogleWorkspaceForm {
-  flex: 1;
-  min-height: 0;
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-}
-
-.UiGoogleWorkspaceServices {
-  margin-top: 6px;
-}
-
-.UiGoogleWorkspaceBottomRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.UiGoogleWorkspaceActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.UiGoogleWorkspaceSecondary {
-  margin-top: 0;
-  width: auto;
-  min-width: 110px;
-  padding: 10px 16px;
-}
-
-.UiGoogleWorkspaceActions .UiPrimaryButton {
-  margin-top: 0;
-  width: auto;
-  min-width: 140px;
-  padding: 10px 16px;
-}
-
-.UiGoogleWorkspaceDetails {
-  margin-top: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(230, 237, 243, 0.10);
-  background: rgba(0, 0, 0, 0.20);
-  padding: 10px 12px;
-}
-
-.UiGoogleWorkspaceDetailsSummary {
-  cursor: pointer;
-  font-size: 12px;
-  color: rgba(230, 237, 243, 0.72);
-}
-
-.UiGoogleWorkspaceDetailsPre {
-  margin-top: 10px;
-  white-space: pre-wrap;
-  font-size: 12px;
-  color: rgba(230, 237, 243, 0.86);
-}
-
-.UiGoogleWorkspaceFooterRow {
-  margin-top: 14px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.UiModelList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 18px 0;
-  max-height: 440px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.UiModelGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.UiModelGroupTitle {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 0 4px;
-}
-
-.UiModelOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: border-color 0.15s ease,
-  background-color 0.15s ease;
-}
-
-.UiModelOption:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.UiModelOption--selected {
-  border-color: var(--accent-color, #a3e635);
-  background-color: rgba(163, 230, 53, 0.06);
-}
-
-.UiModelRadio {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  margin: 0;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: border-color 0.15s ease,
-  background-color 0.15s ease;
-}
-
-.UiModelRadio:checked {
-  border-color: var(--accent-color, #a3e635);
-  background: radial-gradient(circle, var(--accent-color, #a3e635) 40%, transparent 45%);
-}
-
-.UiModelContent {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  gap: 2px;
-}
-
-.UiModelName {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.UiModelMeta {
-  font-size: 13px;
-  color: rgba(230, 237, 243, 0.70);
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.UiModelHints {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.UiModelHint {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.UiModelNameRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.UiModelTierBadge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.80);
-  flex-shrink: 0;
-}
-
-.UiModelTierBadge--fast {
-  border-color: rgba(245, 158, 11, 0.30);
-  background: rgba(245, 158, 11, 0.14);
-  color: rgba(253, 230, 138, 0.95);
-}
-
-.UiModelTierBadge--pro {
-  border-color: rgba(34, 211, 238, 0.30);
-  background: rgba(34, 211, 238, 0.12);
-  color: rgba(165, 243, 252, 0.95);
-}
-
-.UiModelTierBadge--ultra {
-  border-color: rgba(168, 85, 247, 0.30);
-  background: rgba(168, 85, 247, 0.12);
-  color: rgba(233, 213, 255, 0.95);
-}
-
-.UiModelTier {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 2px 0;
-  border-radius: 4px;
-  background-color: var(--accent-color, #a3e635);
-  color: #0b0f14;
-  flex-shrink: 0;
-  width: 46px;
-  text-align: center;
-}
-
-.UiModelBottomRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 18px;
-}
-
-.UiModelBottomRow .UiPrimaryButton {
-  margin-top: 0;
-  margin-left: 0;
-  margin-right: 0;
-  width: auto;
-  min-width: 140px;
-}
-
-.UiSectionTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.UiTierHelp {
-  position: relative;
-  display: inline-flex;
-}
-
-.UiTierHelpIcon {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: help;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.UiTierHelp:hover .UiTierHelpIcon {
-  border-color: var(--accent-color, #a3e635);
-  color: var(--accent-color, #a3e635);
-}
-
-.UiTierHelpTooltip {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-  background: rgba(20, 24, 28, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 12px;
-  width: 280px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s, visibility 0.15s;
-}
-
-.UiTierHelp:hover .UiTierHelpTooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-.UiTierHelpItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.4;
-}
-
-.UiTierHelpItem:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.UiTierHelpItem:first-child {
-  padding-top: 0;
-}
-
-.UiTierHelpItem .UiModelTier {
-  flex-shrink: 0;
-}
-
-/* Settings page styles */
-.UiSettingsSection {
-  padding: 16px 0;
-  border-bottom: 1px solid rgba(230, 237, 243, 0.08);
-}
-
-.UiSettingsSection:first-of-type {
-  padding-top: 0;
-}
-
-.UiSettingsSection:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.UiSettingsSection--danger {
-  border-top: 1px solid rgba(255, 122, 0, 0.25);
-  margin-top: 8px;
-  padding-top: 20px;
-}
-
-.UiSettingsSection--danger .UiSectionTitle {
-  color: rgba(255, 122, 0, 0.95);
-}
-
-.UiSettingsSubsection {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(230, 237, 243, 0.08);
-}
-
-.UiInputRow {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.UiInputRow .UiInput {
-  flex: 1 1 auto;
-}
-
-/* New Chat UI styles */
-.UiChatShell {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: radial-gradient(900px 520px at 50% 28%, rgba(194, 255, 64, 0.06), transparent 58%),
-  radial-gradient(900px 520px at 50% 80%, rgba(194, 255, 64, 0.03), transparent 62%),
-  var(--bg);
-}
-
-.UiChatTranscript {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  padding: 24px 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.UiChatTranscriptInner {
-  max-width: 800px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.UiChatEmpty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-  padding: 40px 20px;
-  animation: gatewaySplashEnter 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-}
-
-.UiChatEmptyBubble {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(145deg, rgba(255, 140, 50, 0.12), rgba(255, 100, 20, 0.06));
-  border-radius: 28px 28px 28px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
-  0 0 24px rgba(255, 122, 0, 0.08),
-  inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 140, 80, 0.12);
-}
-
-.UiChatEmptyLogo {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
-}
-
-.UiChatEmptyTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: rgba(230, 237, 243, 0.92);
-}
-
-.UiChatEmptySubtitle {
-  font-size: 13px;
-  color: rgba(230, 237, 243, 0.55);
-  max-width: 280px;
-}
-
-.UiChatRow {
-  display: flex;
-  margin: 8px 0;
-  padding: 0 24px;
-  animation: uiChatBubbleEnter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-}
-
-.UiChatRow:first-child {
-  margin-top: 0;
-}
-
-@keyframes uiChatBubbleEnter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  .UiProviderOption {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
   }
-  to {
+
+  .UiProviderRadio {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    background-color: #343434;
+    transition: border-color 0.15s ease,
+    background-color 0.15s ease;
+    position: relative;
+  }
+
+  .UiProviderRadio:checked {
+    background-color: #C3FF44;
+  }
+
+  .UiProviderRadio:checked::after {
+    content: "";
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    top: 50%;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    background-color: #1E1E1E;
+    border-radius: 50%;
+  }
+
+  .UiProviderIconWrap {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #343434;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .UiProviderIcon {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  .UiProviderContent {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .UiProviderHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .UiProviderName {
+    color: #fff;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 16px;
+    margin-bottom: 2px;
+  }
+
+  .UiProviderBadge {
     opacity: 1;
-    transform: translateY(0);
+    border-radius: 4px;
+    padding: 1px 4px;
+    background-color:#4E95FF26;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 14px;
+    color: #4E95FF;
   }
-}
 
-.UiChatRow-user {
-  justify-content: flex-end;
-}
-
-.UiChatRow-assistant,
-.UiChatRow-system,
-.UiChatRow-unknown {
-  justify-content: flex-start;
-}
-
-.UiChatBubble {
-  max-width: min(600px, 80%);
-  border-radius: 18px;
-  border: none;
-  background: rgba(230, 237, 243, 0.06);
-  padding: 14px 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.UiChatBubble-user {
-  background: rgba(194, 255, 64, 0.18);
-}
-
-.UiChatBubble-assistant {
-  background: rgba(230, 237, 243, 0.06);
-}
-
-.UiChatBubble-stream {
-  opacity: 0.85;
-}
-
-.UiChatBubbleMeta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.UiChatRole {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: rgba(230, 237, 243, 0.50);
-}
-
-.UiChatBubble-user .UiChatRole {
-  color: var(--lime);
-}
-
-.UiChatPending {
-  font-size: 10px;
-  color: rgba(230, 237, 243, 0.45);
-}
-
-.UiChatTypingDots {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 10px;
-}
-
-.UiChatTypingDots span {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--lime);
-  display: inline-block;
-  animation: uiChatTypingBounce 1.1s infinite ease-in-out;
-}
-
-.UiChatTypingDots span:nth-child(2) {
-  animation-delay: 0.12s;
-}
-
-.UiChatTypingDots span:nth-child(3) {
-  animation-delay: 0.24s;
-}
-
-@keyframes uiChatTypingBounce {
-  0%,
-  80%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.45;
+  .UiProviderDescription {
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 14px;
+    color: #8E8E8E;
   }
-  40% {
-    transform: translateY(-3px);
-    opacity: 0.95;
+
+  .UiProviderContinueRow {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
   }
-}
 
-.UiChatText {
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.6;
-  font-size: 14px;
-  color: var(--text);
-}
+  .UiProviderContinueRow .UiPrimaryButton {
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    width: auto;
+    min-width: 140px;
+  }
 
-.UiChatBubble-user .UiChatText {
-  color: #fff;
-}
+  /* Link styles */
 
-/* Markdown styles */
-.UiMarkdown {
-  white-space: normal;
-}
+  .UiLink {
+    color: var(--accent-color, #a3e635);
+    text-decoration: none;
+    cursor: pointer;
+  }
 
-.UiMarkdown p {
-  margin: 0 0 12px;
-}
+  .UiLink:hover {
+    text-decoration: underline;
+  }
 
-.UiMarkdown p:last-child {
-  margin-bottom: 0;
-}
+  /* Model selection styles */
 
-.UiMarkdown h1,
-.UiMarkdown h2,
-.UiMarkdown h3,
-.UiMarkdown h4,
-.UiMarkdown h5,
-.UiMarkdown h6 {
-  margin: 16px 0 8px;
-  font-weight: 700;
-  line-height: 1.3;
-}
+  .UiModelCard {
+    display: flex;
+    flex-direction: column;
+    min-height: 635px;
+  }
 
-.UiMarkdown h1:first-child,
-.UiMarkdown h2:first-child,
-.UiMarkdown h3:first-child {
-  margin-top: 0;
-}
+  .UiModelCard .UiModelList {
+    flex: 1;
+    min-height: 0;
+  }
 
-.UiMarkdown h1 {
-  font-size: 1.4em;
-}
+  /* Skills setup styles */
 
-.UiMarkdown h2 {
-  font-size: 1.25em;
-}
+  .UiSkillsCard {
+    display: flex;
+    flex-direction: column;
+    min-height: 635px;
+  }
 
-.UiMarkdown h3 {
-  font-size: 1.1em;
-}
+  .UiSkillsScroll {
+    flex: 1;
+    min-height: 0;
+    margin: 18px 0;
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
 
-.UiMarkdown ul,
-.UiMarkdown ol {
-  margin: 8px 0;
-  padding-left: 20px;
-}
+  .UiSkillsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
 
-.UiMarkdown li {
-  margin: 4px 0;
-}
+  .UiSkillCard {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.18);
+    padding: 12px 14px;
+    transition: border-color 0.15s ease,
+    background-color 0.15s ease;
+  }
 
-.UiMarkdown code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.9em;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
+  .UiSkillCard:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background-color: rgba(255, 255, 255, 0.03);
+  }
 
-.UiMarkdown pre {
-  margin: 12px 0;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
-  overflow-x: auto;
-}
+  .UiSkillCard--connected {
+    border-color: rgba(34, 197, 94, 0.45);
+    background: rgba(34, 197, 94, 0.06);
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.10) inset;
+  }
 
-.UiMarkdown pre code {
-  background: none;
-  padding: 0;
-  font-size: 13px;
-  line-height: 1.5;
-}
+  .UiSkillCard--connected:hover {
+    border-color: rgba(34, 197, 94, 0.62);
+    background: rgba(34, 197, 94, 0.08);
+  }
 
-.UiMarkdown blockquote {
-  margin: 12px 0;
-  padding: 8px 14px;
-  border-left: 3px solid var(--lime);
-  background: rgba(194, 255, 64, 0.06);
-  border-radius: 0 8px 8px 0;
-}
+  .UiSkillTopRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
 
-.UiMarkdown blockquote p {
-  margin: 0;
-}
+  .UiSkillTopRight {
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+  }
 
-.UiMarkdown a {
-  color: var(--lime);
-  text-decoration: none;
-}
+  .UiSkillIcon {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(0, 0, 0, 0.22);
+    display: grid;
+    place-items: center;
+    font-weight: 850;
+    font-size: 12px;
+    color: rgba(230, 237, 243, 0.92);
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
 
-.UiMarkdown a:hover {
-  text-decoration: underline;
-}
+  .UiSkillIcon--google {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(16, 185, 129, 0.18));
+  }
 
-.UiMarkdown hr {
-  border: none;
-  border-top: 1px solid rgba(230, 237, 243, 0.15);
-  margin: 16px 0;
-}
+  .UiSkillIcon--notion {
+    background: rgba(255, 255, 255, 0.10);
+  }
 
-.UiMarkdown table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  font-size: 13px;
-}
+  .UiSkillIcon--trello {
+    background: rgba(59, 130, 246, 0.22);
+  }
 
-.UiMarkdown th,
-.UiMarkdown td {
-  padding: 8px 10px;
-  border: 1px solid rgba(230, 237, 243, 0.12);
-  text-align: left;
-}
+  .UiSkillIcon--apple {
+    background: linear-gradient(135deg, rgba(230, 237, 243, 0.16), rgba(230, 237, 243, 0.06));
+  }
 
-.UiMarkdown th {
-  background: rgba(230, 237, 243, 0.06);
-  font-weight: 600;
-}
+  .UiSkillIcon--reminders {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(34, 197, 94, 0.12));
+  }
 
-.UiMarkdown strong {
-  font-weight: 700;
-}
+  .UiSkillIcon--obsidian {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(99, 102, 241, 0.14));
+  }
 
-.UiMarkdown em {
-  font-style: italic;
-}
+  .UiSkillIcon--github {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10));
+  }
 
-.UiChatComposer {
-  padding: 16px 24px 20px;
-}
+  .UiSkillIcon--slack {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.20), rgba(34, 197, 94, 0.12));
+  }
 
-.UiChatComposerInner {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  max-width: 800px;
-  margin: 0 auto;
-}
+  .UiSkillIcon--telegram {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(34, 197, 94, 0.10));
+  }
 
-.UiChatInput {
-  flex: 1 1 auto;
-  resize: none;
-  border-radius: 14px;
-  border: 1px solid rgba(230, 237, 243, 0.14);
-  background: rgba(230, 237, 243, 0.06);
-  color: var(--text);
-  padding: 12px 14px;
-  font-size: 14px;
-  line-height: 1.5;
-  min-height: 48px;
-  max-height: 180px;
-  transition: border-color 120ms ease,
-  background 120ms ease;
-}
+  .UiSkillIcon--gemini {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(59, 130, 246, 0.18));
+  }
 
-.UiChatInput:focus {
-  outline: none;
-  border-color: rgba(194, 255, 64, 0.35);
-  background: rgba(230, 237, 243, 0.08);
-}
+  .UiSkillIcon--nano-banana {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.20), rgba(194, 255, 64, 0.12));
+  }
 
-.UiChatInput::placeholder {
-  color: rgba(230, 237, 243, 0.35);
-}
+  .UiSkillIcon--sag {
+    background: rgba(230, 237, 243, 0.06);
+  }
 
-.UiChatComposerInner .UiActionButton {
-  flex-shrink: 0;
-}
+  .UiSkillName {
+    margin-top: 10px;
+    font-weight: 650;
+    font-size: 14px;
+    color: #fff;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  .UiChatRow {
-    animation: none;
+  .UiSkillDescription {
+    margin-top: 4px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.60);
+    line-height: 1.4;
+  }
+
+  .UiSkillConnectButton {
+    appearance: none;
+    border: 1px solid rgba(230, 237, 243, 0.16);
+    background: rgba(230, 237, 243, 0.06);
+    color: rgba(230, 237, 243, 0.92);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .UiSkillConnectButton:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .UiSkillStatus {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(230, 237, 243, 0.12);
+    background: rgba(230, 237, 243, 0.06);
+    color: rgba(230, 237, 243, 0.82);
+  }
+
+  .UiSkillStatus--connected {
+    border-color: rgba(34, 197, 94, 0.28);
+    background: rgba(34, 197, 94, 0.18);
+    color: rgba(208, 255, 224, 0.98);
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.14);
+  }
+
+  .UiSkillStatus--soon {
+    border-color: rgba(230, 237, 243, 0.10);
+    background: rgba(230, 237, 243, 0.04);
+    color: rgba(230, 237, 243, 0.55);
+  }
+
+  .UiSkillsBottomRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .UiSkillsBottomActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .UiSkillsBottomActions .UiPrimaryButton,
+  .UiSkillsBottomActions .UiSecondaryButton {
+    margin: 0;
+    width: auto;
+    min-width: 120px;
+    padding: 10px 16px;
+  }
+
+  /* Google Workspace setup */
+
+  .UiGoogleWorkspaceCard {
+    display: flex;
+    flex-direction: column;
+    min-height: 635px;
+  }
+
+  .UiGoogleWorkspaceConnected {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 750;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.12);
+    color: rgba(208, 255, 224, 0.98);
+  }
+
+  .UiGoogleWorkspaceForm {
+    flex: 1;
+    min-height: 0;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .UiGoogleWorkspaceServices {
+    margin-top: 6px;
+  }
+
+  .UiGoogleWorkspaceBottomRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .UiGoogleWorkspaceActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .UiGoogleWorkspaceSecondary {
+    margin-top: 0;
+    width: auto;
+    min-width: 110px;
+    padding: 10px 16px;
+  }
+
+  .UiGoogleWorkspaceActions .UiPrimaryButton {
+    margin-top: 0;
+    width: auto;
+    min-width: 140px;
+    padding: 10px 16px;
+  }
+
+  .UiGoogleWorkspaceDetails {
+    margin-top: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(230, 237, 243, 0.10);
+    background: rgba(0, 0, 0, 0.20);
+    padding: 10px 12px;
+  }
+
+  .UiGoogleWorkspaceDetailsSummary {
+    cursor: pointer;
+    font-size: 12px;
+    color: rgba(230, 237, 243, 0.72);
+  }
+
+  .UiGoogleWorkspaceDetailsPre {
+    margin-top: 10px;
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: rgba(230, 237, 243, 0.86);
+  }
+
+  .UiGoogleWorkspaceFooterRow {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .UiModelList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 18px 0;
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .UiModelGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .UiModelGroupTitle {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0 4px;
+  }
+
+  .UiModelOption {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease,
+    background-color 0.15s ease;
+  }
+
+  .UiModelOption:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  .UiModelOption--selected {
+    border-color: var(--accent-color, #a3e635);
+    background-color: rgba(163, 230, 53, 0.06);
+  }
+
+  .UiModelRadio {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.15s ease,
+    background-color 0.15s ease;
+  }
+
+  .UiModelRadio:checked {
+    border-color: var(--accent-color, #a3e635);
+    background: radial-gradient(circle, var(--accent-color, #a3e635) 40%, transparent 45%);
+  }
+
+  .UiModelContent {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .UiModelName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .UiModelMeta {
+    font-size: 13px;
+    color: rgba(230, 237, 243, 0.70);
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .UiModelHints {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .UiModelHint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .UiModelNameRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .UiModelTierBadge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.80);
+    flex-shrink: 0;
+  }
+
+  .UiModelTierBadge--fast {
+    border-color: rgba(245, 158, 11, 0.30);
+    background: rgba(245, 158, 11, 0.14);
+    color: rgba(253, 230, 138, 0.95);
+  }
+
+  .UiModelTierBadge--pro {
+    border-color: rgba(34, 211, 238, 0.30);
+    background: rgba(34, 211, 238, 0.12);
+    color: rgba(165, 243, 252, 0.95);
+  }
+
+  .UiModelTierBadge--ultra {
+    border-color: rgba(168, 85, 247, 0.30);
+    background: rgba(168, 85, 247, 0.12);
+    color: rgba(233, 213, 255, 0.95);
+  }
+
+  .UiModelTier {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 0;
+    border-radius: 4px;
+    background-color: var(--accent-color, #a3e635);
+    color: #0b0f14;
+    flex-shrink: 0;
+    width: 46px;
+    text-align: center;
+  }
+
+  .UiModelBottomRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 18px;
+  }
+
+  .UiModelBottomRow .UiPrimaryButton {
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    width: auto;
+    min-width: 140px;
+  }
+
+  .UiSectionTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .UiTierHelp {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .UiTierHelpIcon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .UiTierHelp:hover .UiTierHelpIcon {
+    border-color: var(--accent-color, #a3e635);
+    color: var(--accent-color, #a3e635);
+  }
+
+  .UiTierHelpTooltip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: rgba(20, 24, 28, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 12px;
+    width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+
+  .UiTierHelp:hover .UiTierHelpTooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .UiTierHelpItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+  }
+
+  .UiTierHelpItem:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .UiTierHelpItem:first-child {
+    padding-top: 0;
+  }
+
+  .UiTierHelpItem .UiModelTier {
+    flex-shrink: 0;
+  }
+
+  /* Settings page styles */
+
+  .UiSettingsSection {
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(230, 237, 243, 0.08);
+  }
+
+  .UiSettingsSection:first-of-type {
+    padding-top: 0;
+  }
+
+  .UiSettingsSection:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .UiSettingsSection--danger {
+    border-top: 1px solid rgba(255, 122, 0, 0.25);
+    margin-top: 8px;
+    padding-top: 20px;
+  }
+
+  .UiSettingsSection--danger .UiSectionTitle {
+    color: rgba(255, 122, 0, 0.95);
+  }
+
+  .UiSettingsSubsection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(230, 237, 243, 0.08);
+  }
+
+  .UiInputRow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .UiInputRow .UiInput {
+    flex: 1 1 auto;
+  }
+
+  /* New Chat UI styles */
+
+  .UiChatShell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(900px 520px at 50% 28%, rgba(194, 255, 64, 0.06), transparent 58%),
+    radial-gradient(900px 520px at 50% 80%, rgba(194, 255, 64, 0.03), transparent 62%),
+    var(--bg);
+  }
+
+  .UiChatTranscript {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .UiChatTranscriptInner {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 24px;
   }
 
   .UiChatEmpty {
-    animation: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 40px 20px;
+    animation: gatewaySplashEnter 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+
+  .UiChatEmptyBubble {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(145deg, rgba(255, 140, 50, 0.12), rgba(255, 100, 20, 0.06));
+    border-radius: 28px 28px 28px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(255, 122, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 140, 80, 0.12);
+  }
+
+  .UiChatEmptyLogo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  }
+
+  .UiChatEmptyTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(230, 237, 243, 0.92);
+  }
+
+  .UiChatEmptySubtitle {
+    font-size: 13px;
+    color: rgba(230, 237, 243, 0.55);
+    max-width: 280px;
+  }
+
+  .UiChatRow {
+    display: flex;
+    margin: 8px 0;
+    padding: 0 24px;
+    animation: uiChatBubbleEnter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+
+  .UiChatRow:first-child {
+    margin-top: 0;
+  }
+
+  @keyframes uiChatBubbleEnter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .UiChatRow-user {
+    justify-content: flex-end;
+  }
+
+  .UiChatRow-assistant,
+  .UiChatRow-system,
+  .UiChatRow-unknown {
+    justify-content: flex-start;
+  }
+
+  .UiChatBubble {
+    max-width: min(600px, 80%);
+    border-radius: 18px;
+    border: none;
+    background: rgba(230, 237, 243, 0.06);
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .UiChatBubble-user {
+    background: rgba(194, 255, 64, 0.18);
+  }
+
+  .UiChatBubble-assistant {
+    background: rgba(230, 237, 243, 0.06);
+  }
+
+  .UiChatBubble-stream {
+    opacity: 0.85;
+  }
+
+  .UiChatBubbleMeta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .UiChatRole {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(230, 237, 243, 0.50);
+  }
+
+  .UiChatBubble-user .UiChatRole {
+    color: var(--lime);
+  }
+
+  .UiChatPending {
+    font-size: 10px;
+    color: rgba(230, 237, 243, 0.45);
+  }
+
+  .UiChatTypingDots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 10px;
   }
 
   .UiChatTypingDots span {
-    animation: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--lime);
+    display: inline-block;
+    animation: uiChatTypingBounce 1.1s infinite ease-in-out;
   }
-}
+
+  .UiChatTypingDots span:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+
+  .UiChatTypingDots span:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+
+  @keyframes uiChatTypingBounce {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.45;
+    }
+    40% {
+      transform: translateY(-3px);
+      opacity: 0.95;
+    }
+  }
+
+  .UiChatText {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .UiChatBubble-user .UiChatText {
+    color: #fff;
+  }
+
+  /* Markdown styles */
+
+  .UiMarkdown {
+    white-space: normal;
+  }
+
+  .UiMarkdown p {
+    margin: 0 0 12px;
+  }
+
+  .UiMarkdown p:last-child {
+    margin-bottom: 0;
+  }
+
+  .UiMarkdown h1,
+  .UiMarkdown h2,
+  .UiMarkdown h3,
+  .UiMarkdown h4,
+  .UiMarkdown h5,
+  .UiMarkdown h6 {
+    margin: 16px 0 8px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .UiMarkdown h1:first-child,
+  .UiMarkdown h2:first-child,
+  .UiMarkdown h3:first-child {
+    margin-top: 0;
+  }
+
+  .UiMarkdown h1 {
+    font-size: 1.4em;
+  }
+
+  .UiMarkdown h2 {
+    font-size: 1.25em;
+  }
+
+  .UiMarkdown h3 {
+    font-size: 1.1em;
+  }
+
+  .UiMarkdown ul,
+  .UiMarkdown ol {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .UiMarkdown li {
+    margin: 4px 0;
+  }
+
+  .UiMarkdown code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .UiMarkdown pre {
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.35);
+    overflow-x: auto;
+  }
+
+  .UiMarkdown pre code {
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .UiMarkdown blockquote {
+    margin: 12px 0;
+    padding: 8px 14px;
+    border-left: 3px solid var(--lime);
+    background: rgba(194, 255, 64, 0.06);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .UiMarkdown blockquote p {
+    margin: 0;
+  }
+
+  .UiMarkdown a {
+    color: var(--lime);
+    text-decoration: none;
+  }
+
+  .UiMarkdown a:hover {
+    text-decoration: underline;
+  }
+
+  .UiMarkdown hr {
+    border: none;
+    border-top: 1px solid rgba(230, 237, 243, 0.15);
+    margin: 16px 0;
+  }
+
+  .UiMarkdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .UiMarkdown th,
+  .UiMarkdown td {
+    padding: 8px 10px;
+    border: 1px solid rgba(230, 237, 243, 0.12);
+    text-align: left;
+  }
+
+  .UiMarkdown th {
+    background: rgba(230, 237, 243, 0.06);
+    font-weight: 600;
+  }
+
+  .UiMarkdown strong {
+    font-weight: 700;
+  }
+
+  .UiMarkdown em {
+    font-style: italic;
+  }
+
+  .UiChatComposer {
+    padding: 16px 24px 20px;
+  }
+
+  .UiChatComposerInner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .UiChatInput {
+    flex: 1 1 auto;
+    resize: none;
+    border-radius: 14px;
+    border: 1px solid rgba(230, 237, 243, 0.14);
+    background: rgba(230, 237, 243, 0.06);
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 48px;
+    max-height: 180px;
+    transition: border-color 120ms ease,
+    background 120ms ease;
+  }
+
+  .UiChatInput:focus {
+    outline: none;
+    border-color: rgba(194, 255, 64, 0.35);
+    background: rgba(230, 237, 243, 0.08);
+  }
+
+  .UiChatInput::placeholder {
+    color: rgba(230, 237, 243, 0.35);
+  }
+
+  .UiChatComposerInner .UiActionButton {
+    flex-shrink: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .UiChatRow {
+      animation: none;
+    }
+
+    .UiChatEmpty {
+      animation: none;
+    }
+
+    .UiChatTypingDots span {
+      animation: none;
+    }
+  }

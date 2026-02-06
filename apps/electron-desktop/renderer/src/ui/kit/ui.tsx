@@ -181,11 +181,12 @@ export function FooterText({ children }: { children: React.ReactNode }) {
 
 export function PrimaryButton(props: {
   children: React.ReactNode;
+  size: 'sm';
   disabled?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button className="UiPrimaryButton" disabled={props.disabled} onClick={props.onClick}>
+    <button className={`UiPrimaryButton ${props.size === 'sm' && 'UiPrimaryButtonSm'}`} disabled={props.disabled} onClick={props.onClick}>
       {props.children}
     </button>
   );
