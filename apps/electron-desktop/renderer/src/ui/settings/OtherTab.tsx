@@ -1,16 +1,13 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { ActionButton, ButtonRow } from "../kit";
 import { routes } from "../routes";
+import "./OtherTab.css";
+import pkg from "../../../../package.json";
 
 export function OtherTab({ onError }: { onError: (msg: string | null) => void }) {
-  const [launchAtStartup, setLaunchAtStartup] = React.useState(false);
   const [resetBusy, setResetBusy] = React.useState(false);
 
-  const appVersion =
-    typeof window !== "undefined" && window.openclawDesktop?.version
-      ? window.openclawDesktop.version
-      : "0.0.0";
+  const appVersion = pkg.version || "0.0.0";
 
   const resetAndClose = React.useCallback(async () => {
     const api = window.openclawDesktop;
@@ -35,66 +32,62 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
   const api = window.openclawDesktop;
 
   return (
-    <div className="UiSettingsContentInner">
-      <div className="UiSettingsTabTitle">Other</div>
+    <div className="UiSettingsContentInner UiSettingsOther">
+      <h2 className="UiSettingsOtherTitle">Other</h2>
 
-      <section className="UiSettingsSection">
-        <div className="UiSectionTitle">About</div>
-        <div className="UiSettingsRow">
-          <span className="UiSettingsRowLabel">App</span>
-          <span className="UiSettingsRowValue">Atomic Bot v{appVersion}</span>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <NavLink to={routes.legacy} className="UiLink">
-            Legacy
-          </NavLink>
-        </div>
-
-        <button
-          onClick={() => {
-            void api?.openLogs();
-          }}
-        >
-          Open logs
-        </button>
-        <button
-          onClick={() => {
-            void api?.toggleDevTools();
-          }}
-        >
-          DevTools
-        </button>
-      </section>
-
-      <section className="UiSettingsSection">
-        <div className="UiSectionTitle">General</div>
-        <div className="UiSettingsRow">
-          <span className="UiSettingsRowLabel">Launch at startup</span>
-          <label className="UiToggle" aria-label="Launch at startup">
-            <input
-              type="checkbox"
-              checked={launchAtStartup}
-              onChange={(e) => setLaunchAtStartup(e.target.checked)}
-            />
-            <span className="UiToggleTrack">
-              <span className="UiToggleThumb" />
-            </span>
-          </label>
+      {/* About */}
+      <section className="UiSettingsOtherSection">
+        <h3 className="UiSettingsOtherSectionTitle">App</h3>
+        <div className="UiSettingsOtherCard">
+          <div className="UiSettingsOtherRow">
+            <span className="UiSettingsOtherRowLabel">App</span>
+            <span className="UiSettingsOtherAppRowValue">Atomic Bot v{appVersion}</span>
+          </div>
+          {/*<div className="UiSettingsOtherRow">*/}
+          {/*  <button*/}
+          {/*    type="button"*/}
+          {/*    className="UiSettingsOtherLink"*/}
+          {/*    onClick={() => void api?.openLogs()}*/}
+          {/*  >*/}
+          {/*    Open logs*/}
+          {/*  </button>*/}
+          {/*</div>*/}
+          {/*<div className="UiSettingsOtherRow">*/}
+          {/*  <button*/}
+          {/*    type="button"*/}
+          {/*    className="UiSettingsOtherLink"*/}
+          {/*    onClick={() => void api?.toggleDevTools()}*/}
+          {/*  >*/}
+          {/*    Dev Tools*/}
+          {/*  </button>*/}
+          {/*</div>*/}
+          <div className="UiSettingsOtherRow">
+            <NavLink to={routes.legacy} className="UiSettingsOtherLink">
+              Legacy
+            </NavLink>
+          </div>
         </div>
       </section>
 
-      {/* ── Danger zone (reset) ──────────────────────────────── */}
-      <section className="UiSettingsSection UiSettingsSection--danger" style={{ marginTop: 24 }}>
-        <div className="UiSectionTitle">Danger zone</div>
-        <div className="UiSectionSubtitle">
+      {/* Danger zone (reset) */}
+      <section className="UiSettingsOtherSection">
+        <h3 className="UiSettingsOtherSectionTitle">Account</h3>
+        <h3 className="UiSettingsOtherDangerSubtitle">
           This will wipe the app's local state and remove all Google Workspace authorizations. The
           app will then close.
+        </h3>
+        <div className="UiSettingsOtherCard UiSettingsOtherCard--danger">
+          <div className="UiSettingsOtherRow">
+            <button
+              type="button"
+              className="UiSettingsOtherDangerButton"
+              disabled={resetBusy}
+              onClick={() => void resetAndClose()}
+            >
+              {resetBusy ? "Resetting..." : "Reset and close"}
+            </button>
+          </div>
         </div>
-        <ButtonRow>
-          <ActionButton variant="primary" disabled={resetBusy} onClick={() => void resetAndClose()}>
-            {resetBusy ? "Resetting…" : "Reset and close"}
-          </ActionButton>
-        </ButtonRow>
       </section>
     </div>
   );

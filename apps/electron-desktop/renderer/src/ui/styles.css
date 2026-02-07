@@ -905,29 +905,32 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-.UiTab {
+.UiAppTopbarBackButton {
+  display: flex;
+  height: 32px;
+  padding: 0 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  border-radius: 100px;
+  background: #AEFF00;
+  color: #121212;
+  text-align: center;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 510;
+  line-height: 14px;
   appearance: none;
   border: 0;
-  background: transparent;
   cursor: pointer;
   text-decoration: none;
-  align-items: center;
-  justify-content: center;
   user-select: none;
-  transition:
-    background 140ms ease,
-    color 140ms ease,
-    transform 140ms ease;
-  display: flex;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  transition: opacity 140ms ease;
   box-sizing: border-box;
-  padding: 0;
 }
 
-.UiTab:hover {
-  background: rgba(230, 237, 243, 0.06);
+.UiAppTopbarBackButton:hover {
+  opacity: 0.8;
 }
 
 .Card {
