@@ -242,6 +242,7 @@ export async function runEmbeddedAttempt(
           requireExplicitMessageTarget:
             params.requireExplicitMessageTarget ?? isSubagentSessionKey(params.sessionKey),
           disableMessageTool: params.disableMessageTool,
+          ...(params.attachmentInboxDir ? { attachmentInboxDir: params.attachmentInboxDir } : {}),
         });
     const tools = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
     logToolSchemasForGoogle({ tools, provider: params.provider });
@@ -346,11 +347,17 @@ export async function runEmbeddedAttempt(
     });
     const ttsHint = params.config ? buildTtsSystemPromptHint(params.config) : undefined;
 
+    const attachmentHint = params.attachmentInboxDir
+      ? "Attachments for this message were saved to disk; you may read them with the read_file tool using the Path: lines in the user message."
+      : undefined;
+    const extraSystemPromptMerged = [params.extraSystemPrompt, attachmentHint]
+      .filter(Boolean)
+      .join("\n\n");
     const appendPrompt = buildEmbeddedSystemPrompt({
       workspaceDir: effectiveWorkspace,
       defaultThinkLevel: params.thinkLevel,
       reasoningLevel: params.reasoningLevel ?? "off",
-      extraSystemPrompt: params.extraSystemPrompt,
+      extraSystemPrompt: extraSystemPromptMerged || undefined,
       ownerNumbers: params.ownerNumbers,
       reasoningTagHint,
       heartbeatPrompt: isDefaultAgent

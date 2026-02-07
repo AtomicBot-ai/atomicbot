@@ -64,6 +64,40 @@ export async function ensureMediaDir() {
   return mediaDir;
 }
 
+/** Default TTL for inbox subdirs: 24h. */
+const INBOX_DIR_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Remove inbox subdirs older than ttlMs. Call before creating new attachment inbox dirs
+ * so old chat attachment dirs do not accumulate.
+ */
+export async function pruneOldInboxDirs(mediaDir: string, ttlMs = INBOX_DIR_TTL_MS): Promise<void> {
+  const inboxDir = path.join(mediaDir, "inbox");
+  let entries: string[];
+  try {
+    entries = await fs.readdir(inboxDir);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException)?.code;
+    if (code === "ENOENT") {
+      return;
+    }
+    throw err;
+  }
+  const now = Date.now();
+  await Promise.all(
+    entries.map(async (name) => {
+      const full = path.join(inboxDir, name);
+      const stat = await fs.stat(full).catch(() => null);
+      if (!stat?.isDirectory()) {
+        return;
+      }
+      if (now - stat.mtimeMs > ttlMs) {
+        await fs.rm(full, { recursive: true }).catch(() => {});
+      }
+    }),
+  );
+}
+
 export async function cleanOldMedia(ttlMs = DEFAULT_TTL_MS) {
   const mediaDir = await ensureMediaDir();
   const entries = await fs.readdir(mediaDir).catch(() => []);

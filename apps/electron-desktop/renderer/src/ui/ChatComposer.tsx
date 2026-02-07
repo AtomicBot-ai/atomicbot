@@ -17,7 +17,8 @@ function SendIcon() {
 }
 
 const MAX_ATTACHMENTS_DEFAULT = 5;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+/** Must match gateway CHAT_ATTACHMENT_MAX_BYTES (5MB). */
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export type ChatComposerRef = { focusInput: () => void };
 
@@ -86,19 +87,16 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
       adjustTextareaHeight();
     }, [value, adjustTextareaHeight]);
 
-    const onFileChange = React.useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files?.length) {
-          return;
-        }
+    const addFiles = React.useCallback(
+      (files: FileList | File[]) => {
+        const fileArray = Array.from(files);
+        if (!fileArray.length) return;
         const currentCount = attachments.length;
-        const totalNew = files.length;
+        const totalNew = fileArray.length;
         if (currentCount + totalNew > maxAttachments) {
           onAttachmentsLimitError?.(
             `Maximum ${maxAttachments} attachment${maxAttachments === 1 ? "" : "s"} allowed.`
           );
-          e.target.value = "";
           return;
         }
         const add: ChatAttachmentInput[] = [];
@@ -109,12 +107,11 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
           done += 1;
           if (done === toProcess) {
             onAttachmentsChange((prev) => [...prev, ...add]);
-            e.target.value = "";
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         };
         for (let i = 0; i < toProcess; i += 1) {
-          const file = files[i]!;
+          const file = fileArray[i]!;
           if (file.size > MAX_FILE_SIZE_BYTES) {
             if (!oversizedShown) {
               oversizedShown = true;
@@ -138,7 +135,23 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
           reader.readAsDataURL(file);
         }
       },
-      [attachments.length, maxAttachments, onAttachmentsChange, onAttachmentsLimitError]
+      [
+        attachments.length,
+        maxAttachments,
+        onAttachmentsChange,
+        onAttachmentsLimitError,
+      ]
+    );
+
+    const onFileChange = React.useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files?.length) {
+          addFiles(files);
+        }
+        e.target.value = "";
+      },
+      [addFiles]
     );
 
     const removeAttachment = React.useCallback(
@@ -148,10 +161,32 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
       [onAttachmentsChange]
     );
 
+    const onDrop = React.useCallback(
+      (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer?.files;
+        if (files?.length) {
+          addFiles(files);
+        }
+      },
+      [addFiles]
+    );
+
+    const onDragOver = React.useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, []);
+
     const canSend = value.trim().length > 0;
 
     return (
-      <div className="UiChatComposer">
+      <div
+        className="UiChatComposer"
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragEnter={onDragOver}
+      >
         <div className="UiChatComposerInner">
           {attachments.length > 0 && (
             <div className="UiChatAttachments">
@@ -184,15 +219,15 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
             </div>
           )}
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="UiChatFileInput"
-            aria-hidden
-            onChange={onFileChange}
-          />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="*"
+          multiple
+          className="UiChatFileInput"
+          aria-hidden
+          onChange={onFileChange}
+        />
 
           <textarea
             ref={textareaRef}

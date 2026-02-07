@@ -88,6 +88,8 @@ export type EmbeddedRunAttemptParams = {
   streamParams?: AgentStreamParams;
   ownerNumbers?: string[];
   enforceFinalTag?: boolean;
+  /** When set, read_file may read from this dir (chat attachment inbox). */
+  attachmentInboxDir?: string;
 };
 
 export type EmbeddedRunAttemptResult = {

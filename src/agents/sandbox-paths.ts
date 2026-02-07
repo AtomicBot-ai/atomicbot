@@ -52,6 +52,38 @@ export async function assertSandboxPath(params: { filePath: string; cwd: string;
   return resolved;
 }
 
+/**
+ * Assert path is under sandbox root or under any of the extra allowed roots
+ * (e.g. chat attachment inbox). Used so read_file can read saved attachments.
+ */
+export async function assertSandboxPathOrExtraRoots(params: {
+  filePath: string;
+  cwd: string;
+  root: string;
+  extraAllowedRoots?: string[];
+}): Promise<{ resolved: string; relative: string }> {
+  const resolved = resolveToCwd(params.filePath, params.cwd);
+  const rootResolved = path.resolve(params.root);
+  const relative = path.relative(rootResolved, resolved);
+  const underRoot = relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+  if (underRoot) {
+    await assertNoSymlink(relative, rootResolved);
+    return { resolved, relative };
+  }
+  const extra = params.extraAllowedRoots ?? [];
+  for (const extraRoot of extra) {
+    const extraResolved = path.resolve(extraRoot);
+    const extraRelative = path.relative(extraResolved, resolved);
+    const underExtra =
+      extraRelative === "" || (!extraRelative.startsWith("..") && !path.isAbsolute(extraRelative));
+    if (underExtra) {
+      await assertNoSymlink(extraRelative, extraResolved);
+      return { resolved, relative: extraRelative };
+    }
+  }
+  throw new Error(`Path escapes sandbox root (${shortPath(rootResolved)}): ${params.filePath}`);
+}
+
 export function assertMediaNotDataUrl(media: string): void {
   const raw = media.trim();
   if (DATA_URL_RE.test(raw)) {

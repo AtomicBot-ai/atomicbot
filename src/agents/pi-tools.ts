@@ -164,6 +164,8 @@ export function createOpenClawCodingTools(options?: {
   disableMessageTool?: boolean;
   /** Whether the sender is an owner (required for owner-only tools). */
   senderIsOwner?: boolean;
+  /** When set, read_file may read from this dir (e.g. chat attachment inbox). */
+  attachmentInboxDir?: string;
 }): AnyAgentTool[] {
   const execToolName = "exec";
   const sandbox = options?.sandbox?.enabled ? options.sandbox : undefined;
@@ -242,13 +244,11 @@ export function createOpenClawCodingTools(options?: {
       allowModels: applyPatchConfig?.allowModels,
     });
 
+  const readRoot = sandboxRoot ?? workspaceRoot;
+  const readExtraRoots = options?.attachmentInboxDir ? [options.attachmentInboxDir] : undefined;
   const base = (codingTools as unknown as AnyAgentTool[]).flatMap((tool) => {
     if (tool.name === readTool.name) {
-      if (sandboxRoot) {
-        return [createSandboxedReadTool(sandboxRoot)];
-      }
-      const freshReadTool = createReadTool(workspaceRoot);
-      return [createOpenClawReadTool(freshReadTool)];
+      return [createSandboxedReadTool(readRoot, readExtraRoots)];
     }
     if (tool.name === "bash" || tool.name === execToolName) {
       return [];

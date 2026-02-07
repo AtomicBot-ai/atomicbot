@@ -78,6 +78,8 @@ export type FollowupRun = {
     ownerNumbers?: string[];
     extraSystemPrompt?: string;
     enforceFinalTag?: boolean;
+    /** When set, read_file may read from this dir (chat attachment inbox). */
+    attachmentInboxDir?: string;
   };
 };
 

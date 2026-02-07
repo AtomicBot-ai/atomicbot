@@ -10,6 +10,7 @@ import { resolveAgentTimeoutMs } from "../../agents/timeout.js";
 import { dispatchInboundMessage } from "../../auto-reply/dispatch.js";
 import { createReplyDispatcher } from "../../auto-reply/reply/reply-dispatcher.js";
 import { createReplyPrefixOptions } from "../../channels/reply-prefix.js";
+import { ensureMediaDir, pruneOldInboxDirs } from "../../media/store.js";
 import { resolveSendPolicy } from "../../sessions/send-policy.js";
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
 import {
@@ -30,7 +31,7 @@ import {
   validateChatInjectParams,
   validateChatSendParams,
 } from "../protocol/index.js";
-import { getMaxChatHistoryMessagesBytes } from "../server-constants.js";
+import { CHAT_ATTACHMENT_MAX_BYTES, getMaxChatHistoryMessagesBytes } from "../server-constants.js";
 import {
   capArrayByJsonBytes,
   loadSessionEntry,
@@ -355,11 +356,18 @@ export const chatHandlers: GatewayRequestHandlers = {
     }
     let parsedMessage = p.message;
     let parsedImages: ChatImageContent[] = [];
+    const clientRunId = p.idempotencyKey;
+    let attachmentInboxDir: string | undefined;
     if (normalizedAttachments.length > 0) {
       try {
+        const mediaDir = await ensureMediaDir();
+        await pruneOldInboxDirs(mediaDir);
+        const saveDir = path.join(mediaDir, "inbox", clientRunId);
+        attachmentInboxDir = saveDir;
         const parsed = await parseMessageWithAttachments(p.message, normalizedAttachments, {
-          maxBytes: 5_000_000,
+          maxBytes: CHAT_ATTACHMENT_MAX_BYTES,
           log: context.logGateway,
+          saveDir,
         });
         parsedMessage = parsed.message;
         parsedImages = parsed.images;
@@ -374,7 +382,6 @@ export const chatHandlers: GatewayRequestHandlers = {
       overrideMs: p.timeoutMs,
     });
     const now = Date.now();
-    const clientRunId = p.idempotencyKey;
 
     const sendPolicy = resolveSendPolicy({
       cfg,
@@ -508,6 +515,7 @@ export const chatHandlers: GatewayRequestHandlers = {
           runId: clientRunId,
           abortSignal: abortController.signal,
           images: parsedImages.length > 0 ? parsedImages : undefined,
+          ...(attachmentInboxDir ? { attachmentInboxDir } : {}),
           disableBlockStreaming: true,
           onAgentRunStart: (runId) => {
             agentRunStarted = true;

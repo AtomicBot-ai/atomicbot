@@ -171,7 +171,7 @@ describe("parseMessageWithAttachments", () => {
     expect(logs[0]).toMatch(/mime mismatch/i);
   });
 
-  it("drops unknown mime when sniff fails and logs", async () => {
+  it("adds unknown mime as file reference when sniff fails and logs", async () => {
     const logs: string[] = [];
     const unknown = Buffer.from("not an image").toString("base64");
     const parsed = await parseMessageWithAttachments(
@@ -180,8 +180,9 @@ describe("parseMessageWithAttachments", () => {
       { log: { warn: (message) => logs.push(message) } },
     );
     expect(parsed.images).toHaveLength(0);
+    expect(parsed.message).toContain("[Attached: unknown.bin");
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatch(/unable to detect image mime type/i);
+    expect(logs[0]).toMatch(/not detected as image|file reference/i);
   });
 
   it("keeps valid images and drops invalid ones", async () => {

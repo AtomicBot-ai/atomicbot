@@ -171,6 +171,9 @@ export function createFollowupRunner(params: {
               timeoutMs: queued.run.timeoutMs,
               runId,
               blockReplyBreak: queued.run.blockReplyBreak,
+              ...(queued.run.attachmentInboxDir
+                ? { attachmentInboxDir: queued.run.attachmentInboxDir }
+                : {}),
               onAgentEvent: (evt) => {
                 if (evt.stream !== "compaction") {
                   return;

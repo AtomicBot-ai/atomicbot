@@ -2,7 +2,7 @@ import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import { createEditTool, createReadTool, createWriteTool } from "@mariozechner/pi-coding-agent";
 import type { AnyAgentTool } from "./pi-tools.types.js";
 import { detectMime } from "../media/mime.js";
-import { assertSandboxPath } from "./sandbox-paths.js";
+import { assertSandboxPath, assertSandboxPathOrExtraRoots } from "./sandbox-paths.js";
 import { sanitizeToolResultImages } from "./tool-images.js";
 
 // NOTE(steipete): Upstream read now does file-magic MIME detection; we keep the wrapper
@@ -251,7 +251,11 @@ export function wrapToolParamNormalization(
   };
 }
 
-function wrapSandboxPathGuard(tool: AnyAgentTool, root: string): AnyAgentTool {
+function wrapSandboxPathGuard(
+  tool: AnyAgentTool,
+  root: string,
+  extraAllowedRoots?: string[],
+): AnyAgentTool {
   return {
     ...tool,
     execute: async (toolCallId, args, signal, onUpdate) => {
@@ -261,16 +265,25 @@ function wrapSandboxPathGuard(tool: AnyAgentTool, root: string): AnyAgentTool {
         (args && typeof args === "object" ? (args as Record<string, unknown>) : undefined);
       const filePath = record?.path;
       if (typeof filePath === "string" && filePath.trim()) {
-        await assertSandboxPath({ filePath, cwd: root, root });
+        if (extraAllowedRoots?.length) {
+          await assertSandboxPathOrExtraRoots({
+            filePath,
+            cwd: root,
+            root,
+            extraAllowedRoots,
+          });
+        } else {
+          await assertSandboxPath({ filePath, cwd: root, root });
+        }
       }
       return tool.execute(toolCallId, normalized ?? args, signal, onUpdate);
     },
   };
 }
 
-export function createSandboxedReadTool(root: string) {
+export function createSandboxedReadTool(root: string, extraAllowedRoots?: string[]) {
   const base = createReadTool(root) as unknown as AnyAgentTool;
-  return wrapSandboxPathGuard(createOpenClawReadTool(base), root);
+  return wrapSandboxPathGuard(createOpenClawReadTool(base), root, extraAllowedRoots);
 }
 
 export function createSandboxedWriteTool(root: string) {

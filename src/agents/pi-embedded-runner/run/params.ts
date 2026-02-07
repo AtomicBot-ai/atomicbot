@@ -101,4 +101,6 @@ export type RunEmbeddedPiAgentParams = {
   streamParams?: AgentStreamParams;
   ownerNumbers?: string[];
   enforceFinalTag?: boolean;
+  /** When set, read_file may read from this dir (chat attachment inbox). */
+  attachmentInboxDir?: string;
 };

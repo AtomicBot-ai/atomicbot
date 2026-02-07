@@ -39,6 +39,8 @@ export type GetReplyOptions = {
   skillFilter?: string[];
   /** Mutable ref to track if a reply was sent (for Slack "first" threading mode). */
   hasRepliedRef?: { value: boolean };
+  /** When set, read_file tool may also read from this dir (e.g. chat attachment inbox). */
+  attachmentInboxDir?: string;
 };
 
 export type ReplyPayload = {
