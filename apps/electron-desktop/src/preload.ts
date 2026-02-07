@@ -35,6 +35,26 @@ type GhExecResult = {
   resolvedPath: string | null;
 };
 
+type UpdateAvailablePayload = {
+  version: string;
+  releaseDate?: string;
+};
+
+type UpdateDownloadProgressPayload = {
+  percent: number;
+  bytesPerSecond: number;
+  transferred: number;
+  total: number;
+};
+
+type UpdateDownloadedPayload = {
+  version: string;
+};
+
+type UpdateErrorPayload = {
+  message: string;
+};
+
 type OpenclawDesktopApi = {
   version: string;
   openLogs: () => Promise<void>;
@@ -70,6 +90,14 @@ type OpenclawDesktopApi = {
   ghAuthStatus: () => Promise<GhExecResult>;
   ghApiUser: () => Promise<GhExecResult>;
   onGatewayState: (cb: (state: GatewayState) => void) => () => void;
+  // Auto-updater
+  checkForUpdate: () => Promise<void>;
+  downloadUpdate: () => Promise<void>;
+  installUpdate: () => Promise<void>;
+  onUpdateAvailable: (cb: (payload: UpdateAvailablePayload) => void) => () => void;
+  onUpdateDownloadProgress: (cb: (payload: UpdateDownloadProgressPayload) => void) => () => void;
+  onUpdateDownloaded: (cb: (payload: UpdateDownloadedPayload) => void) => () => void;
+  onUpdateError: (cb: (payload: UpdateErrorPayload) => void) => () => void;
 };
 
 // Expose only the bare minimum to the renderer. The Control UI is served by the Gateway and
@@ -111,6 +139,38 @@ const api: OpenclawDesktopApi = {
     ipcRenderer.on("gateway-state", handler);
     return () => {
       ipcRenderer.removeListener("gateway-state", handler);
+    };
+  },
+  // Auto-updater
+  checkForUpdate: async () => ipcRenderer.invoke("updater-check"),
+  downloadUpdate: async () => ipcRenderer.invoke("updater-download"),
+  installUpdate: async () => ipcRenderer.invoke("updater-install"),
+  onUpdateAvailable: (cb: (payload: UpdateAvailablePayload) => void) => {
+    const handler = (_evt: unknown, payload: UpdateAvailablePayload) => cb(payload);
+    ipcRenderer.on("updater-available", handler);
+    return () => {
+      ipcRenderer.removeListener("updater-available", handler);
+    };
+  },
+  onUpdateDownloadProgress: (cb: (payload: UpdateDownloadProgressPayload) => void) => {
+    const handler = (_evt: unknown, payload: UpdateDownloadProgressPayload) => cb(payload);
+    ipcRenderer.on("updater-download-progress", handler);
+    return () => {
+      ipcRenderer.removeListener("updater-download-progress", handler);
+    };
+  },
+  onUpdateDownloaded: (cb: (payload: UpdateDownloadedPayload) => void) => {
+    const handler = (_evt: unknown, payload: UpdateDownloadedPayload) => cb(payload);
+    ipcRenderer.on("updater-downloaded", handler);
+    return () => {
+      ipcRenderer.removeListener("updater-downloaded", handler);
+    };
+  },
+  onUpdateError: (cb: (payload: UpdateErrorPayload) => void) => {
+    const handler = (_evt: unknown, payload: UpdateErrorPayload) => cb(payload);
+    ipcRenderer.on("updater-error", handler);
+    return () => {
+      ipcRenderer.removeListener("updater-error", handler);
     };
   },
 };

@@ -141,14 +141,7 @@ module.exports = async function afterAllArtifactBuild(context) {
     );
   }
 
-  // If electron-builder previously created a .blockmap for a now-nonexistent DMG, delete it.
-  // We're not using electron-updater yet, so leaving a stale blockmap is more confusing than helpful.
-  const blockmapPath = `${dmgPath}.blockmap`;
-  try {
-    fs.rmSync(blockmapPath, { force: true });
-  } catch {
-    // ignore
-  }
+  // Keep blockmap files — electron-updater uses them for efficient differential updates.
 
   const notarizeEnabled = String(process.env.NOTARIZE || "").trim() === "1";
   if (!notarizeEnabled) {

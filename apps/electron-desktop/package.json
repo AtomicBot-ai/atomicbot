@@ -1,7 +1,7 @@
 {
   "name": "atomicbot-desktop",
   "private": true,
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Atomic Bot makes things for you",
   "type": "commonjs",
   "main": "dist/main.js",
@@ -43,7 +43,8 @@
     "dist:local": "CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist -- --publish never",
     "dist": "npm run build:all && electron-builder",
     "dist:env": "npm run build:all &&  node --env-file=.env ./node_modules/electron-builder/out/cli/cli.js",
-    "dist:env:local": "CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist:env -- --publish never"
+    "dist:env:local": "CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist:env -- --publish never",
+    "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^2.9.0",
@@ -64,6 +65,7 @@
     "prettier": "^3.4.2"
   },
   "dependencies": {
+    "electron-updater": "^6.7.3",
     "json5": "^2.2.3",
     "react-hot-toast": "^2.6.0"
   },
@@ -139,6 +141,12 @@
         "to": "gog-credentials"
       }
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "AtomicBot-ai",
+      "repo": "atomicbot",
+      "releaseType": "draft"
+    },
     "mac": {
       "icon": "assets/icon.icns",
       "category": "public.app-category.productivity",

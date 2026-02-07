@@ -2949,3 +2949,100 @@ pre {
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── UpdateBanner ── */
+
+.UpdateBanner {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(30, 34, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  color: rgba(230, 237, 243, 0.9);
+  max-width: 420px;
+  animation: updateBannerSlideIn 300ms ease-out;
+}
+
+@keyframes updateBannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.UpdateBanner-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.UpdateBanner-text--error {
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.UpdateBanner-btn {
+  appearance: none;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.UpdateBanner-btn--primary {
+  background: rgba(56, 139, 253, 0.85);
+  color: #fff;
+}
+
+.UpdateBanner-btn--primary:hover {
+  background: rgba(56, 139, 253, 1);
+}
+
+.UpdateBanner-btn--dismiss {
+  background: transparent;
+  color: rgba(230, 237, 243, 0.5);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.UpdateBanner-btn--dismiss:hover {
+  color: rgba(230, 237, 243, 0.9);
+}
+
+.UpdateBanner-progress {
+  flex: 1;
+  min-width: 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.UpdateBanner-progressBar {
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(56, 139, 253, 0.85);
+  transition: width 200ms ease;
+}
