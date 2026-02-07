@@ -14,7 +14,20 @@ export function TelegramUserPage(props: {
   const totalSteps = 5;
   const activeStep = 4;
 
-  const trimmed = props.telegramUserId.trim();
+  const [errorText, setErrorText] = React.useState("");
+  const token = props.telegramUserId.trim();
+
+  const handleSubmit = () => {
+    if (errorText) {
+      setErrorText("");
+    }
+
+    if (token) {
+      props.onNext();
+    } else {
+      setErrorText("Please enter your token to continue");
+    }
+  };
 
   return (
     <HeroPageLayout variant="compact" align="center" aria-label="Telegram allowlist setup">
@@ -85,6 +98,7 @@ export function TelegramUserPage(props: {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              isError={errorText}
             />
           </div>
 
@@ -109,7 +123,7 @@ export function TelegramUserPage(props: {
           <button className="UiTextButton" onClick={props.onSkip} type="button">
             Back
           </button>
-          <PrimaryButton size={"sm"} disabled={!trimmed} onClick={props.onNext}>
+          <PrimaryButton size={"sm"} onClick={handleSubmit}>
             Save & return
           </PrimaryButton>
         </div>
