@@ -131,6 +131,18 @@ jobs:
             echo "flag=never" >> "$GITHUB_OUTPUT"
           fi
 
+      # Write the App Store Connect API key to a temp file for notarytool.
+      # The NOTARYTOOL_KEY secret contains the .p8 key content; notarytool expects a file path.
+      - name: Write notary API key to file
+        if: env.NOTARYTOOL_KEY_CONTENT != ''
+        run: |
+          KEY_PATH="$RUNNER_TEMP/notary-key.p8"
+          echo "$NOTARYTOOL_KEY_CONTENT" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          echo "NOTARYTOOL_KEY=$KEY_PATH" >> "$GITHUB_ENV"
+        env:
+          NOTARYTOOL_KEY_CONTENT: ${{ secrets.NOTARYTOOL_KEY }}
+
       # Raise open file limit — electron-builder code signing opens every file in the
       # .app bundle (including bundled node_modules) and the default macOS limit (256)
       # is too low. Both launchctl and ulimit are needed on macOS runners.
@@ -154,8 +166,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MACOS_CSC_LINK != '' && 'true' || 'false' }}
           # Notarization (optional — only when signing secrets + notary keys are set).
+          # NOTARYTOOL_KEY is set via GITHUB_ENV in the "Write notary API key" step above
+          # (points to a temp .p8 file path, not the key content).
           NOTARIZE: ${{ secrets.NOTARYTOOL_KEY != '' && secrets.MACOS_CSC_LINK != '' && '1' || '' }}
-          NOTARYTOOL_KEY: ${{ secrets.NOTARYTOOL_KEY }}
           NOTARYTOOL_KEY_ID: ${{ secrets.NOTARYTOOL_KEY_ID }}
           NOTARYTOOL_ISSUER: ${{ secrets.NOTARYTOOL_ISSUER }}
 
