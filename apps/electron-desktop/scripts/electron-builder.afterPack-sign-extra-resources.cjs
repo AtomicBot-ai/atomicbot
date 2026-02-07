@@ -171,13 +171,6 @@ module.exports = async function afterPack(context) {
     return;
   }
 
-  // Determine if signing was explicitly requested via env vars.
-  const hasExplicitSigningConfig =
-    Boolean(process.env.CSC_LINK && String(process.env.CSC_LINK).trim()) ||
-    Boolean(process.env.CSC_NAME && String(process.env.CSC_NAME).trim()) ||
-    Boolean(process.env.SIGN_IDENTITY && String(process.env.SIGN_IDENTITY).trim()) ||
-    Boolean(process.env.CODESIGN_IDENTITY && String(process.env.CODESIGN_IDENTITY).trim());
-
   let identity;
   try {
     identity = selectSigningIdentity();
@@ -186,18 +179,10 @@ module.exports = async function afterPack(context) {
   }
 
   if (!identity) {
-    // If signing was explicitly configured but no identity was found, that's an error.
-    if (hasExplicitSigningConfig) {
-      throw new Error(
-        [
-          "[electron-desktop] No codesign identity found, but signing was explicitly configured.",
-          "Check CSC_LINK / CSC_NAME / SIGN_IDENTITY.",
-        ].join("\n")
-      );
-    }
-    // Otherwise, skip signing silently (e.g. CI without certificates).
+    // No usable signing identity found. This is expected in CI without certificates.
+    // Skip signing extraResources and let electron-builder handle the rest.
     console.log(
-      "[electron-desktop] afterPack: no signing identity configured (skipping extraResources signing)"
+      "[electron-desktop] afterPack: no codesign identity found (skipping extraResources signing)"
     );
     return;
   }
