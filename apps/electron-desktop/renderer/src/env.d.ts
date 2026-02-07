@@ -33,6 +33,26 @@ type GhExecResult = {
   resolvedPath: string | null;
 };
 
+type UpdateAvailablePayload = {
+  version: string;
+  releaseDate?: string;
+};
+
+type UpdateDownloadProgressPayload = {
+  percent: number;
+  bytesPerSecond: number;
+  transferred: number;
+  total: number;
+};
+
+type UpdateDownloadedPayload = {
+  version: string;
+};
+
+type UpdateErrorPayload = {
+  message: string;
+};
+
 declare global {
   interface Window {
     openclawDesktop?: {
@@ -70,6 +90,16 @@ declare global {
       ghAuthStatus: () => Promise<GhExecResult>;
       ghApiUser: () => Promise<GhExecResult>;
       onGatewayState: (cb: (state: GatewayState) => void) => () => void;
+      // Auto-updater
+      checkForUpdate: () => Promise<void>;
+      downloadUpdate: () => Promise<void>;
+      installUpdate: () => Promise<void>;
+      onUpdateAvailable: (cb: (payload: UpdateAvailablePayload) => void) => () => void;
+      onUpdateDownloadProgress: (
+        cb: (payload: UpdateDownloadProgressPayload) => void
+      ) => () => void;
+      onUpdateDownloaded: (cb: (payload: UpdateDownloadedPayload) => void) => () => void;
+      onUpdateError: (cb: (payload: UpdateErrorPayload) => void) => () => void;
     };
   }
 }

@@ -1,0 +1,156 @@
+name: Electron Desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to GitHub Releases"
+        required: false
+        default: false
+        type: boolean
+
+# Only allow one release build at a time to avoid race conditions on GitHub Releases.
+concurrency:
+  group: electron-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Checkout submodules (retry)
+        run: |
+          set -euo pipefail
+          git submodule sync --recursive
+          for attempt in 1 2 3 4 5; do
+            if git -c protocol.version=2 submodule update --init --force --depth=1 --recursive; then
+              exit 0
+            fi
+            echo "Submodule update failed (attempt $attempt/5). Retrying…"
+            sleep $((attempt * 10))
+          done
+          exit 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          check-latest: true
+
+      - name: Setup pnpm (corepack retry)
+        run: |
+          set -euo pipefail
+          corepack enable
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10.23.0 --activate; then
+              pnpm -v
+              exit 0
+            fi
+            echo "corepack prepare failed (attempt $attempt/3). Retrying..."
+            sleep $((attempt * 10))
+          done
+          exit 1
+
+      - name: Runtime versions
+        run: |
+          node -v
+          npm -v
+          pnpm -v
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install electron-desktop dependencies
+        working-directory: apps/electron-desktop
+        run: npm ci
+
+      - name: Build main + renderer
+        working-directory: apps/electron-desktop
+        run: npm run build:all
+
+      - name: Prepare OpenClaw bundle
+        working-directory: apps/electron-desktop
+        run: npm run prepare:openclaw
+
+      - name: Prepare Node runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:node
+
+      - name: Prepare jq runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:jq:all
+
+      - name: Prepare gh runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:gh:all
+
+      # GOG credentials require a .env file with secrets; skip if not available.
+      - name: Prepare GOG runtime
+        if: env.GOG_CLIENT_EMAIL != ''
+        working-directory: apps/electron-desktop
+        run: npm run prepare:gog:all
+        env:
+          GOG_CLIENT_EMAIL: ${{ secrets.GOG_CLIENT_EMAIL }}
+
+      - name: Prepare memo runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:memo:all
+
+      - name: Prepare remindctl runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:remindctl:all
+
+      - name: Prepare obsidian-cli runtime
+        working-directory: apps/electron-desktop
+        run: npm run prepare:obsidian-cli:all
+
+      # Determine publish mode: --publish always for tags, --publish never otherwise.
+      - name: Determine publish mode
+        id: publish-mode
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "flag=always" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.publish }}" == "true" ]]; then
+            echo "flag=always" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=never" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Build + publish. When CSC_LINK is missing, electron-builder skips signing.
+      - name: Build with electron-builder
+        working-directory: apps/electron-desktop
+        run: npx electron-builder --publish ${{ steps.publish-mode.outputs.flag }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing (optional — set these secrets to enable).
+          CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+          # Notarization (optional — set these secrets to enable).
+          NOTARIZE: ${{ secrets.NOTARYTOOL_KEY != '' && '1' || '' }}
+          NOTARYTOOL_KEY: ${{ secrets.NOTARYTOOL_KEY }}
+          NOTARYTOOL_KEY_ID: ${{ secrets.NOTARYTOOL_KEY_ID }}
+          NOTARYTOOL_ISSUER: ${{ secrets.NOTARYTOOL_ISSUER }}
+
+      # Upload artifacts for manual dispatch builds (when not publishing to Releases).
+      - name: Upload build artifacts
+        if: steps.publish-mode.outputs.flag == 'never'
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-desktop-macos-${{ runner.arch }}
+          path: |
+            apps/electron-desktop/release/*.zip
+            apps/electron-desktop/release/*.dmg
+            apps/electron-desktop/release/*.blockmap
+            apps/electron-desktop/release/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 14

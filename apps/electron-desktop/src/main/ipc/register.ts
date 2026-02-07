@@ -8,6 +8,7 @@ import { upsertApiKeyProfile } from "../keys/apiKeys";
 import { readAuthProfilesStore, resolveAuthProfilesPath } from "../keys/authProfilesStore";
 import { registerGogIpcHandlers } from "../gog/ipc";
 import { registerResetAndCloseIpcHandler } from "../reset/ipc";
+import { checkForUpdates, downloadUpdate, installUpdate } from "../updater";
 import type { GatewayState } from "../types";
 
 type ExecResult = {
@@ -674,6 +675,22 @@ export function registerIpcHandlers(params: {
       env: { ...process.env, GH_CONFIG_DIR: ghConfigDir },
       timeoutMs: 15_000,
     });
+  });
+
+  // Auto-updater IPC handlers.
+  ipcMain.handle("updater-check", async () => {
+    await checkForUpdates();
+    return { ok: true } as const;
+  });
+
+  ipcMain.handle("updater-download", async () => {
+    await downloadUpdate();
+    return { ok: true } as const;
+  });
+
+  ipcMain.handle("updater-install", async () => {
+    installUpdate();
+    return { ok: true } as const;
   });
 
   registerGogIpcHandlers({

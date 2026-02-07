@@ -7,6 +7,7 @@ import { registerIpcHandlers } from "./main/ipc/register";
 import { DEFAULT_PORT } from "./main/constants";
 import { ensureGatewayConfigFile, readGatewayTokenFromConfig } from "./main/gateway/config";
 import { spawnGateway } from "./main/gateway/spawn";
+import { initAutoUpdater, disposeAutoUpdater } from "./main/updater";
 import {
   resolveBundledGogBin,
   resolveBundledJqBin,
@@ -180,6 +181,7 @@ app.on("activate", () => {
 });
 
 app.on("before-quit", async () => {
+  disposeAutoUpdater();
   await stopGatewayChild();
 });
 
@@ -224,6 +226,11 @@ void app.whenReady().then(async () => {
 
   await ensureMainWindow();
   ensureTray();
+
+  // Initialize auto-updater in packaged builds only.
+  if (app.isPackaged) {
+    initAutoUpdater(() => mainWindow);
+  }
 
   // Consent is stored in the same per-user state dir as the embedded gateway config.
   const consentPath = path.join(stateDir, "consent.json");
