@@ -16,6 +16,36 @@ import { ChatAttachmentCard, getFileTypeLabel } from "./ChatAttachmentCard";
 import { ChatComposer, type ChatComposerRef } from "./ChatComposer";
 import { addToastError } from "./toast";
 
+/** Parsed file attachment from user message text ([Attached: fileName (mimeType)]). */
+type ParsedFileAttachment = { fileName: string; mimeType: string };
+
+/**
+ * Parse user message text that may contain [Attached: ...], Path: ..., --- Content ---.
+ * Returns display text (before first attachment marker) and file attachments for cards.
+ */
+function parseUserMessageWithAttachments(text: string): {
+  displayText: string;
+  fileAttachments: ParsedFileAttachment[];
+} {
+  const idx = text.indexOf("[Attached:");
+  const displayText = idx >= 0 ? text.slice(0, idx).trim() : text;
+  const fileAttachments: ParsedFileAttachment[] = [];
+  const re = /\[Attached:\s*([^\]]+)\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    const part = match[1]!.trim();
+    const lastParen = part.lastIndexOf("(");
+    if (lastParen > 0 && part.endsWith(")")) {
+      const fileName = part.slice(0, lastParen).trim();
+      const mimeType = part.slice(lastParen + 1, -1).trim();
+      if (fileName && mimeType) {
+        fileAttachments.push({ fileName, mimeType });
+      }
+    }
+  }
+  return { displayText, fileAttachments };
+}
+
 function CopyIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -240,6 +270,11 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
                   dataUrl: att.dataUrl,
                 }))
               : (m.attachments ?? []);
+          const parsedUser = m.role === "user" ? parseUserMessageWithAttachments(m.text) : null;
+          const hasParsedFileAttachments =
+            parsedUser != null && parsedUser.fileAttachments.length > 0;
+          const messageText = hasParsedFileAttachments ? parsedUser!.displayText : m.text;
+          const showAttachmentsBlock = attachmentsToShow.length > 0 || hasParsedFileAttachments;
           return (
             <div key={getMessageKey(m)} className={`UiChatRow UiChatRow-${m.role}`}>
               <div className={`UiChatBubble UiChatBubble-${m.role}`}>
@@ -248,7 +283,7 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
                     <span className="UiChatPending">sending…</span>
                   </div>
                 )}
-                {attachmentsToShow.length > 0 ? (
+                {showAttachmentsBlock ? (
                   <div className="UiChatMessageAttachments">
                     {attachmentsToShow.map((att: UiMessageAttachment, idx: number) => {
                       const isImage = att.dataUrl && (att.mimeType?.startsWith("image/") ?? false);
@@ -270,10 +305,18 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
                         />
                       );
                     })}
+                    {hasParsedFileAttachments &&
+                      parsedUser!.fileAttachments.map((att, idx) => (
+                        <ChatAttachmentCard
+                          key={`${m.id}-parsed-${idx}`}
+                          fileName={att.fileName}
+                          mimeType={att.mimeType}
+                        />
+                      ))}
                   </div>
                 ) : null}
                 <div className="UiChatText UiMarkdown">
-                  <Markdown>{m.text}</Markdown>
+                  <Markdown>{messageText}</Markdown>
                 </div>
                 {m.role === "assistant" && (
                   <div className="UiChatMessageActions">
