@@ -1664,7 +1664,7 @@ pre {
 .UiSkillConnectButtonContainer {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
 }
 
 .UiSkillConnectButton {
@@ -1677,6 +1677,10 @@ pre {
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.2s ease;
+}
+
+.UiSkillConnectButton:hover {
+  opacity: 0.8;
 }
 
 .UiSkillConnectButtonConfigure {
@@ -1695,7 +1699,8 @@ pre {
   cursor: default;
 }
 
-.UiSkillConnectButtonConfigure:hover {opacity: 1;
+.UiSkillConnectButtonConfigure:hover {
+  opacity: 1;
 }
 
 .UiSkillConnectButtonCircle {
@@ -1716,10 +1721,6 @@ pre {
 .UiSkillConnectButton:disabled {
   opacity: 0.55;
   cursor: default;
-}
-
-.UiSkillConnectButton:hover {
-  opacity: 0.8;
 }
 
 .UiSkillStatus {
