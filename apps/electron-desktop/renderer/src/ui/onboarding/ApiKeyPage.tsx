@@ -17,18 +17,36 @@ export function ApiKeyPage(props: {
   const totalSteps = 5;
   const activeStep = 1;
   const [errorText, setErrorText] = useState("");
+  const [validating, setValidating] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (errorText) {
       setErrorText("");
     }
     const trimmed = apiKey.trim();
-    if (trimmed) {
-      props.onSubmit(trimmed);
-    } else {
+    if (!trimmed) {
       setErrorText("Please enter your API key to continue");
+      return;
     }
+
+    // Validate the key against the provider API before saving
+    setValidating(true);
+    try {
+      const result = await window.openclawDesktop?.validateApiKey(props.provider, trimmed);
+      if (result && !result.valid) {
+        setErrorText(result.error ?? "Invalid API key.");
+        return;
+      }
+    } catch {
+      // If validation IPC is unavailable, allow saving anyway
+    } finally {
+      setValidating(false);
+    }
+
+    props.onSubmit(trimmed);
   };
+
+  const isBusy = props.busy || validating;
 
   return (
     <HeroPageLayout variant="compact" align="center" aria-label="API key setup">
@@ -76,7 +94,7 @@ export function ApiKeyPage(props: {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            disabled={props.busy}
+            disabled={isBusy}
             label={meta.name + " API key"}
             isError={errorText}
           />
@@ -87,14 +105,19 @@ export function ApiKeyPage(props: {
         <div className="UiApiKeyButtonRow">
           <button
             className="UiTextButton"
-            disabled={props.busy}
+            disabled={isBusy}
             onClick={props.onBack}
             type="button"
           >
             Back
           </button>
-          <PrimaryButton size={"sm"} disabled={props.busy} onClick={handleSubmit}>
-            {props.busy ? "Saving..." : "Continue"}
+          <PrimaryButton
+            size={"sm"}
+            disabled={isBusy}
+            loading={validating}
+            onClick={() => void handleSubmit()}
+          >
+            {validating ? "Validating…" : props.busy ? "Saving…" : "Continue"}
           </PrimaryButton>
         </div>
       </GlassCard>

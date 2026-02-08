@@ -120,11 +120,39 @@ function ApiKeyModalContent(props: {
 }) {
   const { provider, busy } = props;
   const [draftKey, setDraftKey] = React.useState("");
+  const [validating, setValidating] = React.useState(false);
+  const [validationError, setValidationError] = React.useState("");
 
   const handlePaste = React.useCallback(async () => {
     const text = await props.onPaste();
-    if (text) setDraftKey(text);
+    if (text) {
+      setDraftKey(text);
+      setValidationError("");
+    }
   }, [props]);
+
+  const handleSave = React.useCallback(async () => {
+    const trimmed = draftKey.trim();
+    if (!trimmed) return;
+
+    setValidationError("");
+    setValidating(true);
+    try {
+      const result = await window.openclawDesktop?.validateApiKey(provider.id, trimmed);
+      if (result && !result.valid) {
+        setValidationError(result.error ?? "Invalid API key.");
+        return;
+      }
+    } catch {
+      // If validation IPC is unavailable, allow saving anyway
+    } finally {
+      setValidating(false);
+    }
+
+    props.onSave(trimmed);
+  }, [draftKey, provider.id, props]);
+
+  const isBusy = busy || validating;
 
   return (
     <>
@@ -158,25 +186,30 @@ function ApiKeyModalContent(props: {
         <TextInput
           type="password"
           value={draftKey}
-          onChange={setDraftKey}
+          onChange={(v) => {
+            setDraftKey(v);
+            if (validationError) setValidationError("");
+          }}
           placeholder={provider.placeholder}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          disabled={busy}
+          disabled={isBusy}
+          isError={validationError}
         />
       </div>
 
       <div className="UiModalActions">
-        <ActionButton disabled={busy} onClick={() => void handlePaste()}>
+        <ActionButton disabled={isBusy} onClick={() => void handlePaste()}>
           Paste
         </ActionButton>
         <ActionButton
           variant="primary"
-          disabled={busy || !draftKey.trim()}
-          onClick={() => props.onSave(draftKey.trim())}
+          disabled={isBusy || !draftKey.trim()}
+          loading={validating}
+          onClick={() => void handleSave()}
         >
-          {busy ? "Saving…" : "Save"}
+          {validating ? "Validating…" : busy ? "Saving…" : "Save"}
         </ActionButton>
       </div>
     </>

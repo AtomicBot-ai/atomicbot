@@ -305,6 +305,22 @@ export function registerIpcHandlers(params: {
     return { ok: true } as const;
   });
 
+  ipcMain.handle(
+    "auth-validate-api-key",
+    async (_evt, p: { provider?: unknown; apiKey?: unknown }) => {
+      const provider = typeof p?.provider === "string" ? p.provider.trim() : "";
+      const apiKey = typeof p?.apiKey === "string" ? p.apiKey : "";
+      if (!provider) {
+        return { valid: false, error: "provider is required" };
+      }
+      if (!apiKey) {
+        return { valid: false, error: "API key is required" };
+      }
+      const { validateProviderApiKey } = await import("../keys/validateApiKey");
+      return validateProviderApiKey(provider, apiKey);
+    },
+  );
+
   ipcMain.handle("auth-has-api-key", async (_evt, p: { provider?: unknown }) => {
     const provider = typeof p?.provider === "string" ? p.provider.trim().toLowerCase() : "";
     if (!provider) {

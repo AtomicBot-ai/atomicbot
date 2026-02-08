@@ -853,6 +853,31 @@ button:disabled {
   color: #ffffff80;
 }
 
+/* ── Button spinner ──────────────────────────────────────────────── */
+@keyframes uiButtonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.UiButtonSpinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: uiButtonSpin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.UiActionButton-primary .UiButtonSpinner {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: rgba(0, 0, 0, 0.7);
+}
+
 .UiSecondaryButton {
   min-width: 84px;
   display: block;

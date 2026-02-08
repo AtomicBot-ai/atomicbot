@@ -216,14 +216,16 @@ export function PrimaryButton(props: {
   children: React.ReactNode;
   size?: "sm";
   disabled?: boolean;
+  loading?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       className={`UiPrimaryButton ${props.size === "sm" && "UiPrimaryButtonSm"}`}
-      disabled={props.disabled}
+      disabled={props.disabled || props.loading}
       onClick={props.onClick}
     >
+      {props.loading ? <span className="UiButtonSpinner" aria-hidden="true" /> : null}
       {props.children}
     </button>
   );
@@ -253,6 +255,7 @@ export function ButtonRow({ children }: { children: React.ReactNode }) {
 export function ActionButton(props: {
   children: React.ReactNode;
   disabled?: boolean;
+  loading?: boolean;
   variant?: "secondary" | "primary";
   onClick: () => void;
   className?: string;
@@ -261,7 +264,8 @@ export function ActionButton(props: {
   const className =
     variant === "primary" ? "UiActionButton UiActionButton-primary" : "UiActionButton";
   return (
-    <button className={className} disabled={props.disabled} onClick={props.onClick}>
+    <button className={className} disabled={props.disabled || props.loading} onClick={props.onClick}>
+      {props.loading ? <span className="UiButtonSpinner" aria-hidden="true" /> : null}
       {props.children}
     </button>
   );
