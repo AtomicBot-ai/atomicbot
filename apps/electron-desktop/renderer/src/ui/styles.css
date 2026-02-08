@@ -3045,33 +3045,65 @@ pre {
 
 .UpdateBanner {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
+  bottom: 20px;
+  right: 20px;
   z-index: 9999;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: rgba(30, 34, 42, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: linear-gradient(#1d1d1d, #1d1d1d) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.18) 100%
+      )
+      border-box;
+  border: 1px solid transparent;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   font-size: 13px;
-  color: rgba(230, 237, 243, 0.9);
-  max-width: 420px;
-  animation: updateBannerSlideIn 300ms ease-out;
+  color: var(--text);
+  max-width: 440px;
+  animation: updateBannerSlideIn 300ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 @keyframes updateBannerSlideIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
+}
+
+.UpdateBanner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(174, 255, 0, 0.1);
+  color: var(--lime);
+}
+
+.UpdateBanner-icon--error {
+  background: rgba(255, 122, 0, 0.1);
+  color: var(--accent);
+}
+
+.UpdateBanner-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .UpdateBanner-text {
@@ -3080,60 +3112,113 @@ pre {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+.UpdateBanner-text strong {
+  color: var(--text);
+  font-weight: 650;
 }
 
 .UpdateBanner-text--error {
-  color: rgba(248, 113, 113, 0.95);
+  color: var(--accent);
+}
+
+.UpdateBanner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .UpdateBanner-btn {
   appearance: none;
   border: none;
-  border-radius: 6px;
-  padding: 5px 12px;
+  border-radius: 999px;
+  padding: 6px 16px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    background 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
 }
 
 .UpdateBanner-btn--primary {
-  background: rgba(56, 139, 253, 0.85);
-  color: #fff;
+  background: var(--lime);
+  color: #121212;
+  font-weight: 650;
 }
 
 .UpdateBanner-btn--primary:hover {
-  background: rgba(56, 139, 253, 1);
+  opacity: 0.85;
+}
+
+.UpdateBanner-btn--primary:active {
+  opacity: 0.7;
 }
 
 .UpdateBanner-btn--dismiss {
   background: transparent;
-  color: rgba(230, 237, 243, 0.5);
-  font-size: 16px;
+  color: var(--muted2);
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
-  padding: 2px 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
 .UpdateBanner-btn--dismiss:hover {
-  color: rgba(230, 237, 243, 0.9);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .UpdateBanner-progress {
-  flex: 1;
-  min-width: 80px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .UpdateBanner-progressBar {
   height: 100%;
-  border-radius: 3px;
-  background: rgba(56, 139, 253, 0.85);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--lime), #c8ff4d);
   transition: width 200ms ease;
+}
+
+.UpdateBanner-percent {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.UpdateBanner-btn--primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.UpdateBanner-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(18, 18, 18, 0.25);
+  border-top-color: #121212;
+  border-radius: 50%;
+  animation: updateSpinnerRotate 600ms linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes updateSpinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
 }
