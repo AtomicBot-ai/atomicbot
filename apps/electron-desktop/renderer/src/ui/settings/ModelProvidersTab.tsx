@@ -516,7 +516,7 @@ export function ModelProvidersTab(props: {
     [activeModelEntry]
   );
 
-  const title = view === "models" ? "AI Models" : "AI Providers";
+  const title = view === "models" ? "AI Models" : "Providers & API Keys";
 
   return (
     <div className="UiSettingsContentInner">
@@ -710,7 +710,6 @@ export function ModelProvidersTab(props: {
       ) : (
         /* ── Providers & API keys ────────────────────────── */
         <section className="UiSettingsSection">
-          <div className="UiSectionSubtitle">Click a provider to add or update its API key.</div>
 
           <div className="UiProviderTilesGrid">
             {MODEL_PROVIDERS.map((p) => (
