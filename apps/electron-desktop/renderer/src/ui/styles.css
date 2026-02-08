@@ -2623,11 +2623,18 @@ pre {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid #1e1e1e;
   border-radius: 14px;
   background:
-    linear-gradient(0deg, #1e1e1e, #1e1e1e),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
+          linear-gradient(#2c2c2c, #2c2c2c) padding-box,
+          linear-gradient(
+                  150deg,
+                  rgba(255, 255, 255, 0.24) 0%,
+                  rgba(255, 255, 255, 0) 50%,
+                  rgba(255, 255, 255, 0.24) 100%
+          )
+          border-box;
+
+  border: 1px solid transparent;
   margin-bottom: 14px;
 }
 
