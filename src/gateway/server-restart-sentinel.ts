@@ -25,8 +25,9 @@ export async function scheduleRestartSentinelWake(params: { deps: CliDeps }) {
   const summary = summarizeRestartSentinel(payload);
 
   if (!sessionKey) {
-    const mainSessionKey = resolveMainSessionKeyFromConfig();
-    enqueueSystemEvent(message, { sessionKey: mainSessionKey });
+    // No session context means the config change came from an external UI
+    // (e.g. electron-desktop onboarding), not from a chat session.
+    // Skip enqueuing to avoid surfacing internal restart noise to the user.
     return;
   }
 
