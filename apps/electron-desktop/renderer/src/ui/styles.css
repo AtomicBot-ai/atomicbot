@@ -2513,9 +2513,9 @@ pre {
   min-width: 41px;
   cursor: pointer;
   transition:
-    border-color 0.2ms ease,
-    background 0.2ms ease,
-    color 0.2ms ease;
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .UiProviderFilterChip:hover {
