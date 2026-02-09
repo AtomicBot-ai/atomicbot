@@ -6,7 +6,7 @@
   "type": "commonjs",
   "main": "dist/main.js",
   "author": "",
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "build:all": "npm run build && npm run build:renderer",
     "prepare:gog:all": "npm run fetch:gog && npm run prepare:gog:credentials && npm run prepare:gog",
