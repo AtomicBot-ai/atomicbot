@@ -58,6 +58,7 @@ type UpdateErrorPayload = {
 type OpenclawDesktopApi = {
   version: string;
   openLogs: () => Promise<void>;
+  openWorkspaceFolder: () => Promise<void>;
   toggleDevTools: () => Promise<void>;
   retry: () => Promise<void>;
   resetAndClose: () => Promise<ResetAndCloseResult>;
@@ -109,6 +110,7 @@ type OpenclawDesktopApi = {
 const api: OpenclawDesktopApi = {
   version: "0.0.0",
   openLogs: async () => ipcRenderer.invoke("open-logs"),
+  openWorkspaceFolder: async () => ipcRenderer.invoke("open-workspace-folder"),
   toggleDevTools: async () => ipcRenderer.invoke("devtools-toggle"),
   retry: async () => ipcRenderer.invoke("gateway-retry"),
   resetAndClose: async () => ipcRenderer.invoke("reset-and-close"),

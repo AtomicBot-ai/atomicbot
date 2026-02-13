@@ -58,6 +58,7 @@ declare global {
     openclawDesktop?: {
       version: string;
       openLogs: () => Promise<void>;
+      openWorkspaceFolder: () => Promise<void>;
       toggleDevTools: () => Promise<void>;
       retry: () => Promise<void>;
       resetAndClose: () => Promise<ResetAndCloseResult>;

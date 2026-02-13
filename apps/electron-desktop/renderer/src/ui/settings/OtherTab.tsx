@@ -13,7 +13,7 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
   // Load the current launch-at-login state on mount.
   React.useEffect(() => {
     const api = window.openclawDesktop;
-    if (!api?.getLaunchAtLogin) return;
+    if (!api?.getLaunchAtLogin) {return;}
     void api.getLaunchAtLogin().then((res) => setLaunchAtStartup(res.enabled));
   }, []);
 
@@ -45,7 +45,7 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
     const ok = window.confirm(
       "All local data will be deleted and Google Workspace will be disconnected. The app will close and you’ll need to set it up again."
     );
-    if (!ok) return;
+    if (!ok) {return;}
     onError(null);
     setResetBusy(true);
     try {
@@ -61,6 +61,30 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
   return (
     <div className="UiSettingsContentInner UiSettingsOther">
       <h2 className="UiSettingsOtherTitle">Other</h2>
+
+      {/* Agent workspace folder */}
+      <section className="UiSettingsOtherSection">
+        <h3 className="UiSettingsOtherSectionTitle">Workspace</h3>
+        <div className="UiSettingsOtherCard">
+          <div className="UiSettingsOtherRow">
+            <span className="UiSettingsOtherRowLabel">Agent workspace</span>
+            <button
+              type="button"
+              className="UiSettingsOtherLink"
+              onClick={() => void api?.openWorkspaceFolder()}
+            >
+              Open folder
+            </button>
+          </div>
+        </div>
+        <p className="UiSettingsOtherHint">
+          The workspace contains markdown files that define how the agent works: AGENTS.md
+          (instructions), SOUL.md (personality and style), USER.md (info about you), IDENTITY.md
+          (name, emoji, avatar), TOOLS.md (tool notes), HEARTBEAT.md (heartbeat checks), and
+          BOOTSTRAP.md (initial setup, safe to delete after first conversation). You can edit them
+          manually in any text editor.
+        </p>
+      </section>
 
       {/* About */}
       <section className="UiSettingsOtherSection">

@@ -249,6 +249,17 @@ export function registerIpcHandlers(params: {
     await shell.openPath(logsDir);
   });
 
+  // Open the agent workspace folder in Finder/Explorer.
+  ipcMain.handle("open-workspace-folder", async () => {
+    const workspaceDir = path.join(params.stateDir, "workspace");
+    try {
+      fs.mkdirSync(workspaceDir, { recursive: true });
+    } catch {
+      // ignore
+    }
+    await shell.openPath(workspaceDir);
+  });
+
   ipcMain.handle("devtools-toggle", async () => {
     const win = params.getMainWindow();
     if (!win || win.isDestroyed()) {
