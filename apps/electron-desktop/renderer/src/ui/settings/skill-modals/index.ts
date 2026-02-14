@@ -7,3 +7,4 @@ export { MediaUnderstandingModalContent } from "./MediaUnderstandingModal";
 export { SlackModalContent } from "./SlackModal";
 export { ObsidianModalContent } from "./ObsidianModal";
 export { AppleNotesModalContent, AppleRemindersModalContent } from "./OneClickEnableModal";
+export { NanoBananaModalContent } from "./NanoBananaModal";

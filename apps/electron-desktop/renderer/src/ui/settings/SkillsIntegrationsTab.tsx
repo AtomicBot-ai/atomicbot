@@ -10,6 +10,7 @@ import {
   GitHubModalContent,
   GoogleWorkspaceModalContent,
   MediaUnderstandingModalContent,
+  NanoBananaModalContent,
   NotionModalContent,
   ObsidianModalContent,
   SlackModalContent,
@@ -658,6 +659,21 @@ export function SkillsIntegrationsTab(props: {
           isConnected={statuses["apple-reminders"] === "connected"}
           onConnected={() => handleConnected("apple-reminders")}
           onDisabled={() => void handleDisabled("apple-reminders")}
+        />
+      </Modal>
+
+      <Modal
+        open={activeModal === "nano-banana"}
+        onClose={closeModal}
+        aria-label="Nano Banana settings"
+        header={"Nano Banana (Images)"}
+      >
+        <NanoBananaModalContent
+          gw={props.gw}
+          loadConfig={loadConfig}
+          isConnected={statuses["nano-banana"] === "connected"}
+          onConnected={() => handleConnected("nano-banana")}
+          onDisabled={() => void handleDisabled("nano-banana")}
         />
       </Modal>
 

@@ -214,6 +214,20 @@
   display: block;
 }
 
+/* Generated images from assistant (e.g. image gen) are shown larger */
+.UiChatMessageAttachment--generated {
+  width: auto;
+  height: auto;
+  max-width: 360px;
+  max-height: 360px;
+}
+
+.UiChatMessageAttachment--generated .UiChatMessageAttachmentImg {
+  object-fit: contain;
+  max-width: 360px;
+  max-height: 360px;
+}
+
 .UiChatMessageAttachmentFile {
   width: 100%;
   height: 100%;

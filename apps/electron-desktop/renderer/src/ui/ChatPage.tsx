@@ -5,6 +5,7 @@ import { useGatewayRpc } from "../gateway/context";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   chatActions,
+  extractAttachmentsFromMessage,
   extractText,
   isHeartbeatMessage,
   loadChatHistory,
@@ -213,7 +214,15 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
       }
       if (payload.state === "final") {
         const text = extractText(payload.message);
-        dispatch(chatActions.streamFinalReceived({ runId: payload.runId, seq: payload.seq, text }));
+        const finalAttachments = extractAttachmentsFromMessage(payload.message);
+        dispatch(
+          chatActions.streamFinalReceived({
+            runId: payload.runId,
+            seq: payload.seq,
+            text,
+            attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
+          })
+        );
         return;
       }
       if (payload.state === "error") {
@@ -336,8 +345,16 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
                     {attachmentsToShow.map((att: UiMessageAttachment, idx: number) => {
                       const isImage = att.dataUrl && (att.mimeType?.startsWith("image/") ?? false);
                       if (isImage && att.dataUrl) {
+                        const isGenerated = m.role === "assistant";
                         return (
-                          <div key={`${m.id}-att-${idx}`} className="UiChatMessageAttachment">
+                          <div
+                            key={`${m.id}-att-${idx}`}
+                            className={
+                              isGenerated
+                                ? "UiChatMessageAttachment UiChatMessageAttachment--generated"
+                                : "UiChatMessageAttachment"
+                            }
+                          >
                             <img src={att.dataUrl} alt="" className="UiChatMessageAttachmentImg" />
                           </div>
                         );

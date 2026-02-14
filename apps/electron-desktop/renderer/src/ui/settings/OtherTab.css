@@ -170,6 +170,15 @@
   justify-content: center;
 }
 
+.UiSettingsOtherRowLabel--mono {
+  font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+  font-size: 13px;
+  color: rgba(235, 235, 245, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Workspace section hint text */
 .UiSettingsOtherHint {
   font-size: 13px;

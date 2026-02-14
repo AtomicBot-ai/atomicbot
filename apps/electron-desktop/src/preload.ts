@@ -110,6 +110,10 @@ type OpenclawDesktopApi = {
   onUpdateDownloadProgress: (cb: (payload: UpdateDownloadProgressPayload) => void) => () => void;
   onUpdateDownloaded: (cb: (payload: UpdateDownloadedPayload) => void) => () => void;
   onUpdateError: (cb: (payload: UpdateErrorPayload) => void) => () => void;
+  // State directory
+  getStateDir: () => Promise<{ stateDir: string }>;
+  setStateDirOverride: (stateDir: string) => Promise<{ ok: boolean; needsRestart?: boolean; error?: string }>;
+  pickStateDirFolder: () => Promise<{ ok: boolean; path: string }>;
   // Custom skills
   installCustomSkill: (data: string) => Promise<{
     ok: boolean;
@@ -220,6 +224,11 @@ const api: OpenclawDesktopApi = {
       ipcRenderer.removeListener("updater-error", handler);
     };
   },
+  // State directory
+  getStateDir: async () => ipcRenderer.invoke("get-state-dir"),
+  setStateDirOverride: async (stateDir: string) =>
+    ipcRenderer.invoke("set-state-dir-override", { stateDir }),
+  pickStateDirFolder: async () => ipcRenderer.invoke("pick-state-dir-folder"),
   // Custom skills
   installCustomSkill: async (data: string) => ipcRenderer.invoke("install-custom-skill", { data }),
   listCustomSkills: async () => ipcRenderer.invoke("list-custom-skills"),

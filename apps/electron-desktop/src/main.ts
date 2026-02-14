@@ -190,9 +190,33 @@ app.on("before-quit", async () => {
 
 void app.whenReady().then(async () => {
   const userData = app.getPath("userData");
-  const stateDir = path.join(userData, "openclaw");
   const logsDir = path.join(userData, "logs");
   logsDirForUi = logsDir;
+
+  // ── Resolve stateDir with priority: 1) user override, 2) external gateway, 3) default ──
+  const stateDirOverridePath = path.join(userData, "state-dir-override.json");
+  const userOverrideDir = readStateDirOverride(stateDirOverridePath);
+
+  let stateDir: string;
+  let externalGatewayDetected = false;
+
+  if (userOverrideDir) {
+    stateDir = userOverrideDir;
+  } else {
+    // Check if an external gateway is already running on the default port.
+    const externalConfigPath = path.join(os.homedir(), ".openclaw", "openclaw.json");
+    const externalToken = readGatewayTokenFromConfig(externalConfigPath);
+    const externalGatewayAvailable = externalToken
+      ? await waitForPortOpen("127.0.0.1", DEFAULT_PORT, 3_000)
+      : false;
+
+    if (externalGatewayAvailable) {
+      stateDir = path.join(os.homedir(), ".openclaw");
+      externalGatewayDetected = true;
+    } else {
+      stateDir = path.join(userData, "openclaw");
+    }
+  }
 
   const openclawDir = app.isPackaged ? resolveBundledOpenClawDir() : resolveRepoRoot(MAIN_DIR);
   // In dev, prefer a real Node binary. Spawning the Gateway via the Electron binary (process.execPath)
@@ -326,6 +350,7 @@ void app.whenReady().then(async () => {
     startGateway,
     userData,
     stateDir,
+    stateDirOverridePath,
     logsDir,
     openclawDir,
     gogBin,
@@ -354,6 +379,24 @@ void app.whenReady().then(async () => {
     await startGateway();
   }
 });
+
+function readStateDirOverride(overridePath: string): string | null {
+  try {
+    if (!fs.existsSync(overridePath)) {
+      return null;
+    }
+    const raw = fs.readFileSync(overridePath, "utf-8");
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+    const obj = parsed as { stateDir?: unknown };
+    const dir = typeof obj.stateDir === "string" ? obj.stateDir.trim() : "";
+    return dir.length > 0 ? dir : null;
+  } catch {
+    return null;
+  }
+}
 
 function readConsentAccepted(consentPath: string): boolean {
   try {

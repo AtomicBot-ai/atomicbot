@@ -1,4 +1,4 @@
-import { app, ipcMain, shell, type BrowserWindow } from "electron";
+import { app, dialog, ipcMain, shell, type BrowserWindow } from "electron";
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
@@ -367,6 +367,7 @@ export function registerIpcHandlers(params: {
   startGateway: () => Promise<void>;
   userData: string;
   stateDir: string;
+  stateDirOverridePath: string;
   logsDir: string;
   openclawDir: string;
   gogBin: string;
@@ -892,6 +893,48 @@ export function registerIpcHandlers(params: {
     const enabled = typeof p?.enabled === "boolean" ? p.enabled : false;
     app.setLoginItemSettings({ openAtLogin: enabled });
     return { ok: true } as const;
+  });
+
+  // ── State directory IPC handlers ────────────────────────────────────────────
+
+  ipcMain.handle("get-state-dir", () => {
+    return { stateDir: params.stateDir };
+  });
+
+  ipcMain.handle("set-state-dir-override", async (_evt, p: { stateDir?: unknown }) => {
+    const dir = typeof p?.stateDir === "string" ? p.stateDir.trim() : "";
+    try {
+      if (dir) {
+        fs.writeFileSync(
+          params.stateDirOverridePath,
+          `${JSON.stringify({ stateDir: dir }, null, 2)}\n`,
+          "utf-8"
+        );
+      } else {
+        // Clear the override by removing the file.
+        if (fs.existsSync(params.stateDirOverridePath)) {
+          fs.unlinkSync(params.stateDirOverridePath);
+        }
+      }
+      return { ok: true, needsRestart: true } as const;
+    } catch (err) {
+      return { ok: false, error: String(err) } as const;
+    }
+  });
+
+  ipcMain.handle("pick-state-dir-folder", async () => {
+    const win = params.getMainWindow();
+    if (!win) {
+      return { ok: false, path: "" };
+    }
+    const result = await dialog.showOpenDialog(win, {
+      properties: ["openDirectory", "createDirectory"],
+      title: "Select State Directory",
+    });
+    if (result.canceled || !result.filePaths[0]) {
+      return { ok: false, path: "" };
+    }
+    return { ok: true, path: result.filePaths[0] };
   });
 
   // App version (used by WhatsNew modal to detect updates).

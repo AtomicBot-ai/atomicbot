@@ -161,7 +161,7 @@ const HEARTBEAT_OK_TOKEN = "HEARTBEAT_OK";
 /** Detect heartbeat-related messages that should be hidden from the chat UI. */
 export function isHeartbeatMessage(role: string, text: string): boolean {
   const trimmed = text.trim();
-  if (!trimmed) return false;
+  if (!trimmed) {return false;}
   // User-side: the heartbeat prompt injected by the gateway
   if (role === "user" && trimmed.startsWith(HEARTBEAT_PROMPT_PREFIX)) {
     return true;
@@ -369,7 +369,7 @@ const chatSlice = createSlice({
       }
       state.messages =
         liveOnly.length > 0
-          ? [...fromHistory, ...liveOnly.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))]
+          ? [...fromHistory, ...liveOnly.toSorted((a, b) => (a.ts ?? 0) - (b.ts ?? 0))]
           : fromHistory;
       state.streamByRun = {};
     },
@@ -424,11 +424,16 @@ const chatSlice = createSlice({
     },
     streamFinalReceived(
       state,
-      action: PayloadAction<{ runId: string; seq: number; text: string }>
+      action: PayloadAction<{
+        runId: string;
+        seq: number;
+        text: string;
+        attachments?: UiMessageAttachment[];
+      }>
     ) {
-      const { runId, seq, text } = action.payload;
+      const { runId, seq, text, attachments } = action.payload;
       delete state.streamByRun[runId];
-      if (!text) {
+      if (!text && !attachments?.length) {
         return;
       }
       // Suppress heartbeat ack messages from appearing in chat history
@@ -438,9 +443,10 @@ const chatSlice = createSlice({
       state.messages.push({
         id: `a-${runId}-${seq}`,
         role: "assistant",
-        text,
+        text: text || (attachments?.length ? "" : ""),
         runId,
         ts: Date.now(),
+        attachments,
       });
     },
     streamErrorReceived(state, action: PayloadAction<{ runId: string; errorMessage?: string }>) {
