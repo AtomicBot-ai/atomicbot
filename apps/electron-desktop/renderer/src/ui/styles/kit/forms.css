@@ -1,0 +1,178 @@
+/* ── Kit: Forms (checkboxes, inputs) ────────────────── */
+
+.UiCheckRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(230, 237, 243, 0.9);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.UiCheckRow input {
+  position: relative;
+  width: 13px;
+  height: 13px;
+  background-color: #414141;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  margin: 0;
+}
+
+.UiCheckRow input:checked {
+  background-color: #0d6fff !important;
+}
+
+.UiCheckRow input:checked::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 6px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+  top: 0;
+  left: 3px;
+}
+
+.UiCheckRow.UiCheckRow--error input {
+  border-color: #ff3939;
+  background-color: #ffdfdf !important;
+}
+
+.UiCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.UiCheckbox__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.UiCheckbox__box {
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: #414141;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.UiCheckbox__box--checked {
+  background: #0d6fff;
+}
+
+.UiCheckbox__check {
+  width: 16px;
+  height: 16px;
+  fill: #fff;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+  margin-top: -3px;
+}
+
+.UiCheckbox__box--checked .UiCheckbox__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.UiCheckbox__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.UiCheckbox:hover .UiCheckbox__box {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.UiCheckbox__input:focus-visible + .UiCheckbox__box {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.35);
+}
+
+.UiInputLabel {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  margin-bottom: 6px;
+}
+
+.UiInputWrap {
+  margin-top: 6px;
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background-image: linear-gradient(
+    173deg,
+    rgba(255, 255, 255, 0.24),
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.24)
+  );
+}
+
+.UiInputWrapError {
+  background-image: linear-gradient(
+    173deg,
+    rgba(255, 59, 48, 0.24),
+    rgba(255, 59, 48, 0),
+    rgba(255, 59, 48, 0.24)
+  );
+}
+
+.InputErrorMessage {
+  font-size: 13px;
+  line-height: 13px;
+  color: #ff3b30;
+  padding-top: 4px;
+  padding-left: 4px;
+}
+
+.InputErrorMessageContainer {
+  height: 17px;
+}
+
+.UiModalCard .InputErrorMessageContainer {
+  height: auto;
+}
+
+.UiInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-secondary) !important;
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 22px;
+  box-sizing: border-box;
+  position: relative;
+  resize: none;
+}
+
+select.UiInput {
+  appearance: none;
+  cursor: pointer;
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='white' class='size-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E%0A");
+}

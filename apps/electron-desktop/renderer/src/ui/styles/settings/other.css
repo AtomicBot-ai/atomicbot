@@ -1,0 +1,84 @@
+/* ── Settings: Misc (skill tile states, allowlist) ──── */
+
+/* ── Disabled skill tile ─────────────────────────────── */
+
+.UiSkillCard--disabled {
+  border-color: var(--surface-overlay-subtle);
+  opacity: 0.6;
+}
+
+/* ── Clickable status badges ─────────────────────────── */
+
+.UiSkillStatus--clickable {
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.UiSkillStatus--clickable:hover {
+  opacity: 0.82;
+}
+
+.UiSkillStatus--disabled {
+  border-color: transparent;
+  background: rgba(230, 237, 243, 0.12);
+  color: rgba(230, 237, 243, 0.6);
+}
+
+/* ── Allowlist entries (Telegram, etc.) ──────────────── */
+
+.UiAllowlistEntries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.UiAllowlistEntry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-10);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--surface-overlay-subtle);
+}
+
+.UiAllowlistId {
+  font-size: 13px;
+  color: rgba(230, 237, 243, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.UiAllowlistRemove {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.UiAllowlistRemove:hover {
+  background: #414141;
+}
+
+.UiAllowlistRemove:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

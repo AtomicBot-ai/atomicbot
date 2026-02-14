@@ -1,0 +1,60 @@
+/* ── Kit: Typography (section titles, errors) ────────── */
+
+.UiSectionTitle {
+  font-size: 26px;
+  line-height: 32px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.UiSectionSubtitle {
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 20px;
+  color: #a0a0a0;
+  margin-bottom: 24px;
+
+  ol,
+  ul {
+    margin: 12px 0;
+    padding: 0;
+  }
+
+  ul > li {
+    margin-left: 16px;
+  }
+
+  ol {
+    counter-reset: item;
+    margin: 12px 0;
+    padding: 0;
+  }
+
+  ol > li {
+    counter-increment: item;
+    display: flex;
+    column-gap: 8px;
+    margin: 6px 0;
+  }
+
+  ol > li::before {
+    content: counter(item) ".";
+    text-align: right;
+    opacity: 0.8;
+  }
+
+  li {
+    margin: 8px 0;
+    padding: 0;
+  }
+}
+
+.UiSectionSubtitleAccent {
+  color: #ffffff;
+}
+
+.UiInlineError {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 122, 0, 0.95);
+}

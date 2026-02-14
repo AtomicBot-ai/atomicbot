@@ -1,0 +1,90 @@
+/* ── Onboarding: Connection setup (Google Workspace) ── */
+
+.UiGoogleWorkspaceCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 472px;
+  justify-content: space-between;
+}
+
+.UiGoogleWorkspaceConnected {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.12);
+  color: rgba(208, 255, 224, 0.98);
+}
+
+.UiGoogleWorkspaceForm {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.UiGoogleWorkspaceServices {
+  margin-top: 6px;
+}
+
+.UiGoogleWorkspaceServicesCheckboxes {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  border: 1px solid #ffffff14;
+  border-radius: var(--radius-18);
+  margin-top: 8px;
+}
+
+.UiGoogleWorkspaceBottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.UiGoogleWorkspaceActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.UiGoogleWorkspaceActions .UiPrimaryButton {
+  margin-top: 0;
+  width: auto;
+  padding: 8px 16px;
+}
+
+.UiGoogleWorkspaceDetails {
+  margin-top: 10px;
+  border-radius: var(--radius-14);
+  border: 1px solid var(--border-light);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 12px;
+}
+
+.UiGoogleWorkspaceDetailsSummary {
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(230, 237, 243, 0.72);
+}
+
+.UiGoogleWorkspaceDetailsPre {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: rgba(230, 237, 243, 0.86);
+}
+
+.UiGoogleWorkspaceFooterRow {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}

@@ -1,0 +1,144 @@
+/* ── Kit: Buttons ───────────────────────────────────── */
+
+.UiButtonRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.UiActionButton {
+  appearance: none;
+  gap: 8px;
+  padding: 8px 16px;
+  opacity: 1;
+  border-radius: var(--radius-full);
+  background: #ffffff0d;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    opacity var(--transition-base);
+  width: 100%;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 22px;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.UiActionButton:hover:enabled {
+  opacity: 0.8;
+}
+
+.UiActionButton-primary {
+  background: var(--lime-soft);
+  color: var(--surface-primary);
+}
+
+.UiActionButton-primary:hover {
+  opacity: 0.8;
+}
+
+.UiActionButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.UiPrimaryButton {
+  min-width: 250px;
+  display: block;
+  border: 0;
+  border-radius: var(--radius-full);
+  background:
+    linear-gradient(0deg, var(--lime), var(--lime)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.2) 100%);
+  color: var(--surface-primary);
+  padding: 9px 14px;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 22px;
+  transition: opacity var(--transition-base);
+  cursor: pointer;
+}
+
+.UiPrimaryButtonSm {
+  min-width: 84px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.UiPrimaryButton:hover {
+  opacity: 0.8;
+}
+
+.UiPrimaryButton:disabled {
+  background: #ffffff12;
+  cursor: default;
+  color: #ffffff80;
+}
+
+/* ── Button spinner ──────────────────────────────────── */
+@keyframes uiButtonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.UiButtonSpinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: uiButtonSpin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.UiActionButton-primary .UiButtonSpinner {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: rgba(0, 0, 0, 0.7);
+}
+
+.UiSecondaryButton {
+  min-width: 84px;
+  display: block;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--surface-tertiary);
+  color: #ffffff;
+  font-weight: 750;
+  padding: 8px;
+  transition: opacity var(--transition-base);
+  cursor: pointer;
+}
+
+.UiSecondaryButtonSm {
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.UiSecondaryButton:hover {
+  opacity: 0.8;
+}
+
+.UiSecondaryButton:active:enabled {
+  transform: translateY(0);
+}
+
+.UiSecondaryButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

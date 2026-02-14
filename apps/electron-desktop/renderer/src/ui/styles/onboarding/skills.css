@@ -1,0 +1,262 @@
+/* ── Onboarding: Skills setup ──────────────────────── */
+
+.UiSkillsBottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.UiSkillsBottomActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.UiSkillsCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 472px;
+}
+
+.UiSkillsScroll {
+  flex: 1;
+  min-height: 0;
+  margin: 18px 0;
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.UiSkillsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.UiSkillCard {
+  border-radius: var(--radius-xl);
+  padding: 12px 12px;
+  transition: border-color 0.15s ease;
+  background:
+    linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.24) 100%
+      )
+      border-box;
+
+  border: 1px solid transparent;
+}
+
+.UiSkillCard--connected {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.06);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1) inset;
+}
+
+.UiSkillCard--connected:hover {
+  border-color: rgba(34, 197, 94, 0.62);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.UiSkillTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.UiSkillTopRight {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.UiSkillIcon {
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-weight: 850;
+  font-size: 12px;
+  color: rgba(230, 237, 243, 0.92);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  position: relative;
+}
+
+.UiSkillIcon > img {
+  width: 26px;
+  height: 26px;
+}
+
+.UiSkillIcon--google {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(16, 185, 129, 0.18));
+}
+
+.UiSkillIcon--notion {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.UiSkillIcon--trello {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.UiSkillIcon--apple {
+  background: linear-gradient(135deg, rgba(230, 237, 243, 0.16), var(--border-subtle));
+}
+
+.UiSkillIcon--reminders {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(34, 197, 94, 0.12));
+}
+
+.UiSkillIcon--obsidian {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(99, 102, 241, 0.14));
+}
+
+.UiSkillIcon--github {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.1));
+}
+
+.UiSkillIcon--slack {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(34, 197, 94, 0.12));
+}
+
+.UiSkillIcon--telegram {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(34, 197, 94, 0.1));
+}
+
+.UiSkillIcon--gemini {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(59, 130, 246, 0.18));
+}
+
+.UiSkillIcon--nano-banana {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(194, 255, 64, 0.12));
+}
+
+.UiSkillIcon--discord {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.26), rgba(87, 242, 135, 0.1));
+}
+
+.UiSkillIcon--whatsapp {
+  background: linear-gradient(135deg, rgba(37, 211, 102, 0.22), rgba(18, 140, 126, 0.14));
+}
+
+.UiSkillIcon--signal {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), var(--surface-overlay-subtle));
+}
+
+.UiSkillIcon--imessage {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.22), rgba(48, 176, 199, 0.12));
+}
+
+.UiSkillIcon--matrix {
+  background: linear-gradient(135deg, rgba(11, 189, 139, 0.22), var(--border-subtle));
+}
+
+.UiSkillIcon--msteams {
+  background: linear-gradient(135deg, rgba(98, 100, 167, 0.22), rgba(80, 180, 232, 0.14));
+}
+
+.UiSkillIcon--sag {
+  background: var(--border-subtle);
+}
+
+.UiSkillName {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.UiSkillDescription {
+  font-weight: 400;
+  font-size: 13px;
+  color: #8e8e8e;
+}
+
+.UiSkillConnectButtonContainer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.UiSkillConnectButton {
+  appearance: none;
+  background: #ffffff;
+  color: var(--surface-secondary);
+  border-radius: var(--radius-full);
+  padding: 4px 9px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--transition-base);
+}
+
+.UiSkillConnectButton:hover {
+  opacity: 0.8;
+}
+
+.UiSkillConnectButtonConfigure {
+  color: #ffffff;
+  background:
+    linear-gradient(#353535, #353535) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.24) 100%
+      )
+      border-box;
+
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.UiSkillConnectButtonConfigure:hover {
+  opacity: 1;
+}
+
+.UiSkillConnectButtonCircle {
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+}
+
+.UiSkillConnectButtonCircle:hover {
+  opacity: 0.8;
+}
+
+.UiSkillConnectButton:disabled {
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.UiSkillStatus {
+  font-weight: 500;
+  padding: 3px 4px;
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+}
+
+.UiSkillStatus--connected {
+  background: #38bb581a;
+  color: #38bb58;
+}
+
+.UiSkillStatus--soon {
+  background: var(--surface-tertiary);
+  color: #aeaeae;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}

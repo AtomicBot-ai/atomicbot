@@ -1,0 +1,128 @@
+/* ── Settings: Provider tiles & filters ────────────── */
+
+.UiProviderTilesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.UiProviderTileCheck {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+}
+
+.UiProviderTileName {
+  margin-top: 10px;
+  font-weight: 650;
+  font-size: 14px;
+  color: #fff;
+}
+
+.UiProviderTileDesc {
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+/* ── Provider filter chips (model selection) ──────────── */
+
+.UiProviderFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.UiProviderFilterChip {
+  appearance: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid transparent;
+  gap: 6px;
+  background: #ffffff0f;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px 8px;
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 400;
+  min-width: 41px;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    color var(--transition-base);
+  height: 34px;
+  box-sizing: border-box;
+}
+
+.UiProviderFilterChip:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.UiProviderFilterChip--active {
+  border-color: #1c8af5;
+}
+
+.UiProviderFilterChipIcon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* "Add Provider" chip variant */
+
+.UiProviderFilterChip--add {
+  border-color: #ffffff0f;
+  background: transparent;
+  color: #ffffff;
+}
+
+.UiSettingsSubtitle {
+  font-size: 13px;
+  line-height: 16px;
+  color: #ffffff80;
+  margin-bottom: 12px;
+}
+
+/* ── Active model card ────────────────────────────────── */
+
+.UiActiveModelCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-14);
+  background:
+    linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.24) 100%
+      )
+      border-box;
+
+  border: 1px solid transparent;
+  margin-bottom: 14px;
+}
+
+.UiActiveModelInfo {
+  flex: 1;
+  min-width: 0;
+}

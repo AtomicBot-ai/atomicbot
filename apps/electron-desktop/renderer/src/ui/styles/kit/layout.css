@@ -1,0 +1,218 @@
+/* ── Kit: Layout (shell, hero, brand, cards, scroll) ─── */
+
+@keyframes gatewaySplashSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gatewaySplashEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.UiHeroShell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.UiHeroTopbar {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+}
+
+.UiBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.UiBrandIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 16px rgba(194, 255, 64, 0.16));
+}
+
+.UiBrandMark {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 255, 64, 0.18);
+  color: var(--lime);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.UiBrandText {
+  letter-spacing: 0.4px;
+  font-weight: 750;
+  color: rgba(230, 237, 243, 0.95);
+}
+
+.UiSplashLogo {
+  border-radius: var(--radius-18);
+  object-fit: contain;
+  user-select: none;
+}
+
+.UiSplashLogo--spin {
+  animation: gatewaySplashSpin 3.2s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.UiLoadingStage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.UiLoadingCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  padding: 18px 18px 34px;
+}
+
+.UiLoadingTitle {
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 32px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.UiHero {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: start center;
+  padding: 0 56px;
+}
+
+.UiHero-secondary-color {
+  background: var(--bg-base);
+}
+
+.UiHero-align-center {
+  place-items: center;
+  padding-top: 10vh;
+}
+
+.UiHero-align-start {
+  place-items: start center;
+}
+
+.UiHero-compact {
+  padding: 22px 18px 24px;
+}
+
+.UiHeroTitle {
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 0.92;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 14px;
+  text-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+.UiHero-compact .UiHeroTitle {
+  font-size: clamp(34px, 4.4vw, 54px);
+  margin: 0 0 10px;
+}
+
+.UiHeroSubtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+.UiHero-compact .UiHeroSubtitle {
+  margin: 0 0 18px;
+}
+
+.UiGlassCard {
+  box-sizing: border-box;
+  border-radius: var(--radius-xl);
+  background: var(--bg-base);
+  padding: 24px 24px 16px;
+  animation: gatewaySplashEnter 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.UiGlassCardOnboarding {
+  width: 566px;
+  height: 472px;
+  margin-top: -22px;
+}
+
+.UiGlassCard-wide {
+  width: min(800px, 800px);
+}
+
+.UiGlassCard-intro {
+  padding: 36px 32px;
+  width: min(540px, 90vw);
+}
+
+.UiIntroInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.UiIntroInner .UiSectionTitle {
+  font-size: 24px;
+  margin: 0;
+}
+
+.UiIntroInner .UiSectionSubtitle {
+  margin: 0;
+  max-width: 400px;
+}
+
+.UiScrollBox {
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px 12px;
+  border-radius: var(--radius-14);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-light);
+  color: rgba(230, 237, 243, 0.86);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.UiScrollBox p {
+  margin: 0 0 12px;
+}
+
+.UiScrollBox p:last-child {
+  margin-bottom: 0;
+}

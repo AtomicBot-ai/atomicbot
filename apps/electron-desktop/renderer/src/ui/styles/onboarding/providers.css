@@ -1,0 +1,329 @@
+/* ── Onboarding: Provider & model selection, API keys ── */
+
+.UiOnboardingDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 2px 0 10px 0;
+}
+
+.UiOnboardingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.UiOnboardingDot--active {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.UiApiKeyCard {
+  display: flex;
+  flex-direction: column;
+  height: 472px;
+  justify-content: space-between;
+}
+
+.UiProviderCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.UiProviderCard .UiProviderList {
+  flex: 1;
+}
+
+.UiApiKeyTitle {
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 32px;
+  margin-bottom: 4px;
+}
+
+.UiApiKeySubtitle {
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 20px;
+  color: #a0a0a0;
+  margin-bottom: 24px;
+}
+
+.UiContentWrapper {
+  flex: 1;
+  overflow: auto;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+}
+
+.UiApiKeyInputRow .UiInput {
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+.UiApiKeySpacer {
+  flex: 1;
+}
+
+.UiApiKeyButtonRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.UiTextButton {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 8px 6px;
+  color: rgba(230, 237, 243, 0.72);
+  font-size: 15px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: color var(--transition-base);
+}
+
+.UiTextButton:hover:enabled {
+  color: rgba(230, 237, 243, 0.92);
+}
+
+.UiTextButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.UiProviderContinueRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Link styles */
+
+.UiLinkContainer {
+  margin-top: 12px;
+  color: #a0a0a0;
+  text-align: center;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 13px;
+}
+
+.UiLink {
+  color: var(--lime-soft);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--transition-base);
+  white-space: nowrap;
+}
+
+.UiLinkMainPage {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.UiLink:hover {
+  opacity: 0.8;
+}
+
+.UiListWithScroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.UiProviderList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.UiProviderOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-base);
+}
+
+.UiProviderOption:hover {
+  background: var(--panel);
+}
+
+.UiProviderOption--selected {
+  border-color: var(--accent-color, #a3e635);
+  background-color: rgba(163, 230, 53, 0.06);
+}
+
+.UiProviderRadio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  background-color: var(--surface-tertiary);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  position: relative;
+}
+
+.UiProviderRadio:checked {
+  background-color: #1c8af5;
+}
+
+.UiProviderRadio:checked::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  top: 50%;
+  left: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  background-color: var(--bg-base);
+  border-radius: 50%;
+}
+
+.UiProviderIconWrap {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.UiProviderIcon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.UiProviderContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.UiProviderHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.UiProviderName {
+  color: #fff;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 20px;
+  margin-bottom: 2px;
+}
+
+.UiProviderBadge {
+  opacity: 1;
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+  background-color: #4e95ff26;
+  font-weight: 400;
+  font-size: 13px;
+  color: #4e95ff;
+}
+
+.UiProviderBadgePopular {
+  opacity: 1;
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+  background-color: #f34eff26;
+  font-weight: 400;
+  font-size: 13px;
+  color: #f34eff;
+}
+
+.UiProviderDescription {
+  font-weight: 400;
+  font-size: 13px;
+  color: #8e8e8e;
+}
+
+/* Model selection styles */
+
+.UiModelCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.UiModelCard .UiModelList {
+  flex: 1;
+  min-height: 0;
+}
+
+.UiModelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.UiModelGroupTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 4px;
+  margin-top: 16px;
+}
+
+.UiModelTierBadge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--surface-overlay);
+  color: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+
+.UiModelTierBadge--fast {
+  background: #ffe24e26;
+  color: #ffe24e;
+}
+
+.UiModelTierBadge--pro {
+  background: #4efff326;
+  color: #4efff3;
+}
+
+.UiModelTierBadge--ultra {
+  background: #f34eff26;
+  color: #f34eff;
+}
+
+.UiModelBottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.UiModelBottomRow .UiPrimaryButton {
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0;
+  width: auto;
+  min-width: 140px;
+}

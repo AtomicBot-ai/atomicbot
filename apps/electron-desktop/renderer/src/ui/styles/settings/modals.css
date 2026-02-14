@@ -1,0 +1,197 @@
+/* ── Settings: Modal content & skill modals ────────── */
+
+/* Modal inner layout for API key entry */
+
+.UiModalProviderHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.UiModalProviderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-10);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.UiModalProviderIcon img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.UiModalProviderName {
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+}
+
+.UiModalHelpText {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.UiModalInputRow {
+  margin-bottom: 16px;
+}
+
+.UiModalInputRow .UiInput {
+  flex: 1;
+}
+
+.UiModalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Skill modal content ─────────────────────────────── */
+
+.UiSkillModalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.UiSkillModalField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.UiSkillModalLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(230, 237, 243, 0.65);
+  letter-spacing: 0.02em;
+}
+
+.UiSkillModalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.UiSkillModalStatus {
+  font-size: 13px;
+  color: rgba(230, 237, 243, 0.55);
+  line-height: 1.4;
+}
+
+.UiSkillModalOutput {
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(230, 237, 243, 0.6);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--surface-overlay-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+.UiSkillModalSelect {
+  appearance: none;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(230, 237, 243, 0.88);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--surface-overlay-strong);
+  border-radius: var(--radius-10);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base);
+  box-sizing: border-box;
+}
+
+.UiSkillModalSelect:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.UiSkillModalSelect:focus {
+  outline: none;
+  border-color: var(--accent-color, #a3e635);
+}
+
+.UiSkillModalProviderSelect {
+  display: flex;
+  gap: 8px;
+}
+
+.UiSkillModalProviderOption {
+  appearance: none;
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #ababab;
+  background: #ffffff0f;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    opacity var(--transition-base),
+    background var(--transition-base),
+    color var(--transition-base);
+}
+
+.UiSkillModalProviderOption:hover {
+  opacity: 0.8;
+}
+
+.UiSkillModalProviderOption--active {
+  border-color: var(--lime-soft);
+  color: #ffffff;
+}
+
+/* ── Danger zone ─────────────────────────────────────── */
+
+.UiSkillModalDangerZone {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-overlay-subtle);
+}
+
+.UiSkillModalDisableButton {
+  appearance: none;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ff3333;
+  padding: 8px 16px;
+  opacity: 1;
+  border-radius: var(--radius-full);
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    opacity var(--transition-base);
+  width: 100%;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 22px;
+  border: none;
+  cursor: pointer;
+}
+
+.UiSkillModalDisableButton:hover {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.UiSkillModalDisableButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
