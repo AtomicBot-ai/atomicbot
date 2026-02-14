@@ -472,22 +472,6 @@ select.UiInput {
   color: #ffffff;
 }
 
-.UiMetaRow {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin: 10px 0 14px;
-}
-
-.UiPill {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(230, 237, 243, 0.14);
-  background: rgba(230, 237, 243, 0.05);
-}
-
 .UiPrimaryButton {
   min-width: 250px;
   display: block;

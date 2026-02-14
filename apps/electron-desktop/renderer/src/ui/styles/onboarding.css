@@ -157,39 +157,6 @@
   opacity: 0.8;
 }
 
-.UiModelOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.UiModelOption--selected {
-  border-color: var(--accent-color, #a3e635);
-  background-color: rgba(163, 230, 53, 0.06);
-}
-
-.UiModelRadio {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  margin: 0;
-  flex-shrink: 0;
-  cursor: pointer;
-  background-color: #343434;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-  position: relative;
-}
-
-.UiModelRadio:checked {
-  border-color: var(--accent-color, #a3e635);
-  background: radial-gradient(circle, var(--accent-color, #a3e635) 40%, transparent 45%);
-}
-
 .UiListWithScroll {
   display: flex;
   flex-direction: column;
@@ -239,6 +206,11 @@
 
 .UiProviderOption:hover {
   background: var(--panel);
+}
+
+.UiProviderOption--selected {
+  border-color: var(--accent-color, #a3e635);
+  background-color: rgba(163, 230, 53, 0.06);
 }
 
 .UiProviderRadio {
@@ -710,49 +682,6 @@
   color: rgba(255, 255, 255, 0.5);
   padding: 0 4px;
   margin-top: 16px;
-}
-
-.UiModelOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.UiModelOption:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.UiModelOption--selected {
-  border-color: var(--accent-color, #a3e635);
-  background-color: rgba(163, 230, 53, 0.06);
-}
-
-.UiModelRadio {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  margin: 0;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.UiModelRadio:checked {
-  border-color: var(--accent-color, #a3e635);
-  background: radial-gradient(circle, var(--accent-color, #a3e635) 40%, transparent 45%);
 }
 
 .UiModelContent {

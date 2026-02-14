@@ -12,7 +12,9 @@ import { useWelcomeAppleReminders } from "./useWelcomeAppleReminders";
 import { useWelcomeConfig } from "./useWelcomeConfig";
 import { useWelcomeGog } from "./useWelcomeGog";
 import { useWelcomeModels } from "./useWelcomeModels";
+import { useWelcomeNavigation } from "./useWelcomeNavigation";
 import { useWelcomeNotion } from "./useWelcomeNotion";
+import { useWelcomeSkillState, type SkillId } from "./useWelcomeSkillState";
 import { useWelcomeObsidian } from "./useWelcomeObsidian";
 import { useWelcomeSlack } from "./useWelcomeSlack";
 import { useWelcomeGitHub } from "./useWelcomeGitHub";
@@ -27,18 +29,6 @@ type WelcomeStateInput = {
   navigate: NavigateFunction;
 };
 
-type SkillId =
-  | "google-workspace"
-  | "media-understanding"
-  | "web-search"
-  | "notion"
-  | "trello"
-  | "apple-notes"
-  | "apple-reminders"
-  | "obsidian"
-  | "github"
-  | "slack";
-type SkillStatus = "connect" | "connected";
 type ConnectionStatus = "connect" | "connected";
 
 type ObsidianVault = {
@@ -64,32 +54,28 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
 
   const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(null);
   const [apiKeyBusy, setApiKeyBusy] = React.useState(false);
-  const [notionBusy, setNotionBusy] = React.useState(false);
-  const [trelloBusy, setTrelloBusy] = React.useState(false);
-  const [webSearchBusy, setWebSearchBusy] = React.useState(false);
-  const [mediaUnderstandingBusy, setMediaUnderstandingBusy] = React.useState(false);
-  const [appleNotesBusy, setAppleNotesBusy] = React.useState(false);
-  const [appleRemindersBusy, setAppleRemindersBusy] = React.useState(false);
-  const [obsidianBusy, setObsidianBusy] = React.useState(false);
-  const [githubBusy, setGitHubBusy] = React.useState(false);
-  const [slackBusy, setSlackBusy] = React.useState(false);
   const [telegramStatus, setTelegramStatus] = React.useState<ConnectionStatus>("connect");
   const [obsidianVaultsLoading, setObsidianVaultsLoading] = React.useState(false);
   const [obsidianVaults, setObsidianVaults] = React.useState<ObsidianVault[]>([]);
   const [selectedObsidianVaultName, setSelectedObsidianVaultName] = React.useState("");
   const [hasOpenAiProvider, setHasOpenAiProvider] = React.useState(false);
-  const [skills, setSkills] = React.useState<Record<SkillId, SkillStatus>>({
-    "google-workspace": "connect",
-    "media-understanding": "connect",
-    "web-search": "connect",
-    notion: "connect",
-    trello: "connect",
-    "apple-notes": "connect",
-    "apple-reminders": "connect",
-    obsidian: "connect",
-    github: "connect",
-    slack: "connect",
-  });
+
+  const skillState = useWelcomeSkillState({ setError, setStatus });
+  const {
+    skills,
+    markSkillConnected,
+    runNotion,
+    runTrello,
+    runWebSearch,
+    runMediaUnderstanding,
+    runAppleNotes,
+    runAppleReminders,
+    runObsidian,
+    runGitHub,
+    runSlack,
+  } = skillState;
+
+  const nav = useWelcomeNavigation(navigate);
 
   const { configPath, ensureExtendedConfig, loadConfig } = useWelcomeConfig({
     gw,
@@ -150,72 +136,10 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
     }
   }, [ensureExtendedConfig, navigate]);
 
-  const goApiKey = React.useCallback(() => {
-    void navigate(`${routes.welcome}/api-key`);
-  }, [navigate]);
-  const goModelSelect = React.useCallback(() => {
-    void navigate(`${routes.welcome}/model-select`);
-  }, [navigate]);
-  const goWebSearch = React.useCallback(() => {
-    void navigate(`${routes.welcome}/web-search`);
-  }, [navigate]);
   const goMediaUnderstanding = React.useCallback(() => {
     void refreshProviderFlags();
     void navigate(`${routes.welcome}/media-understanding`);
   }, [navigate]);
-  const goSkills = React.useCallback(() => {
-    void navigate(`${routes.welcome}/skills`);
-  }, [navigate]);
-  const goNotion = React.useCallback(() => {
-    void navigate(`${routes.welcome}/notion`);
-  }, [navigate]);
-  const goTrello = React.useCallback(() => {
-    void navigate(`${routes.welcome}/trello`);
-  }, [navigate]);
-  const goTelegramToken = React.useCallback(() => {
-    void navigate(`${routes.welcome}/telegram-token`);
-  }, [navigate]);
-  const goTelegramUser = React.useCallback(() => {
-    void navigate(`${routes.welcome}/telegram-user`);
-  }, [navigate]);
-  const goGog = React.useCallback(() => {
-    void navigate(`${routes.welcome}/gog`);
-  }, [navigate]);
-  const goGogGoogleWorkspace = React.useCallback(() => {
-    void navigate(`${routes.welcome}/gog-google-workspace`);
-  }, [navigate]);
-  const goProviderSelect = React.useCallback(() => {
-    void navigate(`${routes.welcome}/provider-select`);
-  }, [navigate]);
-  const goAppleNotes = React.useCallback(() => {
-    void navigate(`${routes.welcome}/apple-notes`);
-  }, [navigate]);
-  const goAppleReminders = React.useCallback(() => {
-    void navigate(`${routes.welcome}/apple-reminders`);
-  }, [navigate]);
-  const goGitHub = React.useCallback(() => {
-    void navigate(`${routes.welcome}/github`);
-  }, [navigate]);
-  const goConnections = React.useCallback(() => {
-    void navigate(`${routes.welcome}/connections`);
-  }, [navigate]);
-
-  const slackReturnToRef = React.useRef<"skills" | "connections">("skills");
-  const goSlackFromSkills = React.useCallback(() => {
-    slackReturnToRef.current = "skills";
-    void navigate(`${routes.welcome}/slack`);
-  }, [navigate]);
-  const goSlackFromConnections = React.useCallback(() => {
-    slackReturnToRef.current = "connections";
-    void navigate(`${routes.welcome}/slack`);
-  }, [navigate]);
-  const goSlackBack = React.useCallback(() => {
-    if (slackReturnToRef.current === "connections") {
-      goConnections();
-      return;
-    }
-    goSkills();
-  }, [goConnections, goSkills]);
 
   const refreshObsidianVaults = React.useCallback(async (): Promise<void> => {
     const api = window.openclawDesktop;
@@ -272,23 +196,14 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
     })();
   }, [navigate, refreshObsidianVaults, setError, setStatus]);
 
-  const markSkillConnected = React.useCallback((skillId: SkillId) => {
-    setSkills((prev) => {
-      if (prev[skillId] === "connected") {
-        return prev;
-      }
-      return { ...prev, [skillId]: "connected" };
-    });
-  }, []);
-
   const onProviderSelect = React.useCallback(
     (provider: Provider) => {
       setSelectedProvider(provider);
       setError(null);
       setStatus(null);
-      goApiKey();
+      nav.goApiKey();
     },
-    [goApiKey]
+    [nav.goApiKey]
   );
 
   const onApiKeySubmit = React.useCallback(
@@ -303,7 +218,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         if (ok) {
           // Load models after saving API key
           await loadModels();
-          goModelSelect();
+          nav.goModelSelect();
         }
       } catch (err) {
         setError(String(err));
@@ -311,7 +226,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         setApiKeyBusy(false);
       }
     },
-    [selectedProvider, saveApiKey, loadModels, goModelSelect]
+    [selectedProvider, saveApiKey, loadModels, nav.goModelSelect]
   );
 
   const onModelSelect = React.useCallback(
@@ -319,12 +234,12 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       setError(null);
       try {
         await saveDefaultModel(modelId);
-        goSkills();
+        nav.goSkills();
       } catch (err) {
         setError(String(err));
       }
     },
-    [saveDefaultModel, goSkills]
+    [saveDefaultModel, nav.goSkills]
   );
 
   const refreshProviderFlags = React.useCallback(async () => {
@@ -350,31 +265,21 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
 
   const onWebSearchSubmit = React.useCallback(
     async (provider: WebSearchProvider, apiKey: string) => {
-      setWebSearchBusy(true);
-      setError(null);
-      setStatus(null);
-      try {
+      await runWebSearch(async () => {
         const ok = await saveWebSearch(provider, apiKey);
         if (ok) {
           markSkillConnected("web-search");
-          goSkills();
+          nav.goSkills();
         }
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setWebSearchBusy(false);
-      }
+      });
     },
-    [goSkills, markSkillConnected, saveWebSearch]
+    [runWebSearch, nav.goSkills, markSkillConnected, saveWebSearch]
   );
 
   const onMediaUnderstandingSubmit = React.useCallback(
     async (settings: { image: boolean; audio: boolean; video: boolean }) => {
-      setMediaUnderstandingBusy(true);
-      setError(null);
       setStatus("Saving media understanding settings…");
-      try {
+      await runMediaUnderstanding(async () => {
         const snap = await loadConfig();
         const baseHash =
           typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
@@ -400,15 +305,10 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         });
         markSkillConnected("media-understanding");
         setStatus("Media understanding enabled.");
-        goSkills();
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setMediaUnderstandingBusy(false);
-      }
+        nav.goSkills();
+      });
     },
-    [goSkills, gw, loadConfig, markSkillConnected, setError, setStatus]
+    [runMediaUnderstanding, nav.goSkills, gw, loadConfig, markSkillConnected, setStatus]
   );
 
   const _mediaProvidersDetected = React.useMemo(() => {
@@ -433,51 +333,33 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
 
   const onNotionApiKeySubmit = React.useCallback(
     async (apiKey: string) => {
-      setNotionBusy(true);
-      setError(null);
-      setStatus(null);
-      try {
+      await runNotion(async () => {
         const ok = await saveNotionApiKey(apiKey);
         if (ok) {
           markSkillConnected("notion");
-          goSkills();
+          nav.goSkills();
         }
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setNotionBusy(false);
-      }
+      });
     },
-    [goSkills, markSkillConnected, saveNotionApiKey, setError, setStatus]
+    [runNotion, nav.goSkills, markSkillConnected, saveNotionApiKey]
   );
 
   const onTrelloSubmit = React.useCallback(
     async (apiKey: string, token: string) => {
-      setTrelloBusy(true);
-      setError(null);
-      setStatus(null);
-      try {
+      await runTrello(async () => {
         const ok = await saveTrello(apiKey, token);
         if (ok) {
           markSkillConnected("trello");
-          goSkills();
+          nav.goSkills();
         }
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setTrelloBusy(false);
-      }
+      });
     },
-    [goSkills, markSkillConnected, saveTrello, setError, setStatus]
+    [runTrello, nav.goSkills, markSkillConnected, saveTrello]
   );
 
   const onAppleNotesCheckAndEnable = React.useCallback(async () => {
-    setAppleNotesBusy(true);
-    setError(null);
     setStatus("Checking memo…");
-    try {
+    await runAppleNotes(async () => {
       const api = window.openclawDesktop;
       if (!api) {
         throw new Error("Desktop API not available");
@@ -491,21 +373,14 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       const ok = await enableAppleNotes({ memoResolvedPath: res.resolvedPath });
       if (ok) {
         markSkillConnected("apple-notes");
-        goSkills();
+        nav.goSkills();
       }
-    } catch (err) {
-      setError(String(err));
-      setStatus(null);
-    } finally {
-      setAppleNotesBusy(false);
-    }
-  }, [enableAppleNotes, goSkills, markSkillConnected]);
+    });
+  }, [runAppleNotes, enableAppleNotes, nav.goSkills, markSkillConnected]);
 
   const onAppleRemindersAuthorizeAndEnable = React.useCallback(async () => {
-    setAppleRemindersBusy(true);
-    setError(null);
     setStatus("Authorizing remindctl…");
-    try {
+    await runAppleReminders(async () => {
       const api = window.openclawDesktop;
       if (!api) {
         throw new Error("Desktop API not available");
@@ -529,21 +404,14 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       const ok = await enableAppleReminders({ remindctlResolvedPath: resolvedPath });
       if (ok) {
         markSkillConnected("apple-reminders");
-        goSkills();
+        nav.goSkills();
       }
-    } catch (err) {
-      setError(String(err));
-      setStatus(null);
-    } finally {
-      setAppleRemindersBusy(false);
-    }
-  }, [enableAppleReminders, goSkills, markSkillConnected]);
+    });
+  }, [runAppleReminders, enableAppleReminders, nav.goSkills, markSkillConnected]);
 
   const onObsidianRecheck = React.useCallback(async () => {
-    setObsidianBusy(true);
-    setError(null);
     setStatus("Checking obsidian-cli…");
-    try {
+    await runObsidian(async () => {
       const api = window.openclawDesktop;
       if (!api) {
         throw new Error("Desktop API not available");
@@ -563,26 +431,19 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       const defaultRes = await api.obsidianCliPrintDefaultPath();
       if (defaultRes.ok) {
         markSkillConnected("obsidian");
-        goSkills();
+        nav.goSkills();
         return;
       }
 
       // Keep the skill enabled, but don't mark as connected until default vault is set.
       setStatus('Obsidian enabled. Set a default vault, then click "Check & enable" again.');
-    } catch (err) {
-      setError(String(err));
-      setStatus(null);
-    } finally {
-      setObsidianBusy(false);
-    }
-  }, [enableObsidian, goSkills, markSkillConnected]);
+    });
+  }, [runObsidian, enableObsidian, nav.goSkills, markSkillConnected]);
 
   const onObsidianSetDefaultAndEnable = React.useCallback(
     async (vaultName: string) => {
-      setObsidianBusy(true);
-      setError(null);
       setStatus("Checking obsidian-cli…");
-      try {
+      await runObsidian(async () => {
         const api = window.openclawDesktop;
         if (!api) {
           throw new Error("Desktop API not available");
@@ -616,23 +477,16 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         }
 
         markSkillConnected("obsidian");
-        goSkills();
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setObsidianBusy(false);
-      }
+        nav.goSkills();
+      });
     },
-    [enableObsidian, goSkills, markSkillConnected]
+    [runObsidian, enableObsidian, nav.goSkills, markSkillConnected]
   );
 
   const onGitHubConnect = React.useCallback(
     async (pat: string) => {
-      setGitHubBusy(true);
-      setError(null);
       setStatus("Checking gh…");
-      try {
+      await runGitHub(async () => {
         const api = window.openclawDesktop;
         if (!api) {
           throw new Error("Desktop API not available");
@@ -672,16 +526,11 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         const ok = await enableGitHub({ ghResolvedPath: resolvedPath });
         if (ok) {
           markSkillConnected("github");
-          goSkills();
+          nav.goSkills();
         }
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setGitHubBusy(false);
-      }
+      });
     },
-    [enableGitHub, goSkills, markSkillConnected]
+    [runGitHub, enableGitHub, nav.goSkills, markSkillConnected]
   );
 
   const onSlackConnect = React.useCallback(
@@ -694,27 +543,19 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       dmPolicy: "pairing" | "allowlist" | "open" | "disabled";
       dmAllowFrom: string[];
     }) => {
-      setSlackBusy(true);
-      setError(null);
-      setStatus(null);
-      try {
+      await runSlack(async () => {
         const ok = await saveSlackConfig(settings);
         if (ok) {
           markSkillConnected("slack");
-          if (slackReturnToRef.current === "connections") {
-            goConnections();
+          if (nav.slackReturnToRef.current === "connections") {
+            nav.goConnections();
           } else {
-            goSkills();
+            nav.goSkills();
           }
         }
-      } catch (err) {
-        setError(String(err));
-        setStatus(null);
-      } finally {
-        setSlackBusy(false);
-      }
+      });
     },
-    [goConnections, goSkills, markSkillConnected, saveSlackConfig]
+    [runSlack, nav.goConnections, nav.goSkills, markSkillConnected, saveSlackConfig]
   );
 
   const onTelegramTokenNext = React.useCallback(async () => {
@@ -723,13 +564,13 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
     try {
       const ok = await saveTelegramToken();
       if (ok) {
-        goTelegramUser();
+        nav.goTelegramUser();
       }
     } catch (err) {
       setError(String(err));
       setStatus(null);
     }
-  }, [goTelegramUser, saveTelegramToken]);
+  }, [nav.goTelegramUser, saveTelegramToken]);
 
   const onTelegramUserNext = React.useCallback(async () => {
     setError(null);
@@ -738,60 +579,48 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       const ok = await saveTelegramAllowFrom();
       if (ok) {
         setTelegramStatus("connected");
-        goConnections();
+        nav.goConnections();
       }
     } catch (err) {
       setError(String(err));
       setStatus(null);
     }
-  }, [goConnections, saveTelegramAllowFrom]);
+  }, [nav.goConnections, saveTelegramAllowFrom]);
 
   return {
-    appleNotesBusy,
-    appleRemindersBusy,
-    obsidianBusy,
-    githubBusy,
-    slackBusy,
+    // Skill busy flags + skills record (from useWelcomeSkillState)
+    appleNotesBusy: skillState.appleNotesBusy,
+    appleRemindersBusy: skillState.appleRemindersBusy,
+    obsidianBusy: skillState.obsidianBusy,
+    githubBusy: skillState.githubBusy,
+    slackBusy: skillState.slackBusy,
+    notionBusy: skillState.notionBusy,
+    trelloBusy: skillState.trelloBusy,
+    webSearchBusy: skillState.webSearchBusy,
+    mediaUnderstandingBusy: skillState.mediaUnderstandingBusy,
+    skills,
+    markSkillConnected,
+
+    // Non-skill state
     apiKeyBusy,
     channelsProbe,
     configPath,
     error,
     finish,
-    goApiKey,
-    goGog,
-    goGogGoogleWorkspace,
-    goAppleNotes,
-    goAppleReminders,
+    ...nav,
     goObsidian,
-    goGitHub,
-    goConnections,
-    goSlackFromSkills,
-    goSlackFromConnections,
-    goSlackBack,
-    goModelSelect,
     goMediaUnderstanding,
-    goWebSearch,
-    goNotion,
-    goTrello,
-    goProviderSelect,
-    goSkills,
-    goTelegramToken,
-    goTelegramUser,
     gogAccount,
     gogBusy,
     gogError,
     gogOutput,
     loadModels,
-    markSkillConnected,
     models,
     modelsError,
     modelsLoading,
-    mediaUnderstandingBusy,
     hasOpenAiProvider,
     onMediaUnderstandingSubmit,
     onMediaProviderKeySubmit,
-    notionBusy,
-    trelloBusy,
     onWebSearchSubmit,
     onNotionApiKeySubmit,
     onTrelloSubmit,
@@ -816,13 +645,11 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
     setGogAccount,
     setTelegramToken,
     setTelegramUserId,
-    skills,
     start,
     startBusy,
     status,
     telegramToken,
     telegramUserId,
     telegramStatus,
-    webSearchBusy,
   };
 }
