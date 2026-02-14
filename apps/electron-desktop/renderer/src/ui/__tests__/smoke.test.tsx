@@ -71,7 +71,7 @@ import { LoadingScreen } from "../onboarding/LoadingScreen";
 import { ConsentScreen } from "../onboarding/ConsentScreen";
 import { ChatComposer } from "../chat/ChatComposer";
 import { Sidebar } from "../sidebar/Sidebar";
-import { SettingsPage } from "../SettingsPage";
+import { SettingsPage } from "../settings/SettingsPage";
 import { chatReducer } from "../../store/slices/chatSlice";
 import { configReducer } from "../../store/slices/configSlice";
 import { gatewayReducer } from "../../store/slices/gatewaySlice";

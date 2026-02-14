@@ -12,7 +12,7 @@ import {
 import { ChatPage } from "./chat/ChatPage";
 import { StartChatPage } from "./chat/StartChatPage";
 import { Sidebar } from "./sidebar/Sidebar";
-import { SettingsIndexRedirect, SettingsPage, SettingsTab } from "./SettingsPage";
+import { SettingsIndexRedirect, SettingsPage, SettingsTab } from "./settings/SettingsPage";
 import { TerminalPage } from "./terminal/TerminalPage";
 import { WelcomePage } from "./onboarding/WelcomePage";
 import { getDesktopApiOrNull } from "../ipc/desktopApi";
