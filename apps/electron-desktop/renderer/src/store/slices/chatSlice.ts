@@ -169,8 +169,9 @@ const HEARTBEAT_OK_TOKEN = "HEARTBEAT_OK";
 export function isHeartbeatMessage(role: string, text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed) {return false;}
-  // User-side: the heartbeat prompt injected by the gateway
-  if (role === "user" && trimmed.startsWith(HEARTBEAT_PROMPT_PREFIX)) {
+  // User-side: the heartbeat prompt injected by the gateway.
+  // Use includes() because gateway may prepend metadata (date headers, etc.).
+  if (role === "user" && trimmed.includes(HEARTBEAT_PROMPT_PREFIX)) {
     return true;
   }
   // Assistant-side: HEARTBEAT_OK acknowledgment (possibly with light markup or surrounding text)

@@ -59,6 +59,24 @@ type SessionWithTitle = {
 const SESSIONS_LIST_LIMIT = 50;
 const TITLE_MAX_LEN = 48;
 
+const HEARTBEAT_OK_TOKEN = "HEARTBEAT_OK";
+
+/** Returns true if a session row looks like a heartbeat-only session that should be hidden. */
+function isHeartbeatSession(row: SessionsListResult["sessions"][number]): boolean {
+  // Use cleanDerivedTitle to strip gateway metadata (date headers, untrusted
+  // context blocks, etc.) before checking for heartbeat content.
+  const title = cleanDerivedTitle(row.derivedTitle);
+  const preview = (row.lastMessagePreview ?? "").trim();
+  // Cleaned title or preview that starts with the heartbeat prompt
+  if (title.includes("HEARTBEAT.md") || title.includes(HEARTBEAT_OK_TOKEN)) {
+    return true;
+  }
+  if (preview.includes("HEARTBEAT.md") || preview === HEARTBEAT_OK_TOKEN) {
+    return true;
+  }
+  return false;
+}
+
 // cleanDerivedTitle is now in ./utils/messageParser.ts
 
 function titleFromRow(row: SessionsListResult["sessions"][number]): string {
@@ -98,7 +116,7 @@ export function Sidebar() {
           includeDerivedTitles: true,
           includeLastMessage: true,
         });
-        const rows = res?.sessions ?? [];
+        const rows = (res?.sessions ?? []).filter((row) => !isHeartbeatSession(row));
         const withTitles: SessionWithTitle[] = rows.map((row) => ({
           key: row.key,
           title: titleFromRow(row),
