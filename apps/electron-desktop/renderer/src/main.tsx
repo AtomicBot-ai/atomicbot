@@ -9,10 +9,10 @@ import { WhatsNewModal } from "./ui/WhatsNewModal";
 import { store } from "./store/store";
 import "./ui/styles/index.css";
 import "./ui/Sidebar.css";
-import "./ui/ChatTranscript.css";
-import "./ui/UserMessageBubble.css";
-import "./ui/AssistantMessage.css";
-import "./ui/ChatComposer.css";
+import "./ui/chat/ChatTranscript.css";
+import "./ui/chat/UserMessageBubble.css";
+import "./ui/chat/AssistantMessage.css";
+import "./ui/chat/ChatComposer.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

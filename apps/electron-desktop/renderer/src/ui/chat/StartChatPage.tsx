@@ -1,11 +1,11 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useGatewayRpc } from "../gateway/context";
-import type { GatewayState } from "../../../src/main/types";
-import { dataUrlToBase64, type ChatAttachmentInput } from "../store/slices/chatSlice";
+import { useGatewayRpc } from "../../gateway/context";
+import type { GatewayState } from "../../../../src/main/types";
+import { dataUrlToBase64, type ChatAttachmentInput } from "../../store/slices/chatSlice";
 import { ChatComposer, type ChatComposerRef } from "./ChatComposer";
-import { addToastError } from "./shared/toast";
-import { routes } from "./routes";
+import { addToastError } from "../shared/toast";
+import { routes } from "../routes";
 
 function newSessionKey(): string {
   return `agent:main:main:${crypto.randomUUID().slice(0, 8)}`;

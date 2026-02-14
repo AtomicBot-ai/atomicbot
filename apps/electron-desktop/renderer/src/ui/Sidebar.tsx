@@ -1,13 +1,13 @@
 import React from "react";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useGatewayRpc } from "../gateway/context";
-import type { OptimisticSession } from "./optimisticSessionContext";
-import { useOptimisticSession } from "./optimisticSessionContext";
+import type { OptimisticSession } from "./chat/optimisticSessionContext";
+import { useOptimisticSession } from "./chat/optimisticSessionContext";
 import { routes } from "./routes";
 import { addToastError } from "./shared/toast";
 import { SplashLogo } from "./shared/kit";
 import { SessionSidebarItem } from "./SessionSidebarItem";
-import { cleanDerivedTitle } from "./utils/messageParser";
+import { cleanDerivedTitle } from "./chat/messageParser";
 
 const TERMINAL_SIDEBAR_KEY = "terminal-sidebar-visible";
 

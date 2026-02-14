@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import Markdown, { type Components } from "react-markdown";
 import { useSearchParams } from "react-router-dom";
-import { getDesktopApiOrNull } from "../ipc/desktopApi";
-import { useGatewayRpc } from "../gateway/context";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { getDesktopApiOrNull } from "../../ipc/desktopApi";
+import { useGatewayRpc } from "../../gateway/context";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
   chatActions,
   extractText,
@@ -12,13 +12,13 @@ import {
   sendChatMessage,
   type ChatAttachmentInput,
   type UiMessageAttachment,
-} from "../store/slices/chatSlice";
-import type { GatewayState } from "../../../src/main/types";
+} from "../../store/slices/chatSlice";
+import type { GatewayState } from "../../../../src/main/types";
 import { ChatAttachmentCard, getFileTypeLabel } from "./ChatAttachmentCard";
 import { ChatComposer, type ChatComposerRef } from "./ChatComposer";
 import { useOptimisticSession } from "./optimisticSessionContext";
-import { addToastError } from "./shared/toast";
-import { parseUserMessageWithAttachments } from "./utils/messageParser";
+import { addToastError } from "../shared/toast";
+import { parseUserMessageWithAttachments } from "./messageParser";
 import { CopyMessageButton } from "./CopyMessageButton";
 
 type ChatEvent = {

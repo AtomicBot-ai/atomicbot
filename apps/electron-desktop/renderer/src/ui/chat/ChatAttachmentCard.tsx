@@ -6,10 +6,10 @@ export function getFileTypeLabel(mimeType: string): string {
     return "PDF File";
   }
   const [main] = mimeType.split("/");
-  if (main === "image") return "Image";
-  if (main === "audio") return "Audio";
-  if (main === "video") return "Video";
-  if (main === "text") return "Text File";
+  if (main === "image") {return "Image";}
+  if (main === "audio") {return "Audio";}
+  if (main === "video") {return "Video";}
+  if (main === "text") {return "Text File";}
   return "File";
 }
 

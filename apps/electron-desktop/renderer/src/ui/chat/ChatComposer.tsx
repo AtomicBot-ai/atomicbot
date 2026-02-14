@@ -1,7 +1,7 @@
 import React from "react";
-import type { ChatAttachmentInput } from "../store/slices/chatSlice";
+import type { ChatAttachmentInput } from "../../store/slices/chatSlice";
 import { ChatAttachmentCard, getFileTypeLabel } from "./ChatAttachmentCard";
-import { SendIcon } from "./shared/kit/icons";
+import { SendIcon } from "../shared/kit/icons";
 
 const MAX_ATTACHMENTS_DEFAULT = 5;
 /** Must match gateway CHAT_ATTACHMENT_MAX_BYTES (5MB). */

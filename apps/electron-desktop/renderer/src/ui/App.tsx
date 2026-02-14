@@ -9,8 +9,8 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { ChatPage } from "./ChatPage";
-import { StartChatPage } from "./StartChatPage";
+import { ChatPage } from "./chat/ChatPage";
+import { StartChatPage } from "./chat/StartChatPage";
 import { Sidebar } from "./Sidebar";
 import { SettingsIndexRedirect, SettingsPage, SettingsTab } from "./SettingsPage";
 import { TerminalPage } from "./TerminalPage";
@@ -25,7 +25,7 @@ import { initGatewayState } from "../store/slices/gatewaySlice";
 import { loadOnboardingFromStorage } from "../store/slices/onboardingSlice";
 import type { GatewayState } from "../../../src/main/types";
 import { isBootstrapPath, routes } from "./routes";
-import { OptimisticSessionProvider, OptimisticSessionSync } from "./optimisticSessionContext";
+import { OptimisticSessionProvider, OptimisticSessionSync } from "./chat/optimisticSessionContext";
 import { ExecApprovalOverlay } from "./ExecApprovalModal";
 
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
