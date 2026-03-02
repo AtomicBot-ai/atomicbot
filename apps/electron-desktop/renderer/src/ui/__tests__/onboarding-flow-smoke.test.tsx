@@ -38,6 +38,8 @@ import { ApiKeyPage } from "../onboarding/providers/ApiKeyPage";
 import { ModelSelectPage } from "../onboarding/providers/ModelSelectPage";
 import { SkillsSetupPage } from "../onboarding/skills/SkillsSetupPage";
 import { ConnectionsSetupPage } from "../onboarding/connections/ConnectionsSetupPage";
+import { OnboardingFlowContext } from "../onboarding/hooks/onboarding-flow-context";
+import { PAID_FLOW, SELF_FLOW } from "../onboarding/hooks/onboardingSteps";
 import { TestShell, noop, expectRendered } from "./helpers/onboarding-test-helpers";
 
 // ---------------------------------------------------------------------------
@@ -232,6 +234,72 @@ describe("Onboarding flow smoke tests", () => {
           onSkip={noop}
           onContinue={noop}
         />
+      </TestShell>
+    );
+    expectRendered(container);
+  });
+
+  // -- Unified flow context rendering (both paid and self-managed) --
+
+  it.each([
+    { flow: "paid" as const, steps: PAID_FLOW },
+    { flow: "self-managed" as const, steps: SELF_FLOW },
+  ])("SkillsSetupPage renders with $flow flow context", ({ flow, steps }) => {
+    const { container } = render(
+      <TestShell>
+        <OnboardingFlowContext.Provider value={flow}>
+          <SkillsSetupPage
+            googleWorkspaceStatus="connect"
+            onGoogleWorkspaceConnect={noop}
+            mediaUnderstandingStatus="connect"
+            onMediaUnderstandingConnect={noop}
+            webSearchStatus="connect"
+            onWebSearchConnect={noop}
+            notionStatus="connect"
+            onNotionConnect={noop}
+            trelloStatus="connect"
+            onTrelloConnect={noop}
+            appleNotesStatus="connect"
+            onAppleNotesConnect={noop}
+            appleRemindersStatus="connect"
+            onAppleRemindersConnect={noop}
+            obsidianStatus="connect"
+            onObsidianConnect={noop}
+            githubStatus="connect"
+            onGitHubConnect={noop}
+            slackStatus="connect"
+            onSlackConnect={noop}
+            totalSteps={steps.totalSteps}
+            activeStep={steps.steps.skills}
+            onBack={noop}
+            onSkip={noop}
+            onContinue={noop}
+          />
+        </OnboardingFlowContext.Provider>
+      </TestShell>
+    );
+    expectRendered(container);
+  });
+
+  it.each([
+    { flow: "paid" as const, steps: PAID_FLOW },
+    { flow: "self-managed" as const, steps: SELF_FLOW },
+  ])("ConnectionsSetupPage renders with $flow flow context", ({ flow, steps }) => {
+    const { container } = render(
+      <TestShell>
+        <OnboardingFlowContext.Provider value={flow}>
+          <ConnectionsSetupPage
+            telegramStatus="connect"
+            onTelegramConnect={noop}
+            slackStatus="connect"
+            onSlackConnect={noop}
+            totalSteps={steps.totalSteps}
+            activeStep={steps.steps.connections}
+            onBack={noop}
+            onSkip={noop}
+            onContinue={noop}
+          />
+        </OnboardingFlowContext.Provider>
       </TestShell>
     );
     expectRendered(container);

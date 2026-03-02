@@ -46,6 +46,8 @@ import { SlackConnectPage } from "../onboarding/connections/SlackConnectPage";
 import { TelegramTokenPage } from "../onboarding/connections/TelegramTokenPage";
 import { TelegramUserPage } from "../onboarding/connections/TelegramUserPage";
 import { GogPage } from "../onboarding/skills/GogPage";
+import { OnboardingFlowContext } from "../onboarding/hooks/onboarding-flow-context";
+import { PAID_FLOW, SELF_FLOW } from "../onboarding/hooks/onboardingSteps";
 import { TestShell, noop, noopAsync, expectRendered } from "./helpers/onboarding-test-helpers";
 import { expect } from "vitest";
 
@@ -348,6 +350,76 @@ describe("Onboarding connect-page smoke tests", () => {
           onSubmit={noop}
           onBack={noop}
         />
+      </TestShell>
+    );
+    expectRendered(container);
+  });
+
+  // -- Unified flow context rendering (both paid and self-managed) --
+
+  it.each([
+    { flow: "paid" as const, steps: PAID_FLOW },
+    { flow: "self-managed" as const, steps: SELF_FLOW },
+  ])("NotionConnectPage renders with $flow flow context", ({ flow, steps }) => {
+    const { container } = render(
+      <TestShell>
+        <OnboardingFlowContext.Provider value={flow}>
+          <NotionConnectPage
+            totalSteps={steps.totalSteps}
+            activeStep={steps.steps.skills}
+            status={null}
+            error={null}
+            busy={false}
+            onSubmit={noop}
+            onBack={noop}
+          />
+        </OnboardingFlowContext.Provider>
+      </TestShell>
+    );
+    expectRendered(container);
+  });
+
+  it.each([
+    { flow: "paid" as const, steps: PAID_FLOW },
+    { flow: "self-managed" as const, steps: SELF_FLOW },
+  ])("WebSearchPage renders with $flow flow context", ({ flow, steps }) => {
+    const { container } = render(
+      <TestShell>
+        <OnboardingFlowContext.Provider value={flow}>
+          <WebSearchPage
+            totalSteps={steps.totalSteps}
+            activeStep={steps.steps.skills}
+            status={null}
+            error={null}
+            busy={false}
+            onSubmit={noop}
+            onBack={noop}
+            onSkip={noop}
+          />
+        </OnboardingFlowContext.Provider>
+      </TestShell>
+    );
+    expectRendered(container);
+  });
+
+  it.each([
+    { flow: "paid" as const, steps: PAID_FLOW },
+    { flow: "self-managed" as const, steps: SELF_FLOW },
+  ])("TelegramTokenPage renders with $flow flow context", ({ flow, steps }) => {
+    const { container } = render(
+      <TestShell>
+        <OnboardingFlowContext.Provider value={flow}>
+          <TelegramTokenPage
+            totalSteps={steps.totalSteps}
+            activeStep={steps.steps.connections}
+            status={null}
+            error={null}
+            telegramToken=""
+            setTelegramToken={noop}
+            onNext={noop}
+            onSkip={noop}
+          />
+        </OnboardingFlowContext.Provider>
       </TestShell>
     );
     expectRendered(container);
