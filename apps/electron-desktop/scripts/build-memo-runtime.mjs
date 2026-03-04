@@ -227,6 +227,8 @@ async function main() {
       pyDist,
       "--workpath",
       pyBuild,
+      "--collect-all",
+      "chardet",
       entryScript,
     ],
     { cwd: buildRoot, stdio: ["ignore", "pipe", "pipe"] }
