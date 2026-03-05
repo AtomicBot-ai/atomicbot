@@ -280,6 +280,7 @@ export function AccountModelsTab(props: {
               options={modelOptions}
               placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
               disabled={state.modelsLoading || state.modelBusy || modelOptions.length === 0}
+              disabledStyles={modelOptions.length === 0}
             />
           </div>
           {modelOptions.length === 0 && !state.modelsLoading ? (
@@ -322,6 +323,7 @@ export function AccountModelsTab(props: {
                   state.modelBusy ||
                   modelOptions.length === 0
                 }
+                disabledStyles={!selectedProvider || modelOptions.length === 0}
               />
             </div>
           </div>

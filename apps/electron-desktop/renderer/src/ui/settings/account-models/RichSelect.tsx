@@ -5,6 +5,7 @@
  * @deprecated Part of the legacy AccountModels tab — scheduled for removal.
  */
 import React from "react";
+import { usePresenceTransition } from "@ui/settings/hooks/usePresenceTransition";
 import s from "./RichSelect.module.css";
 
 export type RichOption<T extends string = string> = {
@@ -54,6 +55,7 @@ export function RichSelect<T extends string>(props: {
   options: RichOption<T>[];
   placeholder?: string;
   disabled?: boolean;
+  disabledStyles?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -106,11 +108,13 @@ export function RichSelect<T extends string>(props: {
     if (!open) setSearchQuery("");
   }, [open]);
 
+  const { shouldRender, isEntered, isExiting, onTransitionEnd } = usePresenceTransition(open);
+
   return (
     <div className={s.wrapper} ref={wrapperRef}>
       <button
         type="button"
-        className={s.trigger}
+        className={`${s.trigger} ${props.disabledStyles ? s.triggerDisabled : ""}`}
         onClick={() => !props.disabled && setOpen(!open)}
         disabled={props.disabled}
         aria-haspopup="listbox"
@@ -128,13 +132,14 @@ export function RichSelect<T extends string>(props: {
           </span>
         ) : null}
 
-        {!props.disabled && (
-          <ChevronDown className={`${s.triggerChevron} ${open ? s["triggerChevron--open"] : ""}`} />
-        )}
+        <ChevronDown className={`${s.triggerChevron} ${open ? s["triggerChevron--open"] : ""}`} />
       </button>
 
-      {open ? (
-        <div className={s.dropdown}>
+      {shouldRender ? (
+        <div
+          className={`${s.dropdown} ${isExiting ? s.dropdownClosing : ""}`}
+          onTransitionEnd={onTransitionEnd}
+        >
           <div className={s.dropdownSearch}>
             <input
               type="search"
