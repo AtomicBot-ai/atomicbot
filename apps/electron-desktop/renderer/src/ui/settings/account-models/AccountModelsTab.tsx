@@ -286,7 +286,7 @@ export function AccountModelsTab(props: {
         )}
 
       {!isPaidMode && !isLoading && (
-        <>
+        <div className="fade-in">
           <div className={s.dropdownRow}>
             <div className={s.dropdownGroup}>
               <div className={s.dropdownLabel}>Provider</div>
@@ -342,7 +342,7 @@ export function AccountModelsTab(props: {
               onOAuthSuccess={handleOAuthSuccess}
             />
           )}
-        </>
+        </div>
       )}
 
       {/* Paid: account / billing content */}

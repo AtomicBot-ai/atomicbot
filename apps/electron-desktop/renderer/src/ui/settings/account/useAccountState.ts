@@ -230,6 +230,7 @@ export function useAccountState() {
     email,
     balance,
     subscription,
+    lastRefreshAt,
     loading,
     topUpPending,
     balancePolling,

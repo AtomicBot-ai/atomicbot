@@ -340,10 +340,12 @@ export function AccountTab() {
     setAuthChecked(true);
   }, []);
 
+  // Keep loader until we have at least one status response to avoid flicker when authChecked flips.
   const showLoader =
     state.mode === "paid" &&
     (!authChecked ||
       (state.jwt && state.loading) ||
+      (state.jwt && state.lastRefreshAt === null) ||
       (state.jwt && state.needsSubscription && state.subscriptionPrice === null));
 
   if (showLoader) {
