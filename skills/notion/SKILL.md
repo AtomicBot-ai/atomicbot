@@ -29,12 +29,12 @@ The `NOTION_API_KEY` environment variable is set automatically when configured t
 
 Examples below use bash syntax. On **PowerShell (Windows)** apply these changes:
 
-| bash | PowerShell |
-|------|-----------|
-| `$NOTION_API_KEY` | `$env:NOTION_API_KEY` |
-| `curl` | `curl.exe` (bare `curl` is a PowerShell alias for `Invoke-WebRequest`) |
-| `\` (line continuation) | `` ` `` (backtick) |
-| `'{"json"}'` (single-quoted body) | `'{"json"}'` (same — single quotes in PowerShell are literal) |
+| bash                              | PowerShell                                                             |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| `$NOTION_API_KEY`                 | `$env:NOTION_API_KEY`                                                  |
+| `curl`                            | `curl.exe` (bare `curl` is a PowerShell alias for `Invoke-WebRequest`) |
+| `\` (line continuation)           | `` ` `` (backtick)                                                     |
+| `'{"json"}'` (single-quoted body) | `'{"json"}'` (same — single quotes in PowerShell are literal)          |
 
 ## API Basics
 
@@ -177,5 +177,7 @@ Common property formats for database items:
 
 - Page/database IDs are UUIDs (with or without dashes)
 - The API cannot set database view filters — that's UI-only
-- Rate limit: ~3 requests/second average
+- Rate limit: ~3 requests/second average, with `429 rate_limited` responses using `Retry-After`
+- Append block children: up to 100 children per request, up to two levels of nesting in a single append request
+- Payload size limits: up to 1000 block elements and 500KB overall
 - Use `is_inline: true` when creating data sources to embed them in pages

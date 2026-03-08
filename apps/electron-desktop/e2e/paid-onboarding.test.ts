@@ -88,6 +88,7 @@ test.describe("Paid onboarding flow", () => {
     await page
       .locator('[aria-label="Connections setup"]')
       .getByRole("button", { name: /Skip|Continue/ })
+      .first()
       .click();
 
     // If user is already subscribed, this navigates to chat instead.

@@ -18,7 +18,11 @@ import {
   redactConfigSnapshot,
   restoreRedactedValues,
 } from "../../config/redact-snapshot.js";
-import { buildConfigSchema, type ConfigSchemaResponse } from "../../config/schema.js";
+import {
+  buildConfigSchema,
+  lookupConfigSchema,
+  type ConfigSchemaResponse,
+} from "../../config/schema.js";
 import { extractDeliveryInfo } from "../../config/sessions.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import {
@@ -37,9 +41,12 @@ import {
 import {
   ErrorCodes,
   errorShape,
+  formatValidationErrors,
   validateConfigApplyParams,
   validateConfigGetParams,
   validateConfigPatchParams,
+  validateConfigSchemaLookupParams,
+  validateConfigSchemaLookupResult,
   validateConfigSchemaParams,
   validateConfigSetParams,
 } from "../protocol/index.js";
@@ -112,6 +119,14 @@ function parseRawConfigOrRespond(
     return null;
   }
   return rawValue;
+}
+
+function sanitizeLookupPathForLog(path: string): string {
+  const sanitized = Array.from(path, (char) => {
+    const code = char.charCodeAt(0);
+    return code < 0x20 || code === 0x7f ? "?" : char;
+  }).join("");
+  return sanitized.length > 120 ? `${sanitized.slice(0, 117)}...` : sanitized;
 }
 
 function parseValidateConfigFromRawOrRespond(
@@ -258,6 +273,39 @@ export const configHandlers: GatewayRequestHandlers = {
       return;
     }
     respond(true, loadSchemaWithPlugins(), undefined);
+  },
+  "config.schema.lookup": ({ params, respond, context }) => {
+    if (
+      !assertValidParams(params, validateConfigSchemaLookupParams, "config.schema.lookup", respond)
+    ) {
+      return;
+    }
+    const path = (params as { path: string }).path;
+    const schema = loadSchemaWithPlugins();
+    const result = lookupConfigSchema(schema, path);
+    if (!result) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, "config schema path not found"),
+      );
+      return;
+    }
+    if (!validateConfigSchemaLookupResult(result)) {
+      const errors = validateConfigSchemaLookupResult.errors ?? [];
+      context.logGateway.warn(
+        `config.schema.lookup produced invalid payload for ${sanitizeLookupPathForLog(path)}: ${formatValidationErrors(errors)}`,
+      );
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.UNAVAILABLE, "config.schema.lookup returned invalid payload", {
+          details: { errors },
+        }),
+      );
+      return;
+    }
+    respond(true, result, undefined);
   },
   "config.set": async ({ params, respond }) => {
     if (!assertValidParams(params, validateConfigSetParams, "config.set", respond)) {

@@ -28,6 +28,16 @@ describe("Agent-specific tool filtering", () => {
     stat: async () => null,
   };
 
+  function expectReadOnlyToolSet(toolNames: string[], extraDenied: string[] = []) {
+    expect(toolNames).toContain("read");
+    expect(toolNames).not.toContain("exec");
+    expect(toolNames).not.toContain("write");
+    expect(toolNames).not.toContain("apply_patch");
+    for (const toolName of extraDenied) {
+      expect(toolNames).not.toContain(toolName);
+    }
+  }
+
   async function withApplyPatchEscapeCase(
     opts: { workspaceOnly?: boolean },
     run: (params: {
@@ -109,6 +119,34 @@ describe("Agent-specific tool filtering", () => {
             ...(params.agentTools ? { tools: params.agentTools } : {}),
           },
         ],
+      },
+    };
+  }
+
+  function createExecHostDefaultsConfig(
+    agents: Array<{ id: string; execHost?: "gateway" | "sandbox" }>,
+  ): OpenClawConfig {
+    return {
+      tools: {
+        exec: {
+          host: "sandbox",
+          security: "full",
+          ask: "off",
+        },
+      },
+      agents: {
+        list: agents.map((agent) => ({
+          id: agent.id,
+          ...(agent.execHost
+            ? {
+                tools: {
+                  exec: {
+                    host: agent.execHost,
+                  },
+                },
+              }
+            : {}),
+        })),
       },
     };
   }
@@ -222,12 +260,10 @@ describe("Agent-specific tool filtering", () => {
       agentDir: "/tmp/agent-restricted",
     });
 
-    const toolNames = tools.map((t) => t.name);
-    expect(toolNames).toContain("read");
-    expect(toolNames).not.toContain("exec");
-    expect(toolNames).not.toContain("write");
-    expect(toolNames).not.toContain("apply_patch");
-    expect(toolNames).not.toContain("edit");
+    expectReadOnlyToolSet(
+      tools.map((t) => t.name),
+      ["edit"],
+    );
   });
 
   it("should apply provider-specific tool policy", () => {
@@ -251,11 +287,7 @@ describe("Agent-specific tool filtering", () => {
       modelId: "claude-opus-4-6-thinking",
     });
 
-    const toolNames = tools.map((t) => t.name);
-    expect(toolNames).toContain("read");
-    expect(toolNames).not.toContain("exec");
-    expect(toolNames).not.toContain("write");
-    expect(toolNames).not.toContain("apply_patch");
+    expectReadOnlyToolSet(tools.map((t) => t.name));
   });
 
   it("should apply provider-specific tool profile overrides", () => {
@@ -616,7 +648,6 @@ describe("Agent-specific tool filtering", () => {
 
     const result = await execTool!.execute("call-implicit-sandbox-default", {
       command: "echo done",
-      yieldMs: 10,
     });
     const details = result?.details as { status?: string } | undefined;
     expect(details?.status).toBe("completed");
@@ -647,30 +678,10 @@ describe("Agent-specific tool filtering", () => {
   });
 
   it("should apply agent-specific exec host defaults over global defaults", async () => {
-    const cfg: OpenClawConfig = {
-      tools: {
-        exec: {
-          host: "sandbox",
-          security: "full",
-          ask: "off",
-        },
-      },
-      agents: {
-        list: [
-          {
-            id: "main",
-            tools: {
-              exec: {
-                host: "gateway",
-              },
-            },
-          },
-          {
-            id: "helper",
-          },
-        ],
-      },
-    };
+    const cfg = createExecHostDefaultsConfig([
+      { id: "main", execHost: "gateway" },
+      { id: "helper" },
+    ]);
 
     const mainTools = createOpenClawCodingTools({
       config: cfg,
@@ -717,27 +728,7 @@ describe("Agent-specific tool filtering", () => {
   });
 
   it("applies explicit agentId exec defaults when sessionKey is opaque", async () => {
-    const cfg: OpenClawConfig = {
-      tools: {
-        exec: {
-          host: "sandbox",
-          security: "full",
-          ask: "off",
-        },
-      },
-      agents: {
-        list: [
-          {
-            id: "main",
-            tools: {
-              exec: {
-                host: "gateway",
-              },
-            },
-          },
-        ],
-      },
-    };
+    const cfg = createExecHostDefaultsConfig([{ id: "main", execHost: "gateway" }]);
 
     const tools = createOpenClawCodingTools({
       config: cfg,

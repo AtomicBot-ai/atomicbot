@@ -11,6 +11,7 @@ import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { clearPluginRegistryCache } from "../../plugins/loader.js";
 import {
   getActiveTaskCount,
+  markGatewayDraining,
   resetAllLanes,
   waitForActiveTasks,
 } from "../../process/command-queue.js";
@@ -76,7 +77,9 @@ export async function runGatewayLoop(params: {
         `full process restart failed (${respawn.detail ?? "unknown error"}); falling back to in-process restart`,
       );
     } else {
-      gatewayLog.info("restart mode: in-process restart (OPENCLAW_NO_RESPAWN)");
+      gatewayLog.info(
+        `restart mode: in-process restart (${respawn.detail ?? "OPENCLAW_NO_RESPAWN"})`,
+      );
     }
     if (hadLock && !(await reacquireLockForInProcessRestart())) {
       return;
@@ -113,6 +116,9 @@ export async function runGatewayLoop(params: {
         // On restart, wait for in-flight agent turns to finish before
         // tearing down the server so buffered messages are delivered.
         if (isRestart) {
+          // Reject new enqueues immediately during the drain window so
+          // sessions get an explicit restart error instead of silent task loss.
+          markGatewayDraining();
           const activeTasks = getActiveTaskCount();
           if (activeTasks > 0) {
             gatewayLog.info(

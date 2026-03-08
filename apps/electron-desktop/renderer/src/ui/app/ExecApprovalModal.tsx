@@ -147,6 +147,17 @@ export function ExecApprovalOverlay() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Clear stale approvals when gateway reconnects (new gateway instance
+  // has an empty ExecApprovalManager, so any queued IDs are invalid).
+  const prevConnected = React.useRef(gw.connected);
+  React.useEffect(() => {
+    if (gw.connected && !prevConnected.current) {
+      setQueue([]);
+      setError(null);
+    }
+    prevConnected.current = gw.connected;
+  }, [gw.connected]);
+
   // Subscribe to gateway events
   React.useEffect(() => {
     return gw.onEvent((evt) => {
@@ -209,10 +220,20 @@ export function ExecApprovalOverlay() {
         }, 2300);
       }
     } catch (err) {
-      setError(`Exec approval failed: ${errorToMessage(err)}`);
+      const msg = errorToMessage(err);
+      if (msg.includes("unknown approval id")) {
+        setQueue((prev) => prev.filter((e) => e.id !== active.id));
+      } else {
+        setError(`Exec approval failed: ${msg}`);
+      }
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleDismiss = () => {
+    setQueue((prev) => prev.filter((e) => e.id !== active.id));
+    setError(null);
   };
 
   return (
@@ -222,6 +243,7 @@ export function ExecApprovalOverlay() {
       busy={busy}
       error={error}
       onDecision={handleDecision}
+      onDismiss={handleDismiss}
     />
   );
 }
@@ -234,26 +256,27 @@ function ExecApprovalCard({
   busy,
   error,
   onDecision,
+  onDismiss,
 }: {
   active: ExecApprovalRequest;
   queueCount: number;
   busy: boolean;
   error: string | null;
   onDecision: (d: Decision) => void;
+  onDismiss: () => void;
 }) {
   const remaining = useCountdown(active.expiresAtMs);
   const { request } = active;
 
-  // Close on Escape -> deny
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onDecision("deny");
+        onDismiss();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onDecision]);
+  }, [onDismiss]);
 
   return (
     <div
@@ -269,7 +292,24 @@ function ExecApprovalCard({
             <div className={s.ExecApprovalTitle}>Exec approval needed</div>
             <div className={s.ExecApprovalSub}>{remaining}</div>
           </div>
-          {queueCount > 1 && <div className={s.ExecApprovalBadge}>{queueCount} pending</div>}
+          <div className={s.ExecApprovalHeaderRight}>
+            {queueCount > 1 && <div className={s.ExecApprovalBadge}>{queueCount} pending</div>}
+            <button
+              className={s.ExecApprovalCloseBtn}
+              onClick={onDismiss}
+              aria-label="Close"
+              type="button"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M11 3L3 11M3 3l8 8"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Scrollable body */}

@@ -225,6 +225,26 @@ export function useModelProvidersState(props: {
     }
   }, [props.gw.connected, loadModels, refreshKeyConfiguredProviders]);
 
+  // The gateway's model catalog may still be initializing when the first
+  // few loadModels() calls land (all triggered nearly simultaneously on
+  // mount). Retry with backoff so the UI picks up models once the catalog
+  // becomes available, without requiring a manual navigation round-trip.
+  const emptyRetryRef = React.useRef(0);
+  React.useEffect(() => {
+    if (models.length > 0) {
+      emptyRetryRef.current = 0;
+      return;
+    }
+    if (initialLoadDoneRef.current && !modelsLoading && !modelsError && emptyRetryRef.current < 5) {
+      const delay = 1000 * Math.pow(1.5, emptyRetryRef.current);
+      const timer = setTimeout(() => {
+        emptyRetryRef.current += 1;
+        void loadModels();
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [modelsLoading, models.length, modelsError, loadModels]);
+
   const isProviderConfigured = React.useCallback(
     (id: ModelProvider): boolean => {
       const configEnabled = configuredProviders.has(id);
@@ -271,6 +291,7 @@ export function useModelProvidersState(props: {
           mode: "api_key",
           notePrefix: "Settings",
         });
+        await props.gw.request("secrets.reload", {});
         await props.reload();
         await refreshKeyConfiguredProviders();
         setModalProvider(null);
@@ -303,6 +324,7 @@ export function useModelProvidersState(props: {
           mode: "token",
           notePrefix: "Settings",
         });
+        await props.gw.request("secrets.reload", {});
         await props.reload();
         await refreshKeyConfiguredProviders();
         setModalProvider(null);

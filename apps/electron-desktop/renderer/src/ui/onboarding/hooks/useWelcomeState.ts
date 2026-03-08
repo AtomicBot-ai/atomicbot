@@ -182,6 +182,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
             profileId,
             notePrefix: "Welcome",
           });
+          await gw.request("secrets.reload", {});
         }
         await loadModels();
         nav.goModelSelect();

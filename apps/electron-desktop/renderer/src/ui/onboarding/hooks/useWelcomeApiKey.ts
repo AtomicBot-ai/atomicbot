@@ -45,6 +45,10 @@ export function useWelcomeApiKey({
         mode: "api_key",
         notePrefix: "Welcome",
       });
+      // config.patch resets the model catalog cache but the gateway's in-memory
+      // auth profile snapshot is still stale. Force a secrets reload so the
+      // gateway re-reads credentials from disk before the caller fetches models.
+      await gw.request("secrets.reload", {});
       setStatus(`${provider} API key saved.`);
       return true;
     },
@@ -73,6 +77,7 @@ export function useWelcomeApiKey({
         mode: "token",
         notePrefix: "Welcome",
       });
+      await gw.request("secrets.reload", {});
       setStatus(`${provider} setup token saved.`);
       return true;
     },

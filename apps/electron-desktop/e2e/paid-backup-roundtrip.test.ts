@@ -64,6 +64,7 @@ test.describe("Paid backup roundtrip (paid -> self -> paid)", () => {
     await page
       .locator('[aria-label="Connections setup"]')
       .getByRole("button", { name: /Skip|Continue/ })
+      .first()
       .click();
 
     const destination = await Promise.race([

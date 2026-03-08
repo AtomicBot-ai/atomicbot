@@ -1,6 +1,9 @@
 import type { SsrFPolicy } from "../infra/net/ssrf.js";
-import { resolveRemoteEmbeddingBearerClient } from "./embeddings-remote-client.js";
-import { fetchRemoteEmbeddingVectors } from "./embeddings-remote-fetch.js";
+import { normalizeEmbeddingModelWithPrefixes } from "./embeddings-model-normalize.js";
+import {
+  createRemoteEmbeddingProvider,
+  resolveRemoteEmbeddingClient,
+} from "./embeddings-remote-provider.js";
 import type { EmbeddingProvider, EmbeddingProviderOptions } from "./embeddings.js";
 
 export type MistralEmbeddingClient = {
@@ -14,45 +17,24 @@ export const DEFAULT_MISTRAL_EMBEDDING_MODEL = "mistral-embed";
 const DEFAULT_MISTRAL_BASE_URL = "https://api.mistral.ai/v1";
 
 export function normalizeMistralModel(model: string): string {
-  const trimmed = model.trim();
-  if (!trimmed) {
-    return DEFAULT_MISTRAL_EMBEDDING_MODEL;
-  }
-  if (trimmed.startsWith("mistral/")) {
-    return trimmed.slice("mistral/".length);
-  }
-  return trimmed;
+  return normalizeEmbeddingModelWithPrefixes({
+    model,
+    defaultModel: DEFAULT_MISTRAL_EMBEDDING_MODEL,
+    prefixes: ["mistral/"],
+  });
 }
 
 export async function createMistralEmbeddingProvider(
   options: EmbeddingProviderOptions,
 ): Promise<{ provider: EmbeddingProvider; client: MistralEmbeddingClient }> {
   const client = await resolveMistralEmbeddingClient(options);
-  const url = `${client.baseUrl.replace(/\/$/, "")}/embeddings`;
-
-  const embed = async (input: string[]): Promise<number[][]> => {
-    if (input.length === 0) {
-      return [];
-    }
-    return await fetchRemoteEmbeddingVectors({
-      url,
-      headers: client.headers,
-      ssrfPolicy: client.ssrfPolicy,
-      body: { model: client.model, input },
-      errorPrefix: "mistral embeddings failed",
-    });
-  };
 
   return {
-    provider: {
+    provider: createRemoteEmbeddingProvider({
       id: "mistral",
-      model: client.model,
-      embedQuery: async (text) => {
-        const [vec] = await embed([text]);
-        return vec ?? [];
-      },
-      embedBatch: embed,
-    },
+      client,
+      errorPrefix: "mistral embeddings failed",
+    }),
     client,
   };
 }
@@ -60,11 +42,10 @@ export async function createMistralEmbeddingProvider(
 export async function resolveMistralEmbeddingClient(
   options: EmbeddingProviderOptions,
 ): Promise<MistralEmbeddingClient> {
-  const { baseUrl, headers, ssrfPolicy } = await resolveRemoteEmbeddingBearerClient({
+  return await resolveRemoteEmbeddingClient({
     provider: "mistral",
     options,
     defaultBaseUrl: DEFAULT_MISTRAL_BASE_URL,
+    normalizeModel: normalizeMistralModel,
   });
-  const model = normalizeMistralModel(options.model);
-  return { baseUrl, headers, ssrfPolicy, model };
 }

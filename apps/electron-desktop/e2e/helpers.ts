@@ -84,7 +84,7 @@ export async function selectSelfManaged(page: Page): Promise<void> {
   await waitForSetupModePage(page);
   await page
     .locator('[aria-label="Setup mode selection"]')
-    .getByRole("button", { name: "Continue with API key", exact: true })
+    .getByRole("button", { name: "Set up with API keys", exact: true })
     .click();
 }
 

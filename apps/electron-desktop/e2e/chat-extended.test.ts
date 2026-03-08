@@ -126,7 +126,7 @@ test.describe("Chat — extended interactions", () => {
     await deleteBtn.click();
 
     // UI shows a custom ConfirmDeleteDialog — click its Delete button
-    const confirmDialog = page.locator('[aria-label="Delete session"]');
+    const confirmDialog = page.getByRole("dialog", { name: /Delete session/ });
     await confirmDialog.waitFor({ state: "visible", timeout: 5_000 });
     await confirmDialog.getByRole("button", { name: "Delete" }).click();
 

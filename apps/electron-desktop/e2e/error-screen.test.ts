@@ -16,9 +16,13 @@ test.describe("Error screen (gateway failure)", () => {
     test.setTimeout(60_000);
     const { app, page } = ctx;
 
-    await page.waitForLoadState("domcontentloaded");
+    // Wait for gateway to fully initialize (consent screen confirms "ready" state
+    // has been received and Redux is set up) before simulating failure.
+    await page.locator('[role="dialog"][aria-label="User agreement"]').waitFor({
+      state: "visible",
+      timeout: 60_000,
+    });
 
-    // Send the failed state repeatedly to win against real gateway state updates
     const sendFailed = async () => {
       await simulateGatewayState(app, {
         kind: "failed",
@@ -28,9 +32,9 @@ test.describe("Error screen (gateway failure)", () => {
       });
     };
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       await sendFailed();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(300);
       if (
         await page
           .getByText("OpenClaw Gateway failed to start")

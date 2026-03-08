@@ -87,6 +87,7 @@ export function OAuthModalContent(props: {
               ),
               note: `Settings: enable ${providerId} oauth profile`,
             });
+            await gw.request("secrets.reload", {});
           } catch {
             // Non-fatal: credentials are already stored in auth-profiles.json.
           }

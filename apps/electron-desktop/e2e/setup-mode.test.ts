@@ -49,7 +49,7 @@ test.describe("Setup mode selection page", () => {
     await expect(container.getByText("Manual setup")).toBeVisible();
     await expect(container.getByText("Free with your own API Keys")).toBeVisible();
     await expect(
-      container.getByRole("button", { name: "Continue with API key", exact: true })
+      container.getByRole("button", { name: "Set up with API keys", exact: true })
     ).toBeVisible();
   });
 
