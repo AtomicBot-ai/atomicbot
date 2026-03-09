@@ -53,8 +53,32 @@ function logAdaptiveExternal(pkgName) {
   console.log(`[electron-desktop] Added adaptive external: ${pkgName}`);
 }
 
+// Redirect relative imports that resolve under vendor/openclaw/src/ to
+// vendor/openclaw/dist/ (src/ is not deployed; only dist/ exists).
+function createVendorSrcToDistPlugin(vendorDir) {
+  const srcDir = path.join(vendorDir, "src");
+  const distDir = path.join(vendorDir, "dist");
+  return {
+    name: "vendor-src-to-dist",
+    setup(build) {
+      build.onResolve({ filter: /^\./ }, (args) => {
+        if (!args.importer) return null;
+        const resolved = path.resolve(path.dirname(args.importer), args.path);
+        if (!resolved.startsWith(srcDir + path.sep) && !resolved.startsWith(srcDir + "/"))
+          return null;
+        const rel = path.relative(srcDir, resolved);
+        const distPath = path.join(distDir, rel);
+        for (const candidate of [distPath, distPath.replace(/\.ts$/, ".js")]) {
+          if (fs.existsSync(candidate)) return { path: candidate };
+        }
+        return { path: args.path, external: true };
+      });
+    },
+  };
+}
+
 async function buildEntryWithAdaptiveExternals(params) {
-  const { esbuild, entryJs, bundledPath, initialExternals } = params;
+  const { esbuild, entryJs, bundledPath, initialExternals, plugins } = params;
   const adaptive = new Set();
   const maxAttempts = 12;
 
@@ -72,6 +96,7 @@ async function buildEntryWithAdaptiveExternals(params) {
         metafile: true,
         logLimit: 0,
         external: [...effectiveExternals, "node:*", ...NODE_BUILTINS],
+        plugins: plugins || [],
         banner: {
           js: 'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);',
         },
@@ -438,11 +463,14 @@ async function main() {
     esbuild = await import("esbuild");
     const bundledPath = path.join(distDir, "entry.bundled.js");
 
+    const vendorSrcPlugin = createVendorSrcToDistPlugin(outDir);
+
     const adaptiveBuild = await buildEntryWithAdaptiveExternals({
       esbuild,
       entryJs,
       bundledPath,
       initialExternals: [],
+      plugins: [vendorSrcPlugin],
     });
     const mainBuild = adaptiveBuild.mainBuild;
     effectiveExternals = adaptiveBuild.effectiveExternals;
@@ -492,7 +520,6 @@ async function main() {
           const extIndex = path.join(extDir, "index.ts");
           if (!fs.existsSync(extIndex)) continue;
           const bundledFile = path.join(extDir, "_bundled.js");
-          const srcExternals = Array.from({ length: 6 }, (_, i) => `${"../".repeat(i + 2)}src/*`);
           await esbuildForExt.build({
             entryPoints: [extIndex],
             bundle: true,
@@ -501,10 +528,10 @@ async function main() {
             outfile: bundledFile,
             logLimit: 0,
             nodePaths: extNodePaths,
+            plugins: [vendorSrcPlugin],
             external: [
               "openclaw/plugin-sdk",
               "openclaw/plugin-sdk/*",
-              ...srcExternals,
               "node:*",
               ...effectiveExternals,
             ],
