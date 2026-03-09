@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="apps/electron-desktop/assets/icon-sm.png" alt="Atomic Bot" width="128">
+
 # Atomic Bot
 
 ### Your personal AI assistant — right on your desktop.
@@ -8,7 +10,7 @@ One app. All your AI models. All your tools. All your messengers.
 
 **[Get Atomic Bot](https://atomicbot.ai)** · **[Download for macOS](https://atomicbot.ai)** · **[Download for Windows](https://atomicbot.ai)**
 
-[![macOS](https://img.shields.io/badge/macOS-arm64%20%7C%20x64-000?style=for-the-badge&logo=apple&logoColor=white)](https://atomicbot.ai)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-000?style=for-the-badge&logo=apple&logoColor=white)](https://atomicbot.ai)
 [![Windows](https://img.shields.io/badge/Windows-x64-0078D4?style=for-the-badge&logo=windows11&logoColor=white)](https://atomicbot.ai)
 
 </div>
@@ -107,10 +109,10 @@ Export your entire configuration as a ZIP snapshot. Restore it on a new machine 
 
 ## Platforms
 
-| Platform | Architecture                       | Format                  |
-| -------- | ---------------------------------- | ----------------------- |
-| macOS    | Apple Silicon (arm64), Intel (x64) | `.zip`                  |
-| Windows  | x64                                | `.exe` (NSIS installer) |
+| Platform | Architecture          | Format                  |
+| -------- | --------------------- | ----------------------- |
+| macOS    | Apple Silicon (arm64) | `.dmg`                  |
+| Windows  | x64                   | `.exe` (NSIS installer) |
 
 ## Built with
 
