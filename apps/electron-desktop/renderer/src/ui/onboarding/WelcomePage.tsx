@@ -207,6 +207,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
               error={welcome.error}
               onSelect={welcome.onProviderSelect}
               onBack={() => void navigate(`${routes.welcome}/setup-mode`)}
+              onSkip={welcome.goSkills}
             />
           }
         />
@@ -262,6 +263,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
               onSelect={(modelId) => void welcome.onModelSelect(modelId)}
               onBack={welcome.goApiKey}
               onRetry={() => void welcome.loadModels()}
+              onSkip={welcome.goSkills}
             />
           }
         />

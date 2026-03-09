@@ -1,6 +1,12 @@
 import React, { useEffect } from "react";
 
-import { GlassCard, HeroPageLayout, OnboardingDots, PrimaryButton } from "@shared/kit";
+import {
+  GlassCard,
+  HeroPageLayout,
+  OnboardingDots,
+  PrimaryButton,
+  SecondaryButton,
+} from "@shared/kit";
 import {
   type ModelEntry,
   TIER_INFO,
@@ -19,6 +25,7 @@ export function ModelSelectPage(props: {
   onSelect: (modelId: string) => void;
   onBack: () => void;
   onRetry: () => void;
+  onSkip?: () => void;
 }) {
   const [selected, setSelected] = React.useState<string | null>(null);
 
@@ -149,13 +156,20 @@ export function ModelSelectPage(props: {
           <button className="UiTextButton" onClick={props.onBack}>
             Back
           </button>
-          <PrimaryButton
-            size={"sm"}
-            disabled={!selected}
-            onClick={() => selected && props.onSelect(selected)}
-          >
-            Continue
-          </PrimaryButton>
+          <div className="UiSkillsBottomActions">
+            {props.onSkip ? (
+              <SecondaryButton size={"sm"} onClick={props.onSkip}>
+                Skip
+              </SecondaryButton>
+            ) : null}
+            <PrimaryButton
+              size={"sm"}
+              disabled={!selected}
+              onClick={() => selected && props.onSelect(selected)}
+            >
+              Continue
+            </PrimaryButton>
+          </div>
         </div>
       </GlassCard>
     </HeroPageLayout>

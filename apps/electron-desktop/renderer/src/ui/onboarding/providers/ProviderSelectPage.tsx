@@ -1,6 +1,12 @@
 import React, { useEffect } from "react";
 
-import { GlassCard, HeroPageLayout, OnboardingDots, PrimaryButton } from "@shared/kit";
+import {
+  GlassCard,
+  HeroPageLayout,
+  OnboardingDots,
+  PrimaryButton,
+  SecondaryButton,
+} from "@shared/kit";
 
 import {
   MODEL_PROVIDERS,
@@ -17,6 +23,7 @@ export function ProviderSelectPage(props: {
   onSelect: (provider: Provider) => void;
   selectedProvider: Provider | null;
   onBack?: () => void;
+  onSkip?: () => void;
 }) {
   const [selected, setSelected] = React.useState<Provider | null>(
     props.selectedProvider ? props.selectedProvider : null
@@ -77,7 +84,12 @@ export function ProviderSelectPage(props: {
               </button>
             ) : null}
           </div>
-          <div>
+          <div className="UiSkillsBottomActions">
+            {props.onSkip ? (
+              <SecondaryButton size={"sm"} onClick={props.onSkip}>
+                Skip
+              </SecondaryButton>
+            ) : null}
             <PrimaryButton
               size={"sm"}
               disabled={!selected}
