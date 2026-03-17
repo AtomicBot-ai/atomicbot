@@ -168,7 +168,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
               selectedModel={paid.model.selectedName ?? paid.model.selected ?? "GPT-5.2 Pro"}
               subscriptionPrice={paid.pay.subscriptionPrice}
               onPay={() => void paid.pay.onPay()}
-              onBack={paid.nav.goPaidModelSelect}
+              onBack={welcome.goConnections}
               onCancelPayment={paid.pay.cancelPending}
               busy={paid.pay.busy}
               paymentPending={paid.pay.pending}
