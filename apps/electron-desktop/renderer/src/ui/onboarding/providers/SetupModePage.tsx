@@ -1,5 +1,3 @@
-import React from "react";
-
 import { GlassCard, HeroPageLayout, OnboardingDots, SecondaryButton } from "@shared/kit";
 
 import s from "./SetupModePage.module.css";
@@ -54,6 +52,12 @@ export function SetupModePage(props: {
               </SecondaryButton>
             </div>
           </div>
+
+          {props.onBack && (
+            <button className="UiTextButton" type="button" onClick={props.onBack}>
+              ← Back to home
+            </button>
+          )}
         </div>
       </GlassCard>
     </HeroPageLayout>

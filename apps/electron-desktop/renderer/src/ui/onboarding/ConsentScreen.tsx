@@ -16,11 +16,12 @@ export function ConsentScreen({
   onAccepted,
   onImport,
   onLocalLlm,
+  onboarded,
 }: {
   onAccepted: () => void;
   onImport: () => void;
-  // sigma: optional handler for Local LLM mode
   onLocalLlm?: () => void;
+  onboarded?: boolean;
 }) {
   const api = getDesktopApiOrNull() as ConsentDesktopApi | null;
   const [busy, setBusy] = React.useState(false);
@@ -79,17 +80,19 @@ export function ConsentScreen({
             disabled={busy}
             onClick={() => void acceptAndRun(onAccepted)}
           >
-            Create a new AI agent
+            {onboarded ? "My AI agent" : "Create a new AI agent"}
           </PrimaryButton>
 
-          <button
-            type="button"
-            className={s.UiConsentSecondaryButton}
-            disabled={busy}
-            onClick={() => void acceptAndRun(onImport)}
-          >
-            Import an existing setup
-          </button>
+          {!onboarded && (
+            <button
+              type="button"
+              className={s.UiConsentSecondaryButton}
+              disabled={busy}
+              onClick={() => void acceptAndRun(onImport)}
+            >
+              Import an existing setup
+            </button>
+          )}
 
           <div className="UiLinkContainer">
             <span>

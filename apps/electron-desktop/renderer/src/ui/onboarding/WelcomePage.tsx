@@ -68,7 +68,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
 
   React.useEffect(() => {
     if (onboarded) {
-      void navigate("/chat", { replace: true });
+      void navigate(routes.consent, { replace: true });
     }
   }, [navigate, onboarded]);
 
@@ -206,7 +206,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
               selectedProvider={welcome.selectedProvider}
               error={welcome.error}
               onSelect={welcome.onProviderSelect}
-              onBack={() => void navigate(`${routes.welcome}/setup-mode`)}
+              onBack={() => void navigate(routes.consent)}
               onSkip={welcome.goSkills}
             />
           }

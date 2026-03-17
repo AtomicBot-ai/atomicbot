@@ -32,8 +32,6 @@ import {
   OptimisticSessionSync,
 } from "../chat/hooks/optimisticSessionContext";
 import { ExecApprovalOverlay } from "./ExecApprovalModal";
-import { usePaidStatusBridge } from "./hooks/usePaidStatusBridge";
-import { SubscriptionPromoBannerSource } from "../shared/banners/SubscriptionPromoBannerSource";
 import { UpdateBanner } from "../updates/UpdateBanner";
 import { DefenderBanner } from "../updates/DefenderBanner";
 import { AppBanners } from "../shared/banners/AppBanners";
@@ -58,7 +56,6 @@ function SidebarLayout({ state }: { state: Extract<GatewayState, { kind: "ready"
       <OptimisticSessionProvider>
         <OptimisticSessionSync />
         <ExecApprovalOverlay />
-        <SubscriptionPromoBannerSource />
         <div className={a.UiAppShell}>
           <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
             <Sidebar />
@@ -81,7 +78,7 @@ function Topbar() {
   return (
     <div className={a.UiAppTopbar}>
       <NavLink to={routes.chat} className={a.UiAppNavLink}>
-        <Brand text="ATOMIC BOT" iconSrc={brandIconUrl} iconAlt="" />
+        <Brand text="SIGMA ECLIPSE" iconSrc={brandIconUrl} iconAlt="" />
       </NavLink>
 
       <div className={a.UiAppTopbarActions}>
@@ -98,7 +95,7 @@ function Topbar() {
               fill="#121212"
             />
           </svg>
-          <span>Back to Atomic Bot</span>
+          <span>Back to Sigma Eclipse</span>
         </NavLink>
       </div>
     </div>
@@ -162,7 +159,6 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const didAutoNavRef = React.useRef(false);
-  usePaidStatusBridge();
 
   React.useEffect(() => {
     void dispatch(initGatewayState());
@@ -183,8 +179,7 @@ export function App() {
       const path = location.pathname || "/";
       if (isBootstrapPath(path)) {
         didAutoNavRef.current = true;
-        const destination = onboarded ? routes.chat : routes.consent;
-        void navigate(destination, { replace: true });
+        void navigate(routes.consent, { replace: true });
       }
       return;
     }
@@ -205,7 +200,14 @@ export function App() {
           path={routes.consent}
           element={
             <ConsentScreen
-              onAccepted={() => void navigate(routes.welcome, { replace: true })}
+              onboarded={onboarded}
+              onAccepted={() => {
+                if (onboarded) {
+                  void navigate(routes.chat, { replace: true });
+                } else {
+                  void navigate(routes.welcome, { replace: true });
+                }
+              }}
               onImport={() => void navigate(`${routes.welcome}/restore`, { replace: true })}
               onLocalLlm={() => void navigate(routes.sigma, { replace: true })}
             />
