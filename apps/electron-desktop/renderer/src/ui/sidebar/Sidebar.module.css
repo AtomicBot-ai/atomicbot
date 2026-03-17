@@ -96,8 +96,16 @@
     color 140ms ease;
 }
 
+.UiChatSidebarFooter button.UiChatSidebarSettings {
+  width: 100%;
+  border: none;
+  background: none;
+  appearance: none;
+  text-align: left;
+}
+
 .UiChatSidebarSettings:hover {
-  background: var(--border-subtle);
+  background: var(--border-subtle) !important;
   color: var(--text);
 }
 

@@ -12,6 +12,7 @@
   width: 566px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .UiSetupHeaderButton {
