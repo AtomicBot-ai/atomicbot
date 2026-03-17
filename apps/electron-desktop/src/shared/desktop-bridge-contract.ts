@@ -1,6 +1,15 @@
 import type { GogExecResult } from "../main/gog/types";
 import type { GatewayState, ResetAndCloseResult } from "../main/types";
 import type { ExecResult } from "./types";
+// sigma: Local LLM types
+import type {
+  SigmaAppSettings,
+  SigmaDownloadProgress,
+  SigmaModelInfo,
+  SigmaRecommendedSettings,
+  SigmaRuntimeMode,
+  SigmaServerStatus,
+} from "./sigma/types";
 
 export type UpdateAvailablePayload = {
   version: string;
@@ -163,6 +172,33 @@ export interface OpenclawDesktopApi {
   onTerminalExit: (
     cb: (payload: { id: string; exitCode: number; signal?: number }) => void
   ) => () => void;
+
+  // sigma: Local LLM API
+  sigmaStartServer: () => Promise<string>;
+  sigmaStopServer: () => Promise<string>;
+  sigmaGetServerStatus: () => Promise<SigmaServerStatus>;
+  sigmaCheckLlamaVersion: () => Promise<boolean>;
+  sigmaDownloadLlamaCpp: () => Promise<string>;
+  sigmaDownloadModel: (modelName: string) => Promise<string>;
+  sigmaListModels: () => Promise<SigmaModelInfo[]>;
+  sigmaCheckModel: (modelName: string) => Promise<boolean>;
+  sigmaDeleteModel: (modelName: string) => Promise<string>;
+  sigmaGetActiveModel: () => Promise<string>;
+  sigmaSetActiveModel: (modelName: string) => Promise<string>;
+  sigmaGetSettings: () => Promise<SigmaAppSettings>;
+  sigmaSetPort: (port: number) => Promise<string>;
+  sigmaSetCtxSize: (ctxSize: number) => Promise<string>;
+  sigmaSetGpuLayers: (gpuLayers: number) => Promise<string>;
+  sigmaGetSystemMemory: () => Promise<number>;
+  sigmaGetRecommendedSettings: () => Promise<SigmaRecommendedSettings>;
+  sigmaGetAppDataPath: () => Promise<string>;
+  sigmaGetLogsPath: () => Promise<string>;
+  sigmaClearBinaries: () => Promise<string>;
+  sigmaClearModels: () => Promise<string>;
+  sigmaClearAllData: () => Promise<string>;
+  sigmaSetRuntimeMode: (mode: SigmaRuntimeMode) => Promise<{ ok: true }>;
+  sigmaGetRuntimeMode: () => Promise<{ mode: SigmaRuntimeMode }>;
+  onSigmaDownloadProgress: (cb: (payload: SigmaDownloadProgress) => void) => () => void;
 }
 
 export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
@@ -243,4 +279,30 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "onDeepLink",
   "onTerminalData",
   "onTerminalExit",
+  // sigma: Local LLM keys
+  "sigmaStartServer",
+  "sigmaStopServer",
+  "sigmaGetServerStatus",
+  "sigmaCheckLlamaVersion",
+  "sigmaDownloadLlamaCpp",
+  "sigmaDownloadModel",
+  "sigmaListModels",
+  "sigmaCheckModel",
+  "sigmaDeleteModel",
+  "sigmaGetActiveModel",
+  "sigmaSetActiveModel",
+  "sigmaGetSettings",
+  "sigmaSetPort",
+  "sigmaSetCtxSize",
+  "sigmaSetGpuLayers",
+  "sigmaGetSystemMemory",
+  "sigmaGetRecommendedSettings",
+  "sigmaGetAppDataPath",
+  "sigmaGetLogsPath",
+  "sigmaClearBinaries",
+  "sigmaClearModels",
+  "sigmaClearAllData",
+  "sigmaSetRuntimeMode",
+  "sigmaGetRuntimeMode",
+  "onSigmaDownloadProgress",
 ];

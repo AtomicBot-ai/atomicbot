@@ -7,6 +7,8 @@ export const routes = {
   chat: "/chat",
   settings: "/settings",
   terminal: "/terminal",
+  // sigma: Local LLM main view
+  sigma: "/sigma",
 } as const;
 
 export function isBootstrapPath(pathname: string): boolean {

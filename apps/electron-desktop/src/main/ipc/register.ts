@@ -6,6 +6,8 @@
 import { registerGogIpcHandlers } from "../gog/ipc";
 import { registerResetAndCloseIpcHandler } from "../reset/ipc";
 import { registerWhisperIpcHandlers } from "../whisper/ipc";
+// sigma: Local LLM IPC
+import { registerSigmaIpcHandlers, type SigmaHandlerParams } from "./sigma";
 
 import type { RegisterParams } from "./types";
 import { registerAuthHandlers } from "./auth-ipc";
@@ -24,7 +26,7 @@ import { registerDefenderHandlers } from "./defender-ipc";
 
 export { type RegisterParams } from "./types";
 
-export function registerIpcHandlers(params: RegisterParams) {
+export function registerIpcHandlers(params: RegisterParams & { sigma: SigmaHandlerParams }) {
   registerAuthHandlers(params);
   registerFileHandlers(params);
   registerKeyHandlers(params);
@@ -42,4 +44,7 @@ export function registerIpcHandlers(params: RegisterParams) {
   registerGogIpcHandlers(params);
   registerWhisperIpcHandlers(params);
   registerResetAndCloseIpcHandler(params);
+
+  // sigma: register Local LLM IPC handlers
+  registerSigmaIpcHandlers(params.sigma);
 }

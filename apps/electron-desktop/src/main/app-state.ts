@@ -1,6 +1,8 @@
 import type { BrowserWindow, Tray } from "electron";
 import type { ChildProcess } from "node:child_process";
 import type { GatewayState } from "./types";
+// sigma: Local LLM types
+import type { SigmaRuntimeMode } from "../shared/sigma/types";
 
 /**
  * Mutable application state that was previously spread across module-level
@@ -19,6 +21,9 @@ export interface AppState {
   gatewayState: GatewayState | null;
   consentAccepted: boolean;
   isQuitting: boolean;
+  // sigma: Local LLM process state
+  sigmaServerProcess: { current: ChildProcess | null };
+  sigmaRuntimeMode: { current: SigmaRuntimeMode };
 }
 
 export function createAppState(): AppState {
@@ -34,5 +39,8 @@ export function createAppState(): AppState {
     gatewayState: null,
     consentAccepted: false,
     isQuitting: false,
+    // sigma: Local LLM defaults
+    sigmaServerProcess: { current: null },
+    sigmaRuntimeMode: { current: "openclaw" },
   };
 }

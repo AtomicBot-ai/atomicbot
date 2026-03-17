@@ -1,0 +1,29 @@
+/* ── Status Panel ────────────────────────────────────── */
+
+.sigma-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.sigma-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+}
+
+.sigma-status-label {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sigma-status-message {
+  color: var(--muted2);
+  font-size: 14px;
+  margin: 0;
+}

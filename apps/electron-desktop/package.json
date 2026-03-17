@@ -2,7 +2,7 @@
   "name": "atomicbot-desktop",
   "private": true,
   "version": "1.0.62",
-  "description": "Atomic Bot makes things for you",
+  "description": "Sigma Eclipse makes things for you",
   "type": "commonjs",
   "main": "dist/main.js",
   "author": "",
@@ -111,10 +111,10 @@
   },
   "build": {
     "appId": "ai.atomicbot.desktop",
-    "productName": "Atomic Bot",
+    "productName": "Sigma Eclipse",
     "protocols": [
       {
-        "name": "Atomic Bot",
+        "name": "Sigma Eclipse",
         "schemes": [
           "atomicbot"
         ]
@@ -214,8 +214,8 @@
         "zip"
       ],
       "extendInfo": {
-        "NSRemindersUsageDescription": "Atomic Bot needs access to Reminders to create, list, and complete reminders on your behalf.",
-        "NSMicrophoneUsageDescription": "Atomic Bot needs microphone access for voice input and speech-to-text transcription."
+        "NSRemindersUsageDescription": "Sigma Eclipse needs access to Reminders to create, list, and complete reminders on your behalf.",
+        "NSMicrophoneUsageDescription": "Sigma Eclipse needs microphone access for voice input and speech-to-text transcription."
       }
     },
     "win": {

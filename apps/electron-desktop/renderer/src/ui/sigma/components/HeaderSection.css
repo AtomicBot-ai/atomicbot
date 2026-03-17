@@ -1,0 +1,51 @@
+/* ── Sigma Header ────────────────────────────────────── */
+
+.sigma-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  padding: 0 18px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sigma-header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.sigma-header-logo {
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 8px rgba(79, 195, 247, 0.2));
+}
+
+.sigma-header-title {
+  font-weight: 750;
+  letter-spacing: 0.4px;
+  color: rgba(230, 237, 243, 0.95);
+}
+
+.sigma-header-settings {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
+  position: absolute;
+  right: 18px;
+}
+
+.sigma-header-settings:hover {
+  background: var(--surface-overlay-subtle);
+  color: var(--text);
+}

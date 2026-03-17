@@ -1,0 +1,17 @@
+# Sigma fork merge strategy
+# These directories are fully owned by Sigma — upstream changes are auto-discarded on merge.
+# Requires: git config merge.ours.driver true
+
+# Upstream chat UI — replaced by Sigma
+renderer/src/ui/chat/** merge=ours
+renderer/src/ui/sidebar/** merge=ours
+renderer/src/store/slices/chat/** merge=ours
+
+# Sigma-owned directories — upstream will never have these, but just in case
+renderer/src/ui/sigma/** merge=ours
+renderer/src/store/slices/sigma/** merge=ours
+renderer/src/hooks/sigma/** merge=ours
+src/main/sigma/** merge=ours
+src/main/ipc/sigma/** merge=ours
+src/shared/sigma/** merge=ours
+assets/sigma/** merge=ours

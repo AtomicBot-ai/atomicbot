@@ -15,9 +15,12 @@ export type ConsentDesktopApi = NonNullable<Window["openclawDesktop"]> & {
 export function ConsentScreen({
   onAccepted,
   onImport,
+  onLocalLlm,
 }: {
   onAccepted: () => void;
   onImport: () => void;
+  // sigma: optional handler for Local LLM mode
+  onLocalLlm?: () => void;
 }) {
   const api = getDesktopApiOrNull() as ConsentDesktopApi | null;
   const [busy, setBusy] = React.useState(false);
@@ -58,8 +61,18 @@ export function ConsentScreen({
     >
       <div className={s.UiConsentStage}>
         <div className={s.UiConsentCenter}>
-          <SplashLogo size={72} iconAlt="Atomic Bot" />
-          <div className={s.UiConsentTitle}>Welcome to Atomic Bot</div>
+          <SplashLogo size={72} iconAlt="Sigma Eclipse" />
+          <div className={s.UiConsentTitle}>Welcome to Sigma Eclipse</div>
+
+          {onLocalLlm && (
+            <PrimaryButton
+              className={s.UiConsentButton}
+              disabled={busy}
+              onClick={() => void acceptAndRun(onLocalLlm)}
+            >
+              Local LLM
+            </PrimaryButton>
+          )}
 
           <PrimaryButton
             className={s.UiConsentButton}

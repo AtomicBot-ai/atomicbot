@@ -1,0 +1,78 @@
+---
+description: Sigma fork conventions — file placement, merge strategy, and upstream sync rules for electron-desktop
+globs: apps/electron-desktop/**
+alwaysApply: false
+---
+
+# Sigma Fork Conventions
+
+This repo is a fork of `AtomicBot-ai/atomicbot` (remote `upstream`).
+We pull upstream updates periodically, so **minimizing merge conflicts is critical**.
+
+## Directory Strategy
+
+All new Sigma-specific code MUST live in dedicated `sigma/` directories.
+Upstream will never touch these paths, so they merge cleanly.
+
+### Renderer (frontend)
+
+| Path | Purpose |
+|------|---------|
+| `renderer/src/ui/sigma/` | Sigma-specific pages and components (local LLM panel, custom main view) |
+| `renderer/src/store/slices/sigma/` | Sigma-specific Redux slices (local LLM state, server status) |
+| `renderer/src/hooks/sigma/` | Sigma-specific React hooks (useServerControl, useModelDownload) |
+
+### Main process (backend)
+
+| Path | Purpose |
+|------|---------|
+| `src/main/sigma/` | Sigma-specific services (llama.cpp download, model management, server manager) |
+| `src/main/ipc/sigma/` | Sigma-specific IPC handlers (server-ipc, download-ipc) |
+
+### Shared
+
+| Path | Purpose |
+|------|---------|
+| `src/shared/sigma/` | Sigma-specific IPC channels and types |
+
+### Assets
+
+| Path | Purpose |
+|------|---------|
+| `assets/sigma/` | Sigma-specific assets (versions.json for llama.cpp/models, icons) |
+
+## Upstream Files — Modification Rules
+
+When you MUST modify an upstream file (routes.ts, store.ts, register.ts, preload.ts, app-bootstrap.ts):
+
+1. Keep changes **minimal** — add imports and one-line registrations, nothing more
+2. Mark Sigma additions with `// sigma:` comment prefix so they're easy to spot during merge
+3. Prefer **appending** over inserting in the middle of the file
+
+Example for `routes.ts`:
+```ts
+// upstream routes stay untouched above
+  terminal: "/terminal",
+  // sigma: local LLM routes
+  sigma: "/sigma",
+} as const;
+```
+
+Example for `register.ts`:
+```ts
+// sigma: register local LLM IPC handlers
+registerSigmaIpc(deps);
+```
+
+## Files Owned by Sigma (merge=ours via .gitattributes)
+
+These upstream directories are replaced by Sigma and upstream changes are auto-discarded:
+- `renderer/src/ui/chat/**` — replaced by Sigma UI
+- `renderer/src/ui/sidebar/**` — replaced by Sigma UI
+- `renderer/src/store/slices/chat/**` — replaced by Sigma state
+
+## Do NOT
+
+- Put new Sigma code directly into upstream directories (`ui/settings/`, `main/gateway/`, etc.)
+- Delete upstream files — replace their contents or leave them if unused
+- Rename upstream files — it creates unresolvable merge conflicts

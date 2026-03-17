@@ -1,17 +1,9 @@
 import React from "react";
 
-import {
-  GlassCard,
-  HeroPageLayout,
-  OnboardingDots,
-  PrimaryButton,
-  SecondaryButton,
-  SplashLogo,
-} from "@shared/kit";
+import { GlassCard, HeroPageLayout, OnboardingDots, SecondaryButton } from "@shared/kit";
 
 import s from "./SetupModePage.module.css";
 import cursorIcon from "@assets/сursor.svg";
-import googleIcon from "@assets/set-up-skills/Google.svg";
 
 export type SetupModeChoice = "paid" | "self-managed";
 
@@ -24,8 +16,6 @@ export function SetupModePage(props: {
   authError?: string | null;
   onBack?: () => void;
 }) {
-  const [selected, setSelected] = React.useState<SetupModeChoice>("paid");
-
   return (
     <HeroPageLayout variant="compact" align="center" aria-label="Setup mode selection">
       <GlassCard className={`UiGlassCardOnboarding ${s.UiSetupModeCard}`}>
@@ -35,55 +25,11 @@ export function SetupModePage(props: {
           <div>
             <div className="UiSectionTitle">Set up your AI agent</div>
             <div className="UiSectionSubtitle">
-              Choose how you'd like to set up your OpenClaw. You can change this later.
+              Configure your AI agent with your own API keys. You can change this later.
             </div>
           </div>
 
           <div className={s.UiSetupModeOptions}>
-            <div className="UiSectionCard UiSectionCardGreen">
-              <div>
-                <div className={s.UiSetupModeIconRow}>
-                  <div className={s.UiSetupModeIcon}>
-                    <SplashLogo iconAlt="Atomic Bot" size={35} />
-                  </div>
-                  <span className={s.UiSetupModeBadge}>Popular 🔥</span>
-                </div>
-                <div className={s.UiSetupModeTitle}>Do everything for me</div>
-                <div className={s.UiSetupModeDesc}>Billed monthly</div>
-                <ul className={s.UiSetupModeFeatures}>
-                  <li>One-click setup</li>
-                  <li>Access to 100+ AI models</li>
-                  <li>Automatic credit management</li>
-                </ul>
-              </div>
-
-              <PrimaryButton
-                size="sm"
-                className={s.UiGoogleButton}
-                disabled={props.authBusy}
-                onClick={() => {
-                  if (props.onStartGoogleAuth) {
-                    props.onStartGoogleAuth();
-                    setSelected("paid");
-                  } else {
-                    props.onSelect("paid");
-                    setSelected("paid");
-                  }
-                }}
-              >
-                {props.authBusy ? (
-                  <span
-                    className={`UiButtonSpinner ${s.UiGoogleButtonSpinner}`}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <img src={googleIcon} alt="" width={18} height={18} />
-                )}
-                Continue with Google
-              </PrimaryButton>
-              {props.authError ? <div className="UiErrorText">{props.authError}</div> : null}
-            </div>
-
             <div className="UiSectionCard">
               <div>
                 <div className={s.UiSetupModeIcon}>
@@ -102,7 +48,6 @@ export function SetupModePage(props: {
                 size="sm"
                 onClick={() => {
                   props.onSelect("self-managed");
-                  setSelected("self-managed");
                 }}
               >
                 Set up with API keys

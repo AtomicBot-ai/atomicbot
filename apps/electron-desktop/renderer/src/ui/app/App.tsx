@@ -16,6 +16,8 @@ import { SettingsIndexRedirect, SettingsPage, SettingsTab } from "../settings/Se
 import { TerminalPage } from "../terminal/TerminalPage";
 import { WelcomePage } from "../onboarding/WelcomePage";
 import { ConsentScreen } from "../onboarding/ConsentScreen";
+// sigma: Local LLM view
+import { SigmaMainView } from "../sigma/SigmaMainView";
 import { LoadingScreen } from "../onboarding/LoadingScreen";
 import { Brand } from "@shared/kit";
 import { GatewayRpcProvider } from "@gateway/context";
@@ -205,9 +207,12 @@ export function App() {
             <ConsentScreen
               onAccepted={() => void navigate(routes.welcome, { replace: true })}
               onImport={() => void navigate(`${routes.welcome}/restore`, { replace: true })}
+              onLocalLlm={() => void navigate(routes.sigma, { replace: true })}
             />
           }
         />
+        {/* sigma: Local LLM route */}
+        <Route path={routes.sigma} element={<SigmaMainView />} />
         <Route
           path={`${routes.welcome}/*`}
           element={

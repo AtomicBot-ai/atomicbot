@@ -8,6 +8,9 @@ import type {
   UpdateErrorPayload,
 } from "./shared/desktop-bridge-contract";
 import { IPC, IPC_EVENTS } from "./shared/ipc-channels";
+// sigma: Local LLM IPC channels
+import { SIGMA_IPC, SIGMA_IPC_EVENTS } from "./shared/sigma/ipc-channels";
+import type { SigmaDownloadProgress, SigmaRuntimeMode } from "./shared/sigma/types";
 
 /** Helper: subscribe to an IPC event channel with automatic unsubscribe. */
 function onIpc<T>(channel: string, cb: (payload: T) => void): () => void {
@@ -128,6 +131,41 @@ const api: OpenclawDesktopApi = {
     onIpc(IPC_EVENTS.terminalData, cb),
   onTerminalExit: (cb: (payload: { id: string; exitCode: number; signal?: number }) => void) =>
     onIpc(IPC_EVENTS.terminalExit, cb),
+
+  // sigma: Local LLM API
+  sigmaStartServer: async () => ipcRenderer.invoke(SIGMA_IPC.serverStart),
+  sigmaStopServer: async () => ipcRenderer.invoke(SIGMA_IPC.serverStop),
+  sigmaGetServerStatus: async () => ipcRenderer.invoke(SIGMA_IPC.serverStatus),
+  sigmaCheckLlamaVersion: async () => ipcRenderer.invoke(SIGMA_IPC.downloadCheckLlama),
+  sigmaDownloadLlamaCpp: async () => ipcRenderer.invoke(SIGMA_IPC.downloadLlama),
+  sigmaDownloadModel: async (modelName: string) =>
+    ipcRenderer.invoke(SIGMA_IPC.downloadModel, { modelName }),
+  sigmaListModels: async () => ipcRenderer.invoke(SIGMA_IPC.modelList),
+  sigmaCheckModel: async (modelName: string) =>
+    ipcRenderer.invoke(SIGMA_IPC.modelCheck, { modelName }),
+  sigmaDeleteModel: async (modelName: string) =>
+    ipcRenderer.invoke(SIGMA_IPC.modelDelete, { modelName }),
+  sigmaGetActiveModel: async () => ipcRenderer.invoke(SIGMA_IPC.modelGetActive),
+  sigmaSetActiveModel: async (modelName: string) =>
+    ipcRenderer.invoke(SIGMA_IPC.modelSetActive, { modelName }),
+  sigmaGetSettings: async () => ipcRenderer.invoke(SIGMA_IPC.settingsGet),
+  sigmaSetPort: async (port: number) => ipcRenderer.invoke(SIGMA_IPC.settingsSetPort, { port }),
+  sigmaSetCtxSize: async (ctxSize: number) =>
+    ipcRenderer.invoke(SIGMA_IPC.settingsSetCtxSize, { ctxSize }),
+  sigmaSetGpuLayers: async (gpuLayers: number) =>
+    ipcRenderer.invoke(SIGMA_IPC.settingsSetGpuLayers, { gpuLayers }),
+  sigmaGetSystemMemory: async () => ipcRenderer.invoke(SIGMA_IPC.systemMemory),
+  sigmaGetRecommendedSettings: async () => ipcRenderer.invoke(SIGMA_IPC.systemRecommended),
+  sigmaGetAppDataPath: async () => ipcRenderer.invoke(SIGMA_IPC.pathsAppData),
+  sigmaGetLogsPath: async () => ipcRenderer.invoke(SIGMA_IPC.pathsLogs),
+  sigmaClearBinaries: async () => ipcRenderer.invoke(SIGMA_IPC.dataClearBinaries),
+  sigmaClearModels: async () => ipcRenderer.invoke(SIGMA_IPC.dataClearModels),
+  sigmaClearAllData: async () => ipcRenderer.invoke(SIGMA_IPC.dataClearAll),
+  sigmaSetRuntimeMode: async (mode: SigmaRuntimeMode) =>
+    ipcRenderer.invoke(SIGMA_IPC.setRuntimeMode, { mode }),
+  sigmaGetRuntimeMode: async () => ipcRenderer.invoke(SIGMA_IPC.getRuntimeMode),
+  onSigmaDownloadProgress: (cb: (payload: SigmaDownloadProgress) => void) =>
+    onIpc(SIGMA_IPC_EVENTS.downloadProgress, cb),
 };
 
 contextBridge.exposeInMainWorld("openclawDesktop", api);

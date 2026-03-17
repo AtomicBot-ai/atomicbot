@@ -1,0 +1,46 @@
+/* ── Logs Section ────────────────────────────────────── */
+
+.sigma-logs {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  min-height: 160px;
+  max-height: 180px;
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  scrollbar-width: auto;
+}
+
+.sigma-logs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sigma-logs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sigma-logs::-webkit-scrollbar-thumb {
+  background: #ffffff26;
+  border-radius: var(--radius-full);
+}
+
+.sigma-log-entry {
+  padding: 2px 0;
+  color: var(--muted);
+  word-wrap: break-word;
+}
+
+.sigma-log-entry--empty {
+  color: var(--muted3);
+  font-style: italic;
+  text-align: center;
+  padding: 32px 0;
+}

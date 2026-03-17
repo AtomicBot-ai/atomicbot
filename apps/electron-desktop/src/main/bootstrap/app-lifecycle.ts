@@ -3,6 +3,8 @@ import * as path from "node:path";
 
 import type { AppState } from "../app-state";
 import type { Platform } from "../platform";
+// sigma: Local LLM cleanup
+import { stopServerByPid } from "../sigma/services/server-manager";
 
 type ShowWindow = () => Promise<void>;
 type HandleDeepLink = (url: string, win: BrowserWindow | null) => void;
@@ -86,6 +88,18 @@ export function registerAppLifecycle(params: {
     event.preventDefault();
 
     disposeAutoUpdater();
+
+    // sigma: stop Local LLM server before quit
+    const sigmaChild = state.sigmaServerProcess?.current;
+    if (sigmaChild?.pid) {
+      try {
+        stopServerByPid(sigmaChild.pid);
+      } catch {
+        /* already dead */
+      }
+      state.sigmaServerProcess.current = null;
+    }
+
     stopGatewayChild()
       .then(() => {
         if (state.gatewayStateDir) {

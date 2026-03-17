@@ -36,7 +36,7 @@ function safeRmrf(target) {
     path.sep + "atomicbot-desktop",
     // Back-compat / legacy names.
     path.sep + "openclaw-electron-desktop",
-    path.sep + "Atomic Bot",
+    path.sep + "Sigma Eclipse",
   ];
   if (!allowedMarkers.some((m) => normalized.includes(m))) {
     throw new Error(`refusing to delete unexpected path: ${normalized}`);

@@ -1,0 +1,300 @@
+/* ── Settings Overlay ────────────────────────────────── */
+
+.sigma-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: sigmaFadeIn 0.2s ease;
+}
+
+@keyframes sigmaFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sigma-settings-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Settings Header ──────────────────────────────────── */
+
+.sigma-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  padding: 0 18px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sigma-settings-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sigma-settings-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
+  position: absolute;
+  right: 18px;
+}
+
+.sigma-settings-close:hover {
+  background: var(--surface-overlay-subtle);
+  color: var(--text);
+}
+
+/* ── Settings Content ─────────────────────────────────── */
+
+.sigma-settings-content {
+  overflow-y: auto;
+  padding: 0 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.sigma-section {
+  background: var(--bg-base);
+  width: 100%;
+  max-width: 560px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sigma-section h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+/* ── Form Elements ────────────────────────────────────── */
+
+.sigma-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sigma-form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.sigma-form-group input[type="text"],
+.sigma-form-group input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 20px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
+  color: var(--text);
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base);
+  font-family: inherit;
+}
+
+.sigma-form-group input:focus {
+  outline: none;
+  border-color: var(--lime);
+  background: var(--bg-base);
+}
+
+.sigma-form-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sigma-help-text {
+  font-size: 12px;
+  color: var(--muted3);
+  margin-top: 2px;
+}
+
+.sigma-warning-text {
+  font-size: 12px;
+  color: var(--warning);
+  margin-top: 2px;
+}
+
+/* ── Checkbox ─────────────────────────────────────────── */
+
+.sigma-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sigma-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--lime);
+  cursor: pointer;
+}
+
+.sigma-checkbox-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── Buttons ──────────────────────────────────────────── */
+
+.sigma-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sigma-btn-primary {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-full);
+  background:
+    linear-gradient(0deg, var(--lime), var(--lime)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.2) 100%);
+  color: var(--surface-primary);
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity var(--transition-base);
+}
+
+.sigma-btn-primary:hover {
+  opacity: 0.8;
+}
+
+.sigma-btn-primary:disabled {
+  background: #ffffff12 !important;
+  color: #ffffff80;
+  cursor: default;
+}
+
+.sigma-btn-secondary {
+  appearance: none;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
+}
+
+.sigma-btn-secondary:hover {
+  background: var(--surface-overlay-subtle);
+  color: var(--text);
+}
+
+.sigma-btn-danger {
+  appearance: none;
+  border: 1px solid var(--error);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--error);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
+}
+
+.sigma-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* ── Danger Section ───────────────────────────────────── */
+
+.sigma-section-danger {
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ── Confirm Modal ────────────────────────────────────── */
+
+.sigma-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sigmaFadeIn 0.15s ease;
+}
+
+.sigma-confirm-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.sigma-confirm-modal h3 {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sigma-confirm-modal p {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sigma-confirm-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

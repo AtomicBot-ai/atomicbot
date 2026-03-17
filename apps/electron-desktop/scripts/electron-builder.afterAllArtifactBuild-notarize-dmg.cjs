@@ -100,7 +100,7 @@ module.exports = async function afterAllArtifactBuild(context) {
       pkg.build &&
       typeof pkg.build.productName === "string" &&
       pkg.build.productName.trim()) ||
-    "Atomic Bot";
+    "Sigma Eclipse";
   const version = (pkg && typeof pkg.version === "string" && pkg.version.trim()) || "0.0.0";
 
   const dmgPath = path.join(outDir, `${productName}-${version}-${process.arch}.dmg`);

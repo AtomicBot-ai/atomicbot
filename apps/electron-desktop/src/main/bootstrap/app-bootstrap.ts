@@ -149,6 +149,12 @@ export async function bootstrapApp(params: {
     setGatewayToken: (t: string) => {
       token = t;
     },
+    // sigma: Local LLM handler params
+    sigma: {
+      getMainWindow: () => params.state.mainWindow,
+      serverProcess: params.state.sigmaServerProcess,
+      runtimeMode: params.state.sigmaRuntimeMode,
+    },
   });
 
   registerTerminalIpcHandlers({

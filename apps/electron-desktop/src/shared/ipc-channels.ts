@@ -120,3 +120,6 @@ export const IPC_EVENTS = {
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC];
 export type IpcEventChannel = (typeof IPC_EVENTS)[keyof typeof IPC_EVENTS];
+
+// sigma: Local LLM channels
+export { SIGMA_IPC, SIGMA_IPC_EVENTS } from "./sigma/ipc-channels";

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Version mapping for Sigma Eclipse LLM external dependencies",
+  "appVersion": "0.1.0",
+  "llamaCpp": {
+    "version": "b7140",
+    "platforms": {
+      "macos-arm64": {
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b7140/llama-b7140-bin-macos-arm64.zip",
+        "sha256": "a6c631d3be905917a3461d782ce8ca6ae89bafcdfb510a464336691bf52e472a"
+      },
+      "windows-x64": {
+        "url": "https://releases.sigmabrowser.com/dev/llamacpp/llama-b7140-bin-win-cuda-cublas-x86.zip",
+        "sha256": "c2d1356705b6cdad61823619bef0f51b60fa6b49cf5f9ee617b47ba2c6498357"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b7140/llama-b7140-bin-win-cpu-arm64.zip",
+        "sha256": "01ee09c30452b3370ba8727f8010a5b2900aaf31dff72e77163304ace1e7e31c"
+      }
+    }
+  },
+  "models": {
+    "model": {
+      "version": "v1.0",
+      "filename": "model-v1.0.gguf",
+      "url": "https://releases.sigmabrowser.com/dev/secure-llm/model.zip",
+      "sha256": "907ba4b9b9ae56726cac34cfa66be9d493f147e4823271f5120c6ad8ccf3a959"
+    },
+    "model_uncensored": {
+      "version": "v1.0",
+      "filename": "model-uncensored-v1.0.gguf",
+      "url": "https://releases.sigmabrowser.com/dev/secure-llm/model_uncensored.zip",
+      "sha256": "21807105312d6494103934798c0da638e07d10278bfd29b715aba355c37f4864"
+    },
+    "model_s": {
+      "version": "v1.0",
+      "filename": "model-s-v1.0.gguf",
+      "url": "https://releases.sigmabrowser.com/dev/secure-llm/model_s.zip",
+      "sha256": "e5b0282323ebc54db43d0a8b91e5869555f9a6ee6811a893fa1adc47a9382fcd"
+    },
+    "model_s_uncensored": {
+      "version": "v1.0",
+      "filename": "model-s-uncensored-v1.0.gguf",
+      "url": "https://releases.sigmabrowser.com/dev/secure-llm/model_s_uncensored.zip",
+      "sha256": "afa391b5d1fddd67e3c340ccbd9484ed7d97b1bf43dd17e5068de89fc282b267"
+    }
+  }
+}
