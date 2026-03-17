@@ -125,12 +125,9 @@ function LegacyScreen({ state }: { state: Extract<GatewayState, { kind: "ready" 
   const legacyUrl = React.useMemo(() => {
     const base = state.url.endsWith("/") ? state.url : `${state.url}/`;
     const token = encodeURIComponent(state.token);
-    // When the gateway Control UI basePath is empty (default), the legacy UI lives at
-    // /overview, /chat, ... and /ui/* is explicitly 404'd by the gateway.
-    // The legacy UI supports ?token=... (see ui navigation tests).
-    // The desktop app embeds the Control UI in an iframe; ask the gateway to emit
-    // an embedding-friendly `frame-ancestors` policy for this request.
-    return `${base}overview?token=${token}&embed=1`;
+    // Control UI reads the token from the hash fragment (not query params).
+    // Query ?token= is stripped without import by the Control UI settings logic.
+    return `${base}overview#token=${token}`;
   }, [state.url, state.token]);
   return (
     <div className={a.IframeWrap}>
