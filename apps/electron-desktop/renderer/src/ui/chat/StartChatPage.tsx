@@ -28,8 +28,11 @@ export function StartChatPage({
   const dispatch = useAppDispatch();
   const authMode = useAppSelector((s) => s.auth.mode);
   const subscription = useAppSelector((s) => s.auth.subscription);
+  const isAuthorized = useAppSelector((s) => s.auth.jwt != null);
   const needsUpgradePaywall =
-    authMode === "paid" && (subscription === null || subscription.status === "canceled");
+    isAuthorized &&
+    authMode === "paid" &&
+    (subscription === null || subscription.status === "canceled");
   const composerRef = React.useRef<ChatComposerRef | null>(null);
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<ChatAttachmentInput[]>([]);

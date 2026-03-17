@@ -77,6 +77,7 @@ export function useAccountState() {
     (params: DeepLinkAuthParams) => {
       void (async () => {
         await dispatch(storeAuthToken(params));
+        await dispatch(fetchDesktopStatus());
         await dispatch(switchToSubscription({ request: gw.request }));
         try {
           await dispatch(

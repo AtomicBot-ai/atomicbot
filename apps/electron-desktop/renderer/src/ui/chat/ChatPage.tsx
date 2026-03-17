@@ -47,8 +47,11 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const error = useAppSelector((s) => s.chat.error);
   const authMode = useAppSelector((s) => s.auth.mode);
   const subscription = useAppSelector((s) => s.auth.subscription);
+  const isAuthorized = useAppSelector((s) => s.auth.jwt != null);
   const needsUpgradePaywall =
-    authMode === "paid" && (subscription === null || subscription.status === "canceled");
+    isAuthorized &&
+    authMode === "paid" &&
+    (subscription === null || subscription.status === "canceled");
 
   const gw = useGatewayRpc();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
