@@ -1,12 +1,7 @@
 import React, { useEffect } from "react";
 
-import {
-  GlassCard,
-  HeroPageLayout,
-  OnboardingDots,
-  PrimaryButton,
-  SecondaryButton,
-} from "@shared/kit";
+import { GlassCard, HeroPageLayout, OnboardingDots, PrimaryButton } from "@shared/kit";
+import layoutStyles from "../OnboardingStepLayout.module.css";
 import {
   type ModelEntry,
   TIER_INFO,
@@ -60,9 +55,24 @@ export function ModelSelectPage(props: {
 
   if (props.loading) {
     return (
-      <HeroPageLayout variant="compact" align="center" aria-label="Model selection">
+      <HeroPageLayout
+        variant="compact"
+        align="center"
+        aria-label="Model selection"
+        className={layoutStyles.UiSetupLayout}
+      >
+        <div className={layoutStyles.UiSetupHeader}>
+          <div className={layoutStyles.UiSetupHeaderButton}>
+            <button className="UiTextButton" type="button" onClick={props.onBack}>
+              Back
+            </button>
+          </div>
+          <div className={layoutStyles.UiSetupHeaderCenter}>
+            <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
+          </div>
+          <div className={layoutStyles.UiSetupHeaderButton} />
+        </div>
         <GlassCard className="UiModelCard UiGlassCardOnboarding">
-          <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
           <div className="UiSectionTitle">Select AI Model</div>
           <div className="UiSectionSubtitle">
             Fetching available models from your configured provider.
@@ -74,15 +84,28 @@ export function ModelSelectPage(props: {
 
   if (props.error) {
     return (
-      <HeroPageLayout variant="compact" align="center" aria-label="Model selection">
+      <HeroPageLayout
+        variant="compact"
+        align="center"
+        aria-label="Model selection"
+        className={layoutStyles.UiSetupLayout}
+      >
+        <div className={layoutStyles.UiSetupHeader}>
+          <div className={layoutStyles.UiSetupHeaderButton}>
+            <button className="UiTextButton" type="button" onClick={props.onBack}>
+              Back
+            </button>
+          </div>
+          <div className={layoutStyles.UiSetupHeaderCenter}>
+            <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
+          </div>
+          <div className={layoutStyles.UiSetupHeaderRight} />
+        </div>
         <GlassCard className="UiModelCard UiGlassCardOnboarding">
-          <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
           <div className="UiSectionTitle">Select AI Model</div>
           <div className="UiSectionSubtitle">Failed to load models.</div>
           <div className="UiModelBottomRow">
-            <button className="UiTextButton" onClick={props.onBack}>
-              Back
-            </button>
+            <div />
             <PrimaryButton onClick={props.onRetry}>Retry</PrimaryButton>
           </div>
         </GlassCard>
@@ -92,18 +115,31 @@ export function ModelSelectPage(props: {
 
   if (filteredModels.length === 0) {
     return (
-      <HeroPageLayout variant="compact" align="center" aria-label="Model selection">
+      <HeroPageLayout
+        variant="compact"
+        align="center"
+        aria-label="Model selection"
+        className={layoutStyles.UiSetupLayout}
+      >
+        <div className={layoutStyles.UiSetupHeader}>
+          <div className={layoutStyles.UiSetupHeaderButton}>
+            <button className="UiTextButton" type="button" onClick={props.onBack}>
+              Back
+            </button>
+          </div>
+          <div className={layoutStyles.UiSetupHeaderCenter}>
+            <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
+          </div>
+          <div className={layoutStyles.UiSetupHeaderRight} />
+        </div>
         <GlassCard className="UiModelCard UiGlassCardOnboarding">
-          <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
           <div className="UiSectionTitle">Select AI Model</div>
           <div className="UiSectionSubtitle">
             No models were found for your configured API key. The key may be invalid or the provider
             may be temporarily unavailable.
           </div>
           <div className="UiModelBottomRow">
-            <button className="UiTextButton" onClick={props.onBack}>
-              Back
-            </button>
+            <div />
             <PrimaryButton onClick={props.onRetry}>Retry</PrimaryButton>
           </div>
         </GlassCard>
@@ -112,9 +148,30 @@ export function ModelSelectPage(props: {
   }
 
   return (
-    <HeroPageLayout variant="compact" align="center" aria-label="Model selection">
+    <HeroPageLayout
+      variant="compact"
+      align="center"
+      aria-label="Model selection"
+      className={layoutStyles.UiSetupLayout}
+    >
+      <div className={layoutStyles.UiSetupHeader}>
+        <div className={layoutStyles.UiSetupHeaderButton}>
+          <button className="UiTextButton" type="button" onClick={props.onBack}>
+            Back
+          </button>
+        </div>
+        <div className={layoutStyles.UiSetupHeaderCenter}>
+          <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
+        </div>
+        <div className={layoutStyles.UiSetupHeaderRight}>
+          {props.onSkip ? (
+            <button className="UiTextButton" type="button" onClick={props.onSkip}>
+              Skip
+            </button>
+          ) : null}
+        </div>
+      </div>
       <GlassCard className="UiModelCard UiGlassCardOnboarding">
-        <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
         <div className="UiSectionTitle">Select AI Model</div>
         <div className="UiSectionSubtitle">
           Choose your preferred model. You can change this later in settings.
@@ -153,17 +210,10 @@ export function ModelSelectPage(props: {
           })}
         </div>
         <div className="UiProviderContinueRow">
-          <button className="UiTextButton" onClick={props.onBack}>
-            Back
-          </button>
+          <div />
           <div className="UiSkillsBottomActions">
-            {props.onSkip ? (
-              <SecondaryButton size={"sm"} onClick={props.onSkip}>
-                Skip
-              </SecondaryButton>
-            ) : null}
             <PrimaryButton
-              size={"sm"}
+              size="sm"
               disabled={!selected}
               onClick={() => selected && props.onSelect(selected)}
             >
