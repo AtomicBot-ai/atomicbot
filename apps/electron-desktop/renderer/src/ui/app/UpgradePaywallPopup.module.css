@@ -1,0 +1,198 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: #121212;
+}
+
+.overlay[data-visible="false"] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.overlay[data-visible="true"] {
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+.scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.closeBtn {
+  padding: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeBtn:hover {
+  color: #fff;
+}
+
+.closeBtn svg {
+  display: block;
+}
+
+.wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+  justify-content: center;
+}
+
+.title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 32px;
+  margin: 0 0 32px;
+}
+
+.titleAccent {
+  color: #c3ff42;
+}
+
+.titlePlain {
+  color: #fff;
+}
+
+.card {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background:
+    linear-gradient(#171717, #171717) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.24) 100%
+      )
+      border-box;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  box-sizing: border-box;
+  max-height: 390px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 500;
+  color: #fff;
+}
+
+.priceSuffix {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.featureItem svg {
+  color: #34c759;
+  width: 16px;
+  height: 16px;
+}
+
+.checkIcon {
+  flex-shrink: 0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.refillRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.trialNote {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.buttonWrap {
+  margin-top: 10px;
+}
+
+.buttonWrap :global(.UiPrimaryButton) {
+  width: 100%;
+  height: 42px;
+  font-size: 14px;
+  border-radius: 999px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
