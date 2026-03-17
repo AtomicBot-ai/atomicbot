@@ -7,6 +7,7 @@ import { getObject } from "@shared/utils/configHelpers";
 import { ChatComposer, type ChatComposerRef } from "./components/ChatComposer";
 import { useVoiceInput, getVoiceProvider } from "./hooks/useVoiceInput";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
+import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";
 import { downloadWhisperModel } from "@store/slices/whisperSlice";
 import { addToastError } from "@shared/toast";
 import { routes } from "../app/routes";
@@ -25,6 +26,10 @@ export function StartChatPage({
   const location = useLocation();
   const gw = useGatewayRpc();
   const dispatch = useAppDispatch();
+  const authMode = useAppSelector((s) => s.auth.mode);
+  const subscription = useAppSelector((s) => s.auth.subscription);
+  const needsUpgradePaywall =
+    authMode === "paid" && (subscription === null || subscription.status === "canceled");
   const composerRef = React.useRef<ChatComposerRef | null>(null);
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<ChatAttachmentInput[]>([]);
@@ -126,6 +131,10 @@ export function StartChatPage({
     if ((!message && !hasAttachments) || sending) {
       return;
     }
+    if (needsUpgradePaywall) {
+      dispatch(upgradePaywallActions.open());
+      return;
+    }
 
     const sessionKey = newSessionKey();
     const runId = crypto.randomUUID();
@@ -180,7 +189,7 @@ export function StartChatPage({
     } finally {
       setSending(false);
     }
-  }, [gw.request, input, navigate, sending, attachments]);
+  }, [dispatch, gw.request, input, navigate, sending, attachments, needsUpgradePaywall]);
 
   return (
     <div className={ct.UiChatShell}>

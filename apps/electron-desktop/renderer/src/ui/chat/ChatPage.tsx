@@ -10,6 +10,7 @@ import {
   sendChatMessage,
   type ChatAttachmentInput,
 } from "@store/slices/chat/chatSlice";
+import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";
 import type { GatewayState } from "@main/types";
 import { HIDDEN_TOOL_NAMES } from "./components/ToolCallCard";
 import { ChatComposer, type ChatComposerRef } from "./components/ChatComposer";
@@ -44,6 +45,10 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const sending = useAppSelector((s) => s.chat.sending);
   const awaitingContinuation = useAppSelector((s) => s.chat.awaitingContinuation);
   const error = useAppSelector((s) => s.chat.error);
+  const authMode = useAppSelector((s) => s.auth.mode);
+  const subscription = useAppSelector((s) => s.auth.subscription);
+  const needsUpgradePaywall =
+    authMode === "paid" && (subscription === null || subscription.status === "canceled");
 
   const gw = useGatewayRpc();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -142,13 +147,17 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
     if (!message && !hasAttachments) {
       return;
     }
+    if (needsUpgradePaywall) {
+      dispatch(upgradePaywallActions.open());
+      return;
+    }
     const toSend = attachments.length > 0 ? [...attachments] : undefined;
     setInput("");
     setAttachments([]);
     void dispatch(
       sendChatMessage({ request: gw.request, sessionKey, message, attachments: toSend })
     );
-  }, [dispatch, gw.request, input, sessionKey, attachments]);
+  }, [dispatch, gw.request, input, sessionKey, attachments, needsUpgradePaywall]);
 
   return (
     <div className={ct.UiChatShell}>
