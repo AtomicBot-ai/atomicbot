@@ -114,8 +114,9 @@
   list-style: none;
   margin: 0;
   padding: 0 0 12px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  height: 100%;
 }
 
 .UiChatSidebarSessionList li {

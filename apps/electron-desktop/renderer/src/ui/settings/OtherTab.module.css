@@ -110,6 +110,7 @@
   align-items: center;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .UiSettingsOtherToggle input {
