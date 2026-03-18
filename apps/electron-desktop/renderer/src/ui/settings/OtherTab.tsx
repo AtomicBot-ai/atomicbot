@@ -16,7 +16,7 @@ import { RestoreBackupModal } from "./RestoreBackupModal";
 import s from "./OtherTab.module.css";
 import pkg from "../../../../package.json";
 
-type SecurityLevel = "strict" | "balanced" | "permissive";
+type SecurityLevel = "balanced" | "permissive";
 
 type ExecApprovalsFile = {
   version: 1;
@@ -50,17 +50,12 @@ function deriveSecurityLevel(file: ExecApprovalsFile): SecurityLevel {
   const security = file.defaults?.security ?? "allowlist";
   const ask = file.defaults?.ask ?? "on-miss";
   if (security === "full" && ask === "off") return "permissive";
-  if (security === "allowlist" && ask === "always") return "strict";
   return "balanced";
 }
 
 function applySecurityLevel(file: ExecApprovalsFile, level: SecurityLevel): ExecApprovalsFile {
   const defaults = { ...file.defaults };
   switch (level) {
-    case "strict":
-      defaults.security = "allowlist";
-      defaults.ask = "always";
-      break;
     case "balanced":
       defaults.security = "allowlist";
       defaults.ask = "on-miss";
@@ -419,15 +414,14 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
               disabled={securityBusy}
               onChange={(e) => void handleSecurityLevelChange(e.target.value as SecurityLevel)}
             >
-              <option value="strict">Strict</option>
               <option value="balanced">Balanced</option>
               <option value="permissive">Permissive</option>
             </select>
           </div>
         </div>
         <p className={s.UiSettingsOtherHint}>
-          <strong>Strict</strong> — approve every command. <strong>Balanced</strong> — approve only
-          unknown commands. <strong>Permissive</strong> — no approvals needed.
+          <strong>Balanced</strong> — approve only unknown commands. <strong>Permissive</strong> —
+          no approvals needed.
         </p>
       </section>
 
