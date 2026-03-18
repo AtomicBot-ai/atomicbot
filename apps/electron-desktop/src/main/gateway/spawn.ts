@@ -5,6 +5,7 @@ import * as path from "node:path";
 import type { BinaryPaths } from "../types";
 import { ensureDir } from "../util/fs";
 import { getPlatform } from "../platform";
+import { getGogKeyringEnv } from "../gog/gog-keyring";
 import type { TailBuffer } from "../util/net";
 import { resolveFfmpegPath } from "../whisper/ffmpeg";
 import { readSelectedWhisperModel } from "../whisper/model-state";
@@ -94,6 +95,8 @@ export function spawnGateway(
   ensureDir(ghConfigDir);
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    // On macOS, force gogcli to use an encrypted file backend instead of Keychain.
+    ...getGogKeyringEnv(stateDir),
     // Keep all OpenClaw state inside the Electron app's userData directory.
     OPENCLAW_STATE_DIR: stateDir,
     OPENCLAW_CONFIG_PATH: configPath,

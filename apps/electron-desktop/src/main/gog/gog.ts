@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { GogExecResult } from "./types";
+import { getGogKeyringEnv } from "./gog-keyring";
 import { getPlatform } from "../platform";
 
 export function runGog(params: {
@@ -11,13 +12,16 @@ export function runGog(params: {
   args: string[];
   cwd: string;
   env?: NodeJS.ProcessEnv;
+  stateDir?: string;
   timeoutMs?: number;
 }): Promise<GogExecResult> {
   const timeoutMs = typeof params.timeoutMs === "number" ? params.timeoutMs : 120_000;
+  const keyringEnv = params.stateDir ? getGogKeyringEnv(params.stateDir) : {};
+  const mergedEnv = { ...process.env, ...keyringEnv, ...params.env };
   return new Promise<GogExecResult>((resolve) => {
     const child = spawn(params.bin, params.args, {
       cwd: params.cwd,
-      env: params.env,
+      env: mergedEnv,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -81,6 +85,7 @@ export function parseGogAuthListEmails(jsonText: string): string[] {
 export async function clearGogAuthTokens(params: {
   gogBin: string;
   openclawDir: string;
+  stateDir?: string;
   warnings: string[];
 }) {
   if (!fs.existsSync(params.gogBin)) {
@@ -91,6 +96,7 @@ export async function clearGogAuthTokens(params: {
     bin: params.gogBin,
     args: ["auth", "list", "--json", "--no-input"],
     cwd: params.openclawDir,
+    stateDir: params.stateDir,
     timeoutMs: 15_000,
   });
   if (!list.ok) {
@@ -104,6 +110,7 @@ export async function clearGogAuthTokens(params: {
       bin: params.gogBin,
       args: ["auth", "remove", email, "--force", "--no-input"],
       cwd: params.openclawDir,
+      stateDir: params.stateDir,
       timeoutMs: 15_000,
     });
     if (!res.ok) {
@@ -155,6 +162,7 @@ export async function ensureGogCredentialsConfigured(params: {
     bin: params.gogBin,
     args: ["auth", "credentials", "set", params.credentialsJsonPath, "--no-input"],
     cwd: params.openclawDir,
+    stateDir: params.stateDir,
     timeoutMs: 30_000,
   });
   if (res.ok) {

@@ -39,7 +39,7 @@ export function registerGogIpcHandlers(params: GogHandlerParams) {
   ipcMain.handle(IPC.gogAuthList, async () => {
     const notFound = checkBinaryExists(gogBin, PREPARE_CMD);
     if (notFound) return notFound;
-    return await runGog({ bin: gogBin, args: ["auth", "list"], cwd: openclawDir });
+    return await runGog({ bin: gogBin, args: ["auth", "list"], cwd: openclawDir, stateDir });
   });
 
   ipcMain.handle(
@@ -72,7 +72,7 @@ export function registerGogIpcHandlers(params: GogHandlerParams) {
       if (noInput) {
         args.push("--no-input");
       }
-      const res = await runGog({ bin: gogBin, args, cwd: openclawDir });
+      const res = await runGog({ bin: gogBin, args, cwd: openclawDir, stateDir });
       return res;
     }
   );
@@ -107,6 +107,7 @@ export function registerGogIpcHandlers(params: GogHandlerParams) {
           bin: gogBin,
           args: ["auth", "credentials", "set", tmpPath, "--no-input"],
           cwd: openclawDir,
+          stateDir,
         });
         return res;
       } finally {
