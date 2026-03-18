@@ -21,7 +21,7 @@ export function registerResetAndCloseIpcHandler(params: ResetHandlerParams) {
     }
 
     try {
-      await clearGogAuthTokens({ gogBin, openclawDir, warnings });
+      await clearGogAuthTokens({ gogBin, openclawDir, stateDir, warnings });
     } catch (err) {
       warnings.push(`failed to clear gog auth tokens: ${String(err)}`);
     }

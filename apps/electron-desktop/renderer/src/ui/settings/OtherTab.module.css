@@ -276,6 +276,49 @@
   opacity: 0.85;
 }
 
+/* Native select styled for dark theme rows */
+.UiSettingsOtherSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #3a3a3c;
+  color: #f2f2f7;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 5px 28px 5px 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  cursor: pointer;
+  outline: none;
+  transition: opacity var(--transition-base);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ebebf599' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 6px;
+  min-width: 110px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.UiSettingsOtherSelect:hover {
+  opacity: 0.85;
+}
+
+.UiSettingsOtherSelect:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.UiSettingsOtherSelect:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.UiSettingsOtherSelect option {
+  background: #2c2c2e;
+  color: #f2f2f7;
+}
+
 /* Subscription mode confirmation popup */
 
 .UiConfirmDescription {

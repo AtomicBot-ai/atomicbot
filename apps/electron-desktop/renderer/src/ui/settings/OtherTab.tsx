@@ -16,6 +16,59 @@ import { RestoreBackupModal } from "./RestoreBackupModal";
 import s from "./OtherTab.module.css";
 import pkg from "../../../../package.json";
 
+type SecurityLevel = "balanced" | "permissive";
+
+type ExecApprovalsFile = {
+  version: 1;
+  socket?: { path?: string; token?: string };
+  defaults?: {
+    security?: string;
+    ask?: string;
+    askFallback?: string;
+    autoAllowSkills?: boolean;
+  };
+  agents?: Record<
+    string,
+    {
+      security?: string;
+      ask?: string;
+      askFallback?: string;
+      autoAllowSkills?: boolean;
+      allowlist?: { pattern: string }[];
+    }
+  >;
+};
+
+type ExecApprovalsSnapshot = {
+  path: string;
+  exists: boolean;
+  hash: string;
+  file: ExecApprovalsFile;
+};
+
+function deriveSecurityLevel(file: ExecApprovalsFile): SecurityLevel {
+  const security = file.defaults?.security ?? "allowlist";
+  const ask = file.defaults?.ask ?? "on-miss";
+  if (security === "full" && ask === "off") return "permissive";
+  return "balanced";
+}
+
+function applySecurityLevel(file: ExecApprovalsFile, level: SecurityLevel): ExecApprovalsFile {
+  const defaults = { ...file.defaults };
+  switch (level) {
+    case "balanced":
+      defaults.security = "allowlist";
+      defaults.ask = "on-miss";
+      defaults.autoAllowSkills = true;
+      break;
+    case "permissive":
+      defaults.security = "full";
+      defaults.ask = "off";
+      break;
+  }
+  return { ...file, defaults };
+}
+
 export function OtherTab({ onError }: { onError: (msg: string | null) => void }) {
   const [launchAtStartup, setLaunchAtStartup] = React.useState(false);
   const [resetBusy, setResetBusy] = React.useState(false);
@@ -23,6 +76,9 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
   const [terminalSidebar, setTerminalSidebar] = useTerminalSidebarVisible();
   const [backupBusy, setBackupBusy] = React.useState(false);
   const [restoreModalOpen, setRestoreModalOpen] = React.useState(false);
+  const [securityLevel, setSecurityLevel] = React.useState<SecurityLevel>("balanced");
+  const [securityBusy, setSecurityBusy] = React.useState(false);
+  const approvalsRef = React.useRef<ExecApprovalsSnapshot | null>(null);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const gw = useGatewayRpc();
@@ -37,6 +93,17 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
     }
     void api.getLaunchAtLogin().then((res) => setLaunchAtStartup(res.enabled));
   }, []);
+
+  React.useEffect(() => {
+    if (!gw.connected) return;
+    void gw
+      .request<ExecApprovalsSnapshot>("exec.approvals.get", {})
+      .then((snap) => {
+        approvalsRef.current = snap;
+        setSecurityLevel(deriveSecurityLevel(snap.file));
+      })
+      .catch(() => {});
+  }, [gw, gw.connected]);
 
   const toggleLaunchAtStartup = React.useCallback(
     async (enabled: boolean) => {
@@ -54,6 +121,31 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
       }
     },
     [onError]
+  );
+
+  const handleSecurityLevelChange = React.useCallback(
+    async (level: SecurityLevel) => {
+      const prev = securityLevel;
+      setSecurityLevel(level);
+      setSecurityBusy(true);
+      onError(null);
+      try {
+        const snap = await gw.request<ExecApprovalsSnapshot>("exec.approvals.get", {});
+        approvalsRef.current = snap;
+        const nextFile = applySecurityLevel(snap.file, level);
+        await gw.request("exec.approvals.set", {
+          baseHash: snap.hash,
+          file: nextFile,
+        });
+        approvalsRef.current = { ...snap, file: nextFile };
+      } catch (err) {
+        setSecurityLevel(prev);
+        onError(errorToMessage(err));
+      } finally {
+        setSecurityBusy(false);
+      }
+    },
+    [gw, onError, securityLevel]
   );
 
   const confirmResetAndClose = React.useCallback(async () => {
@@ -302,6 +394,34 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
         </div>
         <p className={s.UiSettingsOtherHint}>
           Built-in terminal with openclaw and bundled tools in PATH.
+        </p>
+      </section>
+
+      {/* Agent: exec approval security level */}
+      <section className={s.UiSettingsOtherSection}>
+        <h3 className={s.UiSettingsOtherSectionTitle}>Agent</h3>
+        <div className={s.UiSettingsOtherCard}>
+          <div className={s.UiSettingsOtherRow}>
+            <div className={s.UiSettingsOtherRowLabelGroup}>
+              <span className={s.UiSettingsOtherRowLabel}>Command approval</span>
+              <span className={s.UiSettingsOtherRowSubLabel}>
+                Controls when shell commands require your approval
+              </span>
+            </div>
+            <select
+              className={s.UiSettingsOtherSelect}
+              value={securityLevel}
+              disabled={securityBusy}
+              onChange={(e) => void handleSecurityLevelChange(e.target.value as SecurityLevel)}
+            >
+              <option value="balanced">Balanced</option>
+              <option value="permissive">Permissive</option>
+            </select>
+          </div>
+        </div>
+        <p className={s.UiSettingsOtherHint}>
+          <strong>Balanced</strong> — approve only unknown commands. <strong>Permissive</strong> —
+          no approvals needed.
         </p>
       </section>
 

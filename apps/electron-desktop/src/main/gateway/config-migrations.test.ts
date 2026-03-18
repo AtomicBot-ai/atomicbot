@@ -53,7 +53,7 @@ describe("runConfigMigrations", () => {
     expect(result.browser.defaultProfile).toBe("openclaw");
 
     const state = JSON.parse(fs.readFileSync(path.join(tmpDir, "desktop-state.json"), "utf-8"));
-    expect(state.configVersion).toBe(3);
+    expect(state.configVersion).toBe(DESKTOP_CONFIG_MIGRATIONS.length);
   });
 
   it("does not re-apply migrations on second run", () => {
@@ -101,7 +101,7 @@ describe("runConfigMigrations", () => {
     expect(result.tools.exec.safeBinProfiles.gh).toEqual({});
 
     const state = JSON.parse(fs.readFileSync(path.join(tmpDir, "desktop-state.json"), "utf-8"));
-    expect(state.configVersion).toBe(3);
+    expect(state.configVersion).toBe(DESKTOP_CONFIG_MIGRATIONS.length);
   });
 
   it("preserves existing browser.defaultProfile if already set", () => {

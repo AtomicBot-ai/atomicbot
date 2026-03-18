@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   readConsentAccepted: vi.fn(() => true),
   writeConsentAccepted: vi.fn(),
   runConfigMigrations: vi.fn(),
+  runExecApprovalsMigrations: vi.fn(),
   ensureGatewayConfigFile: vi.fn(),
   readGatewayTokenFromConfig: vi.fn(() => "token-from-config"),
   createGatewayStarter: vi.fn(),
@@ -33,6 +34,9 @@ vi.mock("../consent", () => ({
 }));
 vi.mock("../gateway/config-migrations", () => ({
   runConfigMigrations: mocks.runConfigMigrations,
+}));
+vi.mock("../gateway/exec-approvals-migrations", () => ({
+  runExecApprovalsMigrations: mocks.runExecApprovalsMigrations,
 }));
 vi.mock("../gateway/config", () => ({
   ensureGatewayConfigFile: mocks.ensureGatewayConfigFile,

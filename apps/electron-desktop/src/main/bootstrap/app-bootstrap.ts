@@ -8,6 +8,7 @@ import type { BinaryPaths } from "../types";
 import { DEFAULT_PORT } from "../constants";
 import { readConsentAccepted, writeConsentAccepted } from "../consent";
 import { runConfigMigrations } from "../gateway/config-migrations";
+import { runExecApprovalsMigrations } from "../gateway/exec-approvals-migrations";
 import { ensureGatewayConfigFile, readGatewayTokenFromConfig } from "../gateway/config";
 import { createGatewayStarter } from "../gateway/lifecycle";
 import { killOrphanedGateway, removeStaleGatewayLock } from "../gateway/pid-file";
@@ -90,6 +91,7 @@ export async function bootstrapApp(params: {
   let token = tokenFromConfig ?? randomBytes(24).toString("base64url");
   ensureGatewayConfigFile({ configPath, token });
   runConfigMigrations({ configPath, stateDir });
+  runExecApprovalsMigrations({ stateDir });
 
   const rendererIndex = resolveRendererIndex({
     isPackaged: app.isPackaged,

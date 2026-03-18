@@ -183,6 +183,30 @@ export const DESKTOP_CONFIG_MIGRATIONS: ConfigMigration[] = [
       return changed;
     },
   },
+  {
+    version: 4,
+    description: "Set explicit tools.exec defaults (host=gateway, security=allowlist, ask=on-miss)",
+    apply: (cfg) => {
+      const tools = ensureObject(cfg, "tools");
+      const exec = ensureObject(tools, "exec");
+      let changed = false;
+
+      if (typeof exec.host !== "string" || !exec.host.trim()) {
+        exec.host = "gateway";
+        changed = true;
+      }
+      if (typeof exec.security !== "string" || !exec.security.trim()) {
+        exec.security = "allowlist";
+        changed = true;
+      }
+      if (typeof exec.ask !== "string" || !exec.ask.trim()) {
+        exec.ask = "on-miss";
+        changed = true;
+      }
+
+      return changed;
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------

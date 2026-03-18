@@ -104,7 +104,10 @@ export function GatewayRpcProvider({
       // Nudge the client to reconnect immediately if it's sitting in a backoff pause.
       client.nudge();
       // Wait for the gateway to connect (includes WebSocket open + handshake).
-      await waitForConnected(client, WAIT_CONNECTED_TIMEOUT_MS);
+      const ok = await waitForConnected(client, WAIT_CONNECTED_TIMEOUT_MS);
+      if (!ok) {
+        throw new Error("gateway not connected (timeout)");
+      }
       return await client.request<T>(method, params);
     },
     [client]
