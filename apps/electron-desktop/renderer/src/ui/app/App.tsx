@@ -51,23 +51,21 @@ function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> 
   );
 }
 
-function SidebarLayout({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
+function SidebarLayout() {
   return (
-    <GatewayRpcProvider url={state.url} token={state.token}>
-      <OptimisticSessionProvider>
-        <OptimisticSessionSync />
-        <ExecApprovalOverlay />
-        <SubscriptionPromoBannerSource />
-        <div className={a.UiAppShell}>
-          <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
-            <Sidebar />
-            <div className={a.UiChatLayoutMain}>
-              <Outlet />
-            </div>
+    <OptimisticSessionProvider>
+      <OptimisticSessionSync />
+      <ExecApprovalOverlay />
+      <SubscriptionPromoBannerSource />
+      <div className={a.UiAppShell}>
+        <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
+          <Sidebar />
+          <div className={a.UiChatLayoutMain}>
+            <Outlet />
           </div>
         </div>
-      </OptimisticSessionProvider>
-    </GatewayRpcProvider>
+      </div>
+    </OptimisticSessionProvider>
   );
 }
 
@@ -210,7 +208,7 @@ export function App() {
             }
           />
           <Route path={`${routes.welcome}/*`} element={<WelcomePage state={state} />} />
-          <Route path="/" element={<SidebarLayout state={state} />}>
+          <Route path="/" element={<SidebarLayout />}>
             <Route index element={<Navigate to={routes.chat} replace />} />
             <Route path="chat" element={<ChatRoute state={state} />} />
             <Route path="terminal" element={<TerminalPage />} />

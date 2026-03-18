@@ -147,17 +147,6 @@ export function ExecApprovalOverlay() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Clear stale approvals when gateway reconnects (new gateway instance
-  // has an empty ExecApprovalManager, so any queued IDs are invalid).
-  const prevConnected = React.useRef(gw.connected);
-  React.useEffect(() => {
-    if (gw.connected && !prevConnected.current) {
-      setQueue([]);
-      setError(null);
-    }
-    prevConnected.current = gw.connected;
-  }, [gw.connected]);
-
   // Subscribe to gateway events
   React.useEffect(() => {
     return gw.onEvent((evt) => {
@@ -232,8 +221,7 @@ export function ExecApprovalOverlay() {
   };
 
   const handleDismiss = () => {
-    setQueue((prev) => prev.filter((e) => e.id !== active.id));
-    setError(null);
+    void handleDecision("deny");
   };
 
   return (
