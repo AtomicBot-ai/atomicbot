@@ -1,13 +1,14 @@
 import React, { useEffect } from "react";
-
 import { GlassCard, HeroPageLayout, OnboardingDots, PrimaryButton } from "@shared/kit";
-import layoutStyles from "../OnboardingStepLayout.module.css";
 import {
   type ModelEntry,
-  TIER_INFO,
-  formatModelMeta,
   getModelTier,
+  formatModelMeta,
+  TIER_INFO,
 } from "@shared/models/modelPresentation";
+import layoutStyles from "../OnboardingStepLayout.module.css";
+import s from "./ModelSelectPage.module.css";
+import { RichSelect, type RichOption } from "@ui/settings/account-models/RichSelect";
 
 export function ModelSelectPage(props: {
   totalSteps: number;
@@ -46,12 +47,32 @@ export function ModelSelectPage(props: {
     });
   }, [props.models, props.filterProvider, props.defaultModelId]);
 
+  const modelOptions: RichOption<string>[] = React.useMemo(
+    () =>
+      filteredModels.map((m) => {
+        const tier = getModelTier(m);
+        const meta = formatModelMeta(m);
+        const badge = tier ? { text: TIER_INFO[tier].label, variant: tier } : undefined;
+        return {
+          value: `${m.provider}/${m.id}`,
+          label: m.name,
+          meta: meta ?? undefined,
+          badge,
+        };
+      }),
+    [filteredModels]
+  );
+
   useEffect(() => {
     if (filteredModels.length > 0) {
-      const model = filteredModels[0];
+      const pinId = props.defaultModelId;
+      const preferred = pinId
+        ? filteredModels.find((m) => m.id === pinId || m.id.includes(pinId))
+        : null;
+      const model = preferred ?? filteredModels[0]!;
       setSelected(`${model.provider}/${model.id}`);
     }
-  }, [filteredModels]);
+  }, [filteredModels, props.defaultModelId]);
 
   if (props.loading) {
     return (
@@ -176,39 +197,20 @@ export function ModelSelectPage(props: {
         <div className="UiSectionSubtitle">
           Choose your preferred model. You can change this later in settings.
         </div>
-        <div className="UiProviderList UiListWithScroll scrollable">
-          {filteredModels.map((model) => {
-            const modelKey = `${model.provider}/${model.id}`;
-            const tier = getModelTier(model);
-            const meta = formatModelMeta(model);
-            return (
-              <label
-                key={modelKey}
-                className={`UiProviderOption ${selected === modelKey ? "UiProviderOption--selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="model"
-                  value={modelKey}
-                  checked={selected === modelKey}
-                  onChange={() => setSelected(modelKey)}
-                  className="UiProviderRadio"
-                />
-                <div className="UiProviderContent">
-                  <div className="UiProviderHeader">
-                    <span className="UiProviderName">{model.name || model.id}</span>
-                    {tier ? (
-                      <span className={`UiProviderBadge UiModelTierBadge--${tier}`}>
-                        {TIER_INFO[tier].label}
-                      </span>
-                    ) : null}
-                  </div>
-                  {meta ? <div className="UiProviderDescription">{meta}</div> : null}
-                </div>
-              </label>
-            );
-          })}
+        <div className={s.dropdownWrap}>
+          <span className={s.dropdownLabel}>Current Model</span>
+          <RichSelect
+            value={selected}
+            onChange={(value) => setSelected(value)}
+            options={modelOptions}
+            placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
+            disabled={modelOptions.length === 0}
+            disabledStyles={modelOptions.length === 0}
+          />
         </div>
+        <p className={s.footnote}>Different models may consume different amounts of AI credits.</p>
+
+        <div className="UiApiKeySpacer" aria-hidden="true" />
         <div className="UiProviderContinueRow">
           <div />
           <div className="UiSkillsBottomActions">
