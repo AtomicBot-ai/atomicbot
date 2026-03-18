@@ -23,6 +23,7 @@ import { SkillsIntegrationsTab } from "./skills/SkillsIntegrationsTab";
 import { VoiceRecognitionTab } from "./voice/VoiceRecognitionTab";
 import { AccountTab } from "./account/AccountTab";
 import { AccountModelsTab } from "./account-models/AccountModelsTab";
+import { ServerTab } from "./server/ServerTab";
 import { addToastError } from "@shared/toast";
 
 export type SettingsOutletContext = {
@@ -41,6 +42,7 @@ export type SettingsTabId =
   | "voice"
   | "account"
   | "account-models"
+  | "server"
   | "other";
 
 type TabDef = { path: string; label: string; tab: SettingsTabId };
@@ -53,6 +55,7 @@ const ALL_TABS: TabDef[] = [
   { path: "ai-providers", label: "AI Providers", tab: "providers" },
   { path: "messengers", label: "Messengers", tab: "connectors" },
   { path: "voice", label: "Voice", tab: "voice" },
+  { path: "server", label: "VPS Instance", tab: "server" },
   { path: "other", label: "Other", tab: "other" },
 ];
 
@@ -147,6 +150,8 @@ export function SettingsTab({ tab }: { tab: SettingsTabId }) {
           onError={ctx.onError}
         />
       );
+    case "server":
+      return <ServerTab />;
     case "other":
       return <OtherTab onError={ctx.onError} />;
     default:

@@ -84,7 +84,7 @@ function Topbar() {
       </NavLink>
 
       <div className={a.UiAppTopbarActions}>
-        <NavLink to={routes.settings + "/other"} className={a.UiAppTopbarBackButton}>
+        <NavLink to={routes.chat} className={a.UiAppTopbarBackButton}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -222,6 +222,7 @@ export function App() {
               <Route path="messengers" element={<SettingsTab tab="connectors" />} />
               <Route path="skills" element={<SettingsTab tab="skills-integrations" />} />
               <Route path="voice" element={<SettingsTab tab="voice" />} />
+              <Route path="server" element={<SettingsTab tab="server" />} />
               <Route path="account" element={<SettingsTab tab="account" />} />
               <Route path="other" element={<SettingsTab tab="other" />} />
             </Route>
