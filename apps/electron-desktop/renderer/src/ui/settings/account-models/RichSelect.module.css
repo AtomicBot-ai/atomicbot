@@ -191,15 +191,11 @@
 }
 
 .option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--panel);
 }
 
 .option--active {
-  background: rgba(13, 111, 255, 0.12);
-}
-
-.option--active:hover {
-  background: rgba(13, 111, 255, 0.18);
+  background: var(--panel);
 }
 
 .optionIcon {
@@ -282,11 +278,4 @@
   color: rgba(255, 255, 255, 0.35);
   line-height: 1.25;
   margin-top: 0;
-}
-
-.optionCheck {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: #0d6fff;
 }

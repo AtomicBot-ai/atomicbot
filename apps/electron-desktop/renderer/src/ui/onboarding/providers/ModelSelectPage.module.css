@@ -1,0 +1,20 @@
+.dropdownWrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.dropdownLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: #8e8e8e;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.footnote {
+  color: rgba(142, 142, 142, 0.5);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}

@@ -1,5 +1,13 @@
 import React from "react";
-import { Navigate, NavLink, Outlet, useOutletContext } from "react-router-dom";
+import {
+  Navigate,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useSearchParams,
+} from "react-router-dom";
 import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
 import { configActions, reloadConfig, type ConfigSnapshot } from "@store/slices/configSlice";
@@ -47,6 +55,8 @@ const ALL_TABS: TabDef[] = [
   { path: "voice", label: "Voice", tab: "voice" },
   { path: "other", label: "Other", tab: "other" },
 ];
+
+const VALID_TAB_PATHS = new Set(ALL_TABS.map((t) => t.path));
 
 function getVisibleTabs(_mode: SetupMode | null): TabDef[] {
   return ALL_TABS.filter((t) => t.tab !== "account" && t.tab !== "model" && t.tab !== "providers");
@@ -152,6 +162,21 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
   const authMode = useAppSelector((st) => st.auth.mode);
   const gw = useGatewayRpc();
   const visibleTabs = React.useMemo(() => getVisibleTabs(authMode), [authMode]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Switch tab from URL query ?tab=<path> (e.g. ?tab=voice → /settings/voice)
+  React.useEffect(() => {
+    const tabPath = searchParams.get("tab");
+    if (!tabPath || !VALID_TAB_PATHS.has(tabPath)) return;
+    const currentPath = location.pathname.replace(/^\/settings\/?/, "") || "";
+    if (currentPath === tabPath) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    navigate(`/settings/${tabPath}`, { replace: true });
+  }, [searchParams, location.pathname, navigate, setSearchParams]);
 
   const reload = React.useCallback(async () => {
     setPageError(null);

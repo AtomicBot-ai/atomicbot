@@ -84,7 +84,7 @@ function Topbar() {
       </NavLink>
 
       <div className={a.UiAppTopbarActions}>
-        <NavLink to={routes.settings + "/other"} className={a.UiAppTopbarBackButton}>
+        <NavLink to={routes.chat} className={a.UiAppTopbarBackButton}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"

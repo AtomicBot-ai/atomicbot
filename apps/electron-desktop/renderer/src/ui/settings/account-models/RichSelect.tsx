@@ -33,22 +33,6 @@ function ChevronDown(props: { className?: string }) {
   );
 }
 
-function CheckMark(props: { className?: string }) {
-  return (
-    <svg
-      className={props.className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
 export function RichSelect<T extends string>(props: {
   value: T | null;
   onChange: (value: T) => void;
@@ -189,7 +173,6 @@ export function RichSelect<T extends string>(props: {
                         ) : null}
                         {opt.meta ? <div className={s.optionMeta}>{opt.meta}</div> : null}
                       </div>
-                      {isActive ? <CheckMark className={s.optionCheck} /> : null}
                     </button>
                   );
                 })
