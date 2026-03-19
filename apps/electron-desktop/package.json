@@ -19,7 +19,7 @@
     "prepare:runtimes": "npm run prepare:node && npm run prepare:gog:all && npm run prepare:jq:all && npm run prepare:memo:all && npm run prepare:remindctl:all && npm run prepare:obsidian-cli:all && npm run prepare:gh:all && npm run prepare:whisper-cli:all",
     "rebuild": "electron-rebuild -f -w node-pty",
     "dev": "npm run rebuild && npm run build:all && electron .",
-    "build": "tsc -p tsconfig.json && esbuild dist/preload.js --bundle --platform=node --format=cjs --outfile=dist/preload.js --allow-overwrite --external:electron",
+    "build": "tsc -p tsconfig.json && node scripts/define-main-env.mjs && esbuild dist/preload.js --bundle --platform=node --format=cjs --outfile=dist/preload.js --allow-overwrite --external:electron",
     "build:renderer": "vite build --config renderer/vite.config.ts",
     "prepare:all": "npm run prepare:openclaw && npm run prepare:runtimes",
     "prepare:openclaw": "node scripts/prepare-openclaw-bundle.mjs",
@@ -107,6 +107,8 @@
     "json5": "^2.2.3",
     "jszip": "^3.10.1",
     "node-pty": "^1.1.0",
+    "posthog-js": "^1.362.0",
+    "posthog-node": "^5.28.4",
     "react-hot-toast": "^2.6.0"
   },
   "build": {

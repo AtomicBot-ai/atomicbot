@@ -9,4 +9,6 @@ export type BannerItem = {
   action?: { label: string; onClick: () => void };
   /** "session" = dismiss until next app launch; "persistent" = dismiss forever (localStorage). */
   dismissible?: "session" | "persistent";
+  /** Called when the user clicks the dismiss (×) button, in addition to the normal dismissal. */
+  onDismiss?: () => void;
 };

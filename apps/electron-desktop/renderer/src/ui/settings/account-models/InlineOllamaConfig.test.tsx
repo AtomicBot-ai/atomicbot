@@ -57,7 +57,7 @@ const ollamaProvider = {
   helpUrl: "https://ollama.com",
   helpText: "Run models locally or sign in to Ollama Cloud.",
   authType: "ollama" as const,
-  privacyFirst: true,
+  localModels: true,
 };
 
 describe("InlineOllamaConfig", () => {

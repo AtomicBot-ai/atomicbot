@@ -1,5 +1,6 @@
 import { app, type BrowserWindow } from "electron";
 import { randomBytes } from "node:crypto";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { AppState } from "../app-state";
@@ -7,6 +8,8 @@ import type { Platform } from "../platform";
 import type { BinaryPaths } from "../types";
 import { DEFAULT_PORT } from "../constants";
 import { readConsentAccepted, writeConsentAccepted } from "../consent";
+import { readAnalyticsState, writeAnalyticsState } from "../analytics/analytics-state";
+import { initPosthogMain, captureMain } from "../analytics/posthog-main";
 import { runConfigMigrations } from "../gateway/config-migrations";
 import { runExecApprovalsMigrations } from "../gateway/exec-approvals-migrations";
 import { ensureGatewayConfigFile, readGatewayTokenFromConfig } from "../gateway/config";
@@ -111,6 +114,25 @@ export async function bootstrapApp(params: {
 
   const consentPath = path.join(stateDir, "consent.json");
   params.state.consentAccepted = readConsentAccepted(consentPath);
+
+  // Initialize analytics. Enable by default for any user who hasn't explicitly
+  // made a choice yet (no state file, or state file without the prompted flag).
+  const analyticsStatePath = path.join(stateDir, "analytics-state.json");
+  const isFirstAnalyticsRun = !fs.existsSync(analyticsStatePath);
+  const analyticsState = readAnalyticsState(stateDir);
+  if (!analyticsState.prompted) {
+    // Auto-enable for users who have never been prompted.
+    analyticsState.enabled = true;
+    analyticsState.prompted = true;
+    analyticsState.enabledAt = analyticsState.enabledAt ?? new Date().toISOString();
+    writeAnalyticsState(stateDir, analyticsState);
+  }
+  initPosthogMain(analyticsState.userId, analyticsState.enabled);
+  captureMain("app_launched", {
+    platform: process.platform,
+    version: app.getVersion(),
+    firstRun: isFirstAnalyticsRun,
+  });
 
   const stderrTail = createTailBuffer(24_000);
   const startGateway = createGatewayStarter({

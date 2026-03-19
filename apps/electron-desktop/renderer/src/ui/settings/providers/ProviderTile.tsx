@@ -57,6 +57,7 @@ export const ProviderTile = React.memo(function ProviderTile(props: {
       </div>
       <div className="UiSkillName">
         {provider.name}
+        {provider.localModels && <span className="UiProviderBadgeLocal">Local models</span>}
         {provider.privacyFirst && <span className="UiProviderBadgePrivacy">Privacy First</span>}
       </div>
       <div className="UiSkillDescription">{provider.description}</div>

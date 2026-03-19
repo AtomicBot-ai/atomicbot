@@ -38,6 +38,7 @@ import { DefenderBanner } from "../updates/DefenderBanner";
 import { AppBanners } from "../shared/banners/AppBanners";
 import { SkillsPage } from "@ui/skills/SkillsPage";
 import { ModelsPage } from "@ui/models/ModelsPage";
+import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 import a from "./App.module.css";
 
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
@@ -159,6 +160,11 @@ export function App() {
   const location = useLocation();
   const didAutoNavRef = React.useRef(false);
   usePaidStatusBridge();
+
+  // Track page views on every route change.
+  React.useEffect(() => {
+    captureRenderer(ANALYTICS_EVENTS.pageView, { path: location.pathname });
+  }, [location.pathname]);
 
   React.useEffect(() => {
     void dispatch(initGatewayState());

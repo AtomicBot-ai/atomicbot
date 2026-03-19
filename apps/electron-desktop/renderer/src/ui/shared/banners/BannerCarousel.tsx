@@ -73,7 +73,10 @@ export function BannerCarousel({ items }: { items: BannerItem[] }) {
         {current.dismissible && (
           <button
             className={s.BannerDismiss}
-            onClick={() => dismiss(current.id, current.dismissible!)}
+            onClick={() => {
+              current.onDismiss?.();
+              dismiss(current.id, current.dismissible!);
+            }}
             type="button"
             aria-label="Dismiss banner"
           >

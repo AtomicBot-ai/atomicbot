@@ -54,6 +54,7 @@
   font-style: normal;
   font-weight: 400;
   line-height: 13px;
+  white-space: pre-line;
 }
 
 .UiLink {
@@ -204,6 +205,16 @@
   font-weight: 400;
   font-size: 13px;
   color: #ffb300;
+}
+
+.UiProviderBadgeLocal {
+  opacity: 1;
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+  background-color: #14b8a626;
+  font-weight: 400;
+  font-size: 13px;
+  color: #14b8a6;
 }
 
 .UiProviderDescription {

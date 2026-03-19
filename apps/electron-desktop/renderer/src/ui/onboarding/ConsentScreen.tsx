@@ -4,6 +4,7 @@ import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { openExternal } from "@shared/utils/openExternal";
 import { FooterText, HeroPageLayout, PrimaryButton, SplashLogo } from "@shared/kit";
 import { addToastError } from "@shared/toast";
+import { optInRenderer, getCurrentUserId } from "@analytics";
 import pkg from "../../../../package.json";
 import s from "./ConsentScreen.module.css";
 
@@ -21,11 +22,11 @@ export function ConsentScreen({
 }) {
   const api = getDesktopApiOrNull() as ConsentDesktopApi | null;
   const [busy, setBusy] = React.useState(false);
-  const termsUrl = "https://atomicbot.ai/terms-of-service";
   const appVersion = pkg.version || "0.0.0";
+  const termsUrl = "https://atomicbot.ai/terms-of-service";
+  const privacyUrl = "https://atomicbot.ai/privacy-policy";
 
-  // Record TOS acceptance, then invoke the callback. Gateway is already
-  // running at this point so we only need to persist the consent flag.
+  // Record consent acceptance, enable analytics by default, then invoke the callback.
   const acceptAndRun = React.useCallback(
     async (callback: () => void) => {
       if (busy) {
@@ -38,6 +39,11 @@ export function ConsentScreen({
       setBusy(true);
       try {
         await api.acceptConsent();
+        if (api.analyticsSet) {
+          await api.analyticsSet(true);
+        }
+        const userId = getCurrentUserId();
+        if (userId) optInRenderer(userId);
         callback();
       } catch (err) {
         addToastError(err);

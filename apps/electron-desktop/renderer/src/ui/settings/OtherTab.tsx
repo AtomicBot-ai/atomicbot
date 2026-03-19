@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
+import { optInRenderer, optOutRenderer, getCurrentUserId } from "@analytics";
 import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
 import { authActions, clearAuth, persistMode } from "@store/slices/auth/authSlice";
@@ -71,6 +72,7 @@ function applySecurityLevel(file: ExecApprovalsFile, level: SecurityLevel): Exec
 
 export function OtherTab({ onError }: { onError: (msg: string | null) => void }) {
   const [launchAtStartup, setLaunchAtStartup] = React.useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = React.useState(false);
   const [resetBusy, setResetBusy] = React.useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = React.useState(false);
   const [terminalSidebar, setTerminalSidebar] = useTerminalSidebarVisible();
@@ -95,6 +97,14 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
   }, []);
 
   React.useEffect(() => {
+    const api = getDesktopApiOrNull();
+    if (!api?.analyticsGet) {
+      return;
+    }
+    void api.analyticsGet().then((res) => setAnalyticsEnabled(res.enabled));
+  }, []);
+
+  React.useEffect(() => {
     if (!gw.connected) return;
     void gw
       .request<ExecApprovalsSnapshot>("exec.approvals.get", {})
@@ -104,6 +114,30 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
       })
       .catch(() => {});
   }, [gw, gw.connected]);
+
+  const toggleAnalytics = React.useCallback(
+    async (enabled: boolean) => {
+      const api = getDesktopApiOrNull();
+      if (!api?.analyticsSet) {
+        onError("Desktop API not available");
+        return;
+      }
+      setAnalyticsEnabled(enabled);
+      try {
+        await api.analyticsSet(enabled);
+        const userId = getCurrentUserId();
+        if (enabled && userId) {
+          optInRenderer(userId);
+        } else {
+          optOutRenderer();
+        }
+      } catch (err) {
+        setAnalyticsEnabled(!enabled);
+        onError(errorToMessage(err));
+      }
+    },
+    [onError]
+  );
 
   const toggleLaunchAtStartup = React.useCallback(
     async (enabled: boolean) => {
@@ -295,6 +329,13 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
           >
             Discord
           </button>
+          <button
+            type="button"
+            className={s.UiSettingsOtherFooterLink}
+            onClick={() => openExternal("https://atomicbot.ai/privacy-policy")}
+          >
+            Privacy Policy
+          </button>
         </div>
       </section>
 
@@ -423,6 +464,28 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
           <strong>Balanced</strong> — approve only unknown commands. <strong>Permissive</strong> —
           no approvals needed.
         </p>
+      </section>
+
+      {/* Privacy */}
+      <section className={s.UiSettingsOtherSection}>
+        <h3 className={s.UiSettingsOtherSectionTitle}>Privacy</h3>
+        <div className={s.UiSettingsOtherCard}>
+          <div className={s.UiSettingsOtherRow}>
+            <span className={s.UiSettingsOtherRowLabel}>Anonymous statistics</span>
+            <span className={s.UiSettingsOtherAppRowValue}>
+              <label className={s.UiSettingsOtherToggle} aria-label="Share anonymous usage data">
+                <input
+                  type="checkbox"
+                  checked={analyticsEnabled}
+                  onChange={(e) => void toggleAnalytics(e.target.checked)}
+                />
+                <span className={s.UiSettingsOtherToggleTrack}>
+                  <span className={s.UiSettingsOtherToggleThumb} />
+                </span>
+              </label>
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* Danger zone (reset) */}

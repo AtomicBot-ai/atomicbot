@@ -62,3 +62,23 @@
 .UiConsentSecondaryButton:hover {
   opacity: 0.8;
 }
+
+.UiConsentAnalyticsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.7;
+}
+
+.UiConsentAnalyticsRow:hover {
+  opacity: 0.9;
+}
+
+.UiConsentAnalyticsLabel {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ffffff;
+}

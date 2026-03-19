@@ -84,6 +84,9 @@ export function ProviderSelectPage(props: {
                   <span className="UiProviderName">{provider.name}</span>
                   {provider.recommended && <span className="UiProviderBadge">Recommended</span>}
                   {provider.popular && <span className="UiProviderBadgePopular">Popular</span>}
+                  {provider.localModels && (
+                    <span className="UiProviderBadgeLocal">Local models</span>
+                  )}
                   {provider.privacyFirst && (
                     <span className="UiProviderBadgePrivacy">Privacy First</span>
                   )}

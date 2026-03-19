@@ -22,6 +22,7 @@ export type ModelProviderInfo = {
   placeholder?: string;
   popular?: boolean;
   privacyFirst?: boolean;
+  localModels?: boolean;
   helpUrl?: string;
   helpTitle?: string;
   helpText?: string;
@@ -129,7 +130,7 @@ export const MODEL_PROVIDERS: ModelProviderInfo[] = [
     id: "ollama",
     name: "Ollama",
     description: "Run AI models locally or use Ollama Cloud for remote inference",
-    privacyFirst: true,
+    localModels: true,
     placeholder: "ollama-api-key...",
     helpUrl: "https://ollama.com",
     helpText: "Run models locally or sign in to Ollama Cloud.",

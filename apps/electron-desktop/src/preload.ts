@@ -110,6 +110,8 @@ const api: OpenclawDesktopApi = {
   whisperTranscribe: async (params: { audio: string; language?: string; model?: string }) =>
     ipcRenderer.invoke(IPC.whisperTranscribe, params),
   focusWindow: async () => ipcRenderer.invoke(IPC.focusWindow),
+  analyticsGet: async () => ipcRenderer.invoke(IPC.analyticsGet),
+  analyticsSet: async (enabled: boolean) => ipcRenderer.invoke(IPC.analyticsSet, { enabled }),
   defenderStatus: async () => ipcRenderer.invoke(IPC.defenderStatus),
   defenderApplyExclusions: async () => ipcRenderer.invoke(IPC.defenderApplyExclusions),
   defenderDismiss: async () => ipcRenderer.invoke(IPC.defenderDismiss),

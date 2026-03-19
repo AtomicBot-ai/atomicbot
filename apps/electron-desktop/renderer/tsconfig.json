@@ -18,7 +18,9 @@
       "@gateway/*": ["src/gateway/*"],
       "@shared/*": ["src/ui/shared/*"],
       "@styles/*": ["src/ui/styles/*"],
-      "@ui/*": ["src/ui/*"]
+      "@ui/*": ["src/ui/*"],
+      "@analytics": ["src/analytics/index.ts"],
+      "@analytics/*": ["src/analytics/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]

@@ -1,6 +1,7 @@
 import { app, type BrowserWindow } from "electron";
 import { autoUpdater, type UpdateInfo } from "electron-updater";
 import { showUpdateSplash } from "./update-splash";
+import { captureMain } from "./analytics/posthog-main";
 
 // Interval between periodic update checks (5 minutes).
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -90,6 +91,7 @@ export async function downloadUpdate(): Promise<void> {
 
 /** Quit the app and install the downloaded update. */
 export function installUpdate(): void {
+  captureMain("update_installed", { version: app.getVersion() });
   // Show a native splash window that persists across the restart gap so the
   // user sees continuous feedback instead of a confusing blank screen.
   showUpdateSplash();

@@ -7,6 +7,7 @@ import { IPC_EVENTS } from "../../shared/ipc-channels";
 import { spawnGateway } from "./spawn";
 import { writeGatewayPid, removeGatewayPid } from "./pid-file";
 import { waitForPortOpen } from "../util/net";
+import { captureMain } from "../analytics/posthog-main";
 
 export function broadcastGatewayState(
   win: BrowserWindow | null,
@@ -169,5 +170,6 @@ export function createGatewayStarter(
       { kind: "ready", port: deps.port, logsDir: deps.logsDir, url: deps.url, token },
       state
     );
+    captureMain("gateway_started", { port: deps.port });
   };
 }

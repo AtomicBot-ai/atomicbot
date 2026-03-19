@@ -263,6 +263,11 @@
   color: #ffb300;
 }
 
+.optionBadge--local {
+  background: rgba(20, 184, 166, 0.15);
+  color: #14b8a6;
+}
+
 .optionDescription {
   color: rgba(255, 255, 255, 0.4);
   line-height: 1.25;

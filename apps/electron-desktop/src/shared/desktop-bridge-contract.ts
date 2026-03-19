@@ -147,6 +147,8 @@ export interface OpenclawDesktopApi {
     model?: string;
   }) => Promise<{ ok: boolean; text?: string; error?: string }>;
   focusWindow: () => Promise<void>;
+  analyticsGet: () => Promise<{ enabled: boolean; userId: string; prompted: boolean }>;
+  analyticsSet: (enabled: boolean) => Promise<{ ok: true }>;
   defenderStatus: () => Promise<{ applied: boolean; dismissed: boolean; isWindows: boolean }>;
   defenderApplyExclusions: () => Promise<{ ok: boolean; error?: string }>;
   defenderDismiss: () => Promise<{ ok: boolean }>;
@@ -243,4 +245,6 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "onDeepLink",
   "onTerminalData",
   "onTerminalExit",
+  "analyticsGet",
+  "analyticsSet",
 ];

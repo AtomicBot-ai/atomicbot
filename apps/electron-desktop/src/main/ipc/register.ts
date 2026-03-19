@@ -6,6 +6,7 @@
 import { registerGogIpcHandlers } from "../gog/ipc";
 import { registerResetAndCloseIpcHandler } from "../reset/ipc";
 import { registerWhisperIpcHandlers } from "../whisper/ipc";
+import { registerAnalyticsHandlers } from "./analytics-ipc";
 
 import type { RegisterParams } from "./types";
 import { registerAuthHandlers } from "./auth-ipc";
@@ -42,4 +43,5 @@ export function registerIpcHandlers(params: RegisterParams) {
   registerGogIpcHandlers(params);
   registerWhisperIpcHandlers(params);
   registerResetAndCloseIpcHandler(params);
+  registerAnalyticsHandlers(params);
 }

@@ -85,6 +85,7 @@ jobs:
         run: npm run build:all
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       - name: Prepare OpenClaw bundle
         working-directory: apps/electron-desktop
@@ -317,6 +318,7 @@ jobs:
         run: npm run build:all
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       - name: Prepare OpenClaw bundle
         working-directory: apps/electron-desktop

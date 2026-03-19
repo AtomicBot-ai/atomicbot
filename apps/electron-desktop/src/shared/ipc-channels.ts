@@ -92,6 +92,10 @@ export const IPC = {
   defenderApplyExclusions: "defender-apply-exclusions",
   defenderDismiss: "defender-dismiss",
 
+  // Analytics (consent state + opt-in/opt-out)
+  analyticsGet: "analytics-get",
+  analyticsSet: "analytics-set",
+
   // Reset
   resetAndClose: "reset-and-close",
 
