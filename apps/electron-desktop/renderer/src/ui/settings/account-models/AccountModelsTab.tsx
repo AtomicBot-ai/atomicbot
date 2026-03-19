@@ -19,6 +19,7 @@ import {
   MODEL_PROVIDER_BY_ID,
   type ModelProvider,
   resolveProviderIconUrl,
+  getProviderIconUrl,
 } from "@shared/models/providers";
 import { getModelTier, formatModelMeta, TIER_INFO } from "@shared/models/modelPresentation";
 import { useModelProvidersState } from "../providers/useModelProvidersState";
@@ -157,6 +158,7 @@ export function AccountModelsTab(props: {
           label: m.name,
           meta: meta ?? undefined,
           badge,
+          icon: getProviderIconUrl(m.provider),
         };
       });
     }
@@ -172,6 +174,7 @@ export function AccountModelsTab(props: {
           label: m.name,
           meta: meta ?? undefined,
           badge,
+          icon: getProviderIconUrl(m.provider),
         };
       });
   }, [isPaidMode, selectedProvider, state.sortedModels]);
@@ -283,6 +286,7 @@ export function AccountModelsTab(props: {
               placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
               disabled={state.modelsLoading || state.modelBusy || modelOptions.length === 0}
               disabledStyles={modelOptions.length === 0}
+              onlySelectedIcon
             />
           </div>
           {modelOptions.length === 0 && !state.modelsLoading ? (
@@ -326,6 +330,7 @@ export function AccountModelsTab(props: {
                   modelOptions.length === 0
                 }
                 disabledStyles={!selectedProvider || modelOptions.length === 0}
+                onlySelectedIcon
               />
             </div>
           </div>
