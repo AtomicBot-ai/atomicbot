@@ -36,6 +36,8 @@ import { SubscriptionPromoBannerSource } from "../shared/banners/SubscriptionPro
 import { UpdateBanner } from "../updates/UpdateBanner";
 import { DefenderBanner } from "../updates/DefenderBanner";
 import { AppBanners } from "../shared/banners/AppBanners";
+import { SkillsPage } from "@ui/skills/SkillsPage";
+import { ModelsPage } from "@ui/models/ModelsPage";
 import a from "./App.module.css";
 
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
@@ -223,6 +225,9 @@ export function App() {
               <Route path="account" element={<SettingsTab tab="account" />} />
               <Route path="other" element={<SettingsTab tab="other" />} />
             </Route>
+
+            <Route path="skills" element={<SkillsPage state={state} />} />
+            <Route path="models" element={<ModelsPage />} />
           </Route>
           <Route
             path="*"

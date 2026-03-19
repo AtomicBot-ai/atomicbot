@@ -20,6 +20,7 @@ export function SkillsIntegrationsTab(props: {
   configSnap: ConfigSnapshotLike | null;
   reload: () => Promise<void>;
   onError: (value: string | null) => void;
+  noTitle?: boolean;
 }) {
   const { statuses, markConnected, markDisabled, refresh, loadConfig } = useSkillsStatus({
     gw: props.gw,
@@ -41,16 +42,18 @@ export function SkillsIntegrationsTab(props: {
 
   return (
     <div className={ps.UiSettingsContentInner}>
-      <div className={sit.UiSkillsTabHeader}>
-        <div className={ps.UiSettingsTabTitle}>Skills and Integrations</div>
-        <button
-          type="button"
-          className={sit.UiAddCustomSkillLink}
-          onClick={() => custom.setShowUploadModal(true)}
-        >
-          + Add custom skill
-        </button>
-      </div>
+      {!props.noTitle && (
+        <div className={sit.UiSkillsTabHeader}>
+          <div className={ps.UiSettingsTabTitle}>Skills and Integrations</div>
+          <button
+            type="button"
+            className={sit.UiAddCustomSkillLink}
+            onClick={() => custom.setShowUploadModal(true)}
+          >
+            + Add custom skill
+          </button>
+        </div>
+      )}
 
       <div className="UiInputRow">
         <TextInput

@@ -6,6 +6,7 @@ import {
   formatModelMeta,
   TIER_INFO,
 } from "@shared/models/modelPresentation";
+import { getProviderIconUrl } from "@shared/models/providers";
 import layoutStyles from "../OnboardingStepLayout.module.css";
 import s from "./ModelSelectPage.module.css";
 import { RichSelect, type RichOption } from "@ui/settings/account-models/RichSelect";
@@ -56,6 +57,7 @@ export function ModelSelectPage(props: {
         return {
           value: `${m.provider}/${m.id}`,
           label: m.name,
+          icon: getProviderIconUrl(m.provider),
           meta: meta ?? undefined,
           badge,
         };
@@ -206,6 +208,7 @@ export function ModelSelectPage(props: {
             placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
             disabled={modelOptions.length === 0}
             disabledStyles={modelOptions.length === 0}
+            onlySelectedIcon
           />
         </div>
         <p className={s.footnote}>Different models may consume different amounts of AI credits.</p>

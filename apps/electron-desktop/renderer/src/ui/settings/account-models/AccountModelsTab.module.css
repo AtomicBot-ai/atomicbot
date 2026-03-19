@@ -76,10 +76,21 @@
   margin-bottom: 24px;
 }
 
+.dropdownRowWithoutMargin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .dropdownGroup {
   display: flex;
   flex-direction: column;
   margin-bottom: 24px;
+}
+
+.dropdownGroupWithoutMargin {
+  display: flex;
+  flex-direction: column;
 }
 
 .dropdownRow > .dropdownGroup {
@@ -194,6 +205,7 @@
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.5;
   margin-bottom: 12px;
+  height: 20px;
 }
 
 .apiKeyInputRow {

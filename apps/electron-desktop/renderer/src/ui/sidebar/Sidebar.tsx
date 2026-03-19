@@ -188,13 +188,13 @@ export function Sidebar() {
           </span>
           New task
         </div>
-        <NavLink to={`${routes.settings}/skills`} className={css.UiChatSidebarNavLink}>
+        <NavLink to={routes.skills} className={css.UiChatSidebarNavLink}>
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <IconSkills />
           </span>
           Skills
         </NavLink>
-        <NavLink to={`${routes.settings}/account-models`} className={css.UiChatSidebarNavLink}>
+        <NavLink to={routes.models} className={css.UiChatSidebarNavLink}>
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <IconModels />
           </span>

@@ -1,0 +1,51 @@
+/* Skills page styles */
+
+.UiSkillsShell {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.UiSkillsShellWrapper {
+  width: 100%;
+  max-width: 680px;
+  min-width: 568px;
+}
+
+.UiSkillsHeader {
+  width: 100%;
+  display: flex;
+  background: var(--bg-base);
+  padding-top: 48px;
+  padding-bottom: 0;
+  z-index: 100;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.UiSkillsTitle {
+  color: #fff;
+  font-size: 26px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: -0.26px;
+  margin: 0 0 16px;
+}
+
+.UiAddCustomSkillLink {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--lime);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.UiAddCustomSkillLink:hover {
+  opacity: 0.8;
+}

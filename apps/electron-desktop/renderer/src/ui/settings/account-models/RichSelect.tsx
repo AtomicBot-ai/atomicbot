@@ -40,6 +40,7 @@ export function RichSelect<T extends string>(props: {
   placeholder?: string;
   disabled?: boolean;
   disabledStyles?: boolean;
+  onlySelectedIcon?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -154,7 +155,7 @@ export function RichSelect<T extends string>(props: {
                       className={`${s.option} ${isActive ? s["option--active"] : ""}`}
                       onClick={() => handleSelect(opt.value)}
                     >
-                      {opt.icon ? (
+                      {opt.icon && !props.onlySelectedIcon ? (
                         <img className={s.optionIcon} src={opt.icon} alt="" aria-hidden="true" />
                       ) : null}
                       <div className={s.optionContent}>

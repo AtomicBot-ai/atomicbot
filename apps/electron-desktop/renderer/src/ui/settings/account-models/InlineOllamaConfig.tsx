@@ -138,10 +138,10 @@ export function InlineOllamaConfig(props: {
       </div>
 
       <div
-        className={s.dropdownRow}
+        className={s.dropdownRowWithoutMargin}
         style={mode === "local" ? { gridTemplateColumns: "1fr" } : undefined}
       >
-        <div className={s.dropdownGroup}>
+        <div className={s.dropdownGroupWithoutMargin}>
           <div className={s.dropdownLabel}>Base URL</div>
           <TextInput
             value={baseUrl}
@@ -158,7 +158,7 @@ export function InlineOllamaConfig(props: {
         </div>
 
         {mode === "cloud" && (
-          <div className={s.dropdownGroup}>
+          <div className={s.dropdownGroupWithoutMargin}>
             <div className={s.dropdownLabel}>API Key</div>
             <TextInput
               type="password"
@@ -174,29 +174,31 @@ export function InlineOllamaConfig(props: {
         )}
       </div>
 
-      {connStatus !== "idle" && (
-        <div className={s.apiKeyHelpText} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              flexShrink: 0,
-              background:
-                connStatus === "ok"
-                  ? "#22c55e"
-                  : connStatus === "error"
-                    ? "#ef4444"
-                    : "rgba(255,255,255,0.3)",
-            }}
-          />
-          <span>
-            {connStatus === "testing" && "Testing connection..."}
-            {connStatus === "ok" && "Connected to Ollama"}
-            {connStatus === "error" && `Connection failed: ${connError}`}
-          </span>
-        </div>
-      )}
+      <div className={s.apiKeyHelpText} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {connStatus !== "idle" && (
+          <>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background:
+                  connStatus === "ok"
+                    ? "#22c55e"
+                    : connStatus === "error"
+                      ? "#ef4444"
+                      : "rgba(255,255,255,0.3)",
+              }}
+            />
+            <span>
+              {connStatus === "testing" && "Testing connection..."}
+              {connStatus === "ok" && "Connected to Ollama"}
+              {connStatus === "error" && `Connection failed: ${connError}`}
+            </span>
+          </>
+        )}
+      </div>
 
       <div className={s.apiKeyActions}>
         <ActionButton disabled={isBusy || !baseUrl.trim()} onClick={() => void testConnection()}>

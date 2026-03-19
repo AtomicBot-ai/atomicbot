@@ -46,12 +46,46 @@ export const PROVIDER_ICONS: Record<ModelProvider, string> = {
   "kimi-coding": "kimi-coding.svg",
 };
 
+/** Extra providers (e.g. from gateway models list) without dedicated assets; use fallback icon. */
+const EXTRA_PROVIDER_ICONS: Record<string, string> = {
+  "amazon-bedrock": "openrouter.svg",
+  "azure-openai-responses": "openai.svg",
+  cerebras: "openrouter.svg",
+  "github-copilot": "openai-codex.svg",
+  "google-antigravity": "gemini.svg",
+  "google-gemini-cli": "gemini.svg",
+  "google-vertex": "gemini.svg",
+  groq: "openrouter.svg",
+  huggingface: "openrouter.svg",
+  "minimax-cn": "minimax.svg",
+  mistral: "openrouter.svg",
+  opencode: "openai.svg",
+  "opencode-go": "openai.svg",
+  "vercel-ai-gateway": "openrouter.svg",
+};
+
+const ALL_PROVIDER_ICONS: Record<string, string> = {
+  ...PROVIDER_ICONS,
+  ...EXTRA_PROVIDER_ICONS,
+};
+
+export function hasProviderIcon(provider: string): boolean {
+  return provider in ALL_PROVIDER_ICONS;
+}
+
 export function resolveProviderIconUrl(provider: ModelProvider): string {
   // Resolve relative to renderer's index.html (renderer/dist/index.html -> ../../assets/)
   return new URL(
     `../../assets/ai-providers/${PROVIDER_ICONS[provider]}`,
     document.baseURI
   ).toString();
+}
+
+/** Returns icon URL only when provider is in PROVIDER_ICONS (or extra map); use for model lists with arbitrary provider ids. */
+export function getProviderIconUrl(provider: string): string | undefined {
+  const filename = ALL_PROVIDER_ICONS[provider];
+  if (filename == null) return undefined;
+  return new URL(`../../assets/ai-providers/${filename}`, document.baseURI).toString();
 }
 
 export const MODEL_PROVIDERS: ModelProviderInfo[] = [
