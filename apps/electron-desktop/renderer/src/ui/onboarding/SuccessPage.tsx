@@ -2,6 +2,7 @@ import React from "react";
 
 import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
 import { backendApi } from "@ipc/backendApi";
+import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 
 import s from "./SuccessPage.module.css";
 
@@ -11,6 +12,7 @@ export function SuccessPage(props: {
   jwt: string;
   onStartChat: (keys: BackendKeys | null) => void;
 }) {
+  useOnboardingStepEvent("finished", "paid");
   const [ready, setReady] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [keys, setKeys] = React.useState<BackendKeys | null>(null);

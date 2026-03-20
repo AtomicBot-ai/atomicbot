@@ -8,6 +8,19 @@ import s from "./OllamaModalContent.module.css";
 export type OllamaMode = "local" | "cloud";
 
 const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
+const OLLAMA_SETUP_STEPS: Record<OllamaMode, string[]> = {
+  local: [
+    "Download Ollama from ollama.com",
+    "Launch it and download an AI model",
+    "Test the connection and start using it in Atomic Bot",
+  ],
+  cloud: [
+    "Download Ollama from ollama.com",
+    "Launch it and download an AI model",
+    "Create an API key in your Ollama Dashboard",
+    "Paste it below and start using it in Atomic Bot",
+  ],
+};
 
 type ConnectionStatus = "idle" | "testing" | "ok" | "error";
 
@@ -91,6 +104,12 @@ export function OllamaModalContent(props: {
           Cloud + Local
         </button>
       </div>
+
+      <ol className={`${s.UiModalHelpText} ${s.UiModalSetupSteps}`}>
+        {OLLAMA_SETUP_STEPS[mode].map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
 
       <div className={s.UiModalInputRow}>
         <div className={s.UiModalFieldLabel}>Base URL</div>

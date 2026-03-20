@@ -1,6 +1,8 @@
 import React from "react";
 
 import { GlassCard, HeroPageLayout, OnboardingDots, PrimaryButton } from "@shared/kit";
+import { useOnboardingFlow } from "../hooks/onboarding-flow-context";
+import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 import layoutStyles from "../OnboardingStepLayout.module.css";
 import telegramIcon from "@assets/messangers/Telegram.svg";
 import slackIcon from "@assets/set-up-skills/Slack.svg";
@@ -73,6 +75,8 @@ export function ConnectionsSetupPage(props: {
   onSkip: () => void;
   onContinue: () => void;
 }) {
+  const flow = useOnboardingFlow();
+  useOnboardingStepEvent("connections", flow);
   const totalSteps = props.totalSteps ?? 5;
   const activeStep = props.activeStep ?? 4;
   return (

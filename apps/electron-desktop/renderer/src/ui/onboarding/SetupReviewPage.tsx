@@ -1,5 +1,6 @@
 import React from "react";
 import { GlassCard, HeroPageLayout, OnboardingDots } from "@shared/kit";
+import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 import type { SubscriptionPriceInfo } from "@ipc/backendApi";
 import type { AutoTopUpState } from "@store/slices/auth/authSlice";
 import { UpgradePaywallContent } from "@ui/app/UpgradePaywallContent";
@@ -29,6 +30,7 @@ export function SetupReviewPage(props: {
   onError?: (error: unknown) => void;
   onSkip?: () => void;
 }) {
+  useOnboardingStepEvent("setup_review", "paid");
   if (props.paymentPending) {
     return (
       <HeroPageLayout variant="compact" align="center" aria-label="Waiting for payment">

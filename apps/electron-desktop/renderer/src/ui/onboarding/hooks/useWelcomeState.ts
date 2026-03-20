@@ -1,6 +1,7 @@
 import React from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { useGatewayRpc } from "@gateway/context";
+import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { useAppDispatch } from "@store/hooks";
 import { setOnboarded } from "@store/slices/onboardingSlice";
@@ -140,6 +141,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
   // --- Orchestrator-level handlers ---
 
   const finish = React.useCallback(() => {
+    captureRenderer(ANALYTICS_EVENTS.onboardingStep, { step: "finished", flow: "self-managed" });
     dispatch(authActions.setMode("self-managed"));
     persistDesktopMode("self-managed");
     void dispatch(setOnboarded(true));

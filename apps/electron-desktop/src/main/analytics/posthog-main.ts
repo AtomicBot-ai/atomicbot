@@ -17,6 +17,7 @@ export function initPosthogMain(userId: string, enabled: boolean): void {
     host: POSTHOG_HOST,
     flushAt: 20,
     flushInterval: 10_000,
+    disableGeoip: true,
   });
   client.identify({ distinctId: userId });
 }
@@ -43,6 +44,7 @@ export function optInMain(userId: string): void {
     host: POSTHOG_HOST,
     flushAt: 20,
     flushInterval: 10_000,
+    disableGeoip: true,
   });
   client.identify({ distinctId: userId });
 }

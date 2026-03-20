@@ -11,6 +11,7 @@ import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";
 import { downloadWhisperModel } from "@store/slices/whisperSlice";
 import { addToastError } from "@shared/toast";
 import { routes } from "../app/routes";
+import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 import ct from "./ChatTranscript.module.css";
 
 function newSessionKey(): string {
@@ -171,6 +172,7 @@ export function StartChatPage({
         idempotencyKey: runId,
         ...(apiAttachments?.length ? { attachments: apiAttachments } : {}),
       });
+      captureRenderer(ANALYTICS_EVENTS.messageSent);
       setInput("");
       setAttachments([]);
       const title =

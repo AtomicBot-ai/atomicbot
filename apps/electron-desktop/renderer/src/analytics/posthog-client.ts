@@ -1,11 +1,31 @@
-import posthog from "posthog-js";
+import posthog, { type CaptureResult, type Properties } from "posthog-js";
 
 // Injected by Vite at build time from VITE_POSTHOG_API_KEY in .env.
 const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY ?? "";
 const POSTHOG_HOST = "https://us.i.posthog.com";
+const GEOIP_DISABLE_PROPERTY = "$geoip_disable";
+const IP_PROPERTY = "$ip";
 
 let initialized = false;
 let currentUserId: string | null = null;
+
+function disableGeoipForEvent(event: CaptureResult | null): CaptureResult | null {
+  if (!event) {
+    return event;
+  }
+
+  const properties: Properties = {
+    ...(event.properties ?? {}),
+    [GEOIP_DISABLE_PROPERTY]: true,
+  };
+
+  delete properties[IP_PROPERTY];
+
+  return {
+    ...event,
+    properties,
+  };
+}
 
 export function initPosthogRenderer(userId: string, enabled: boolean): void {
   if (initialized) {
@@ -22,6 +42,8 @@ export function initPosthogRenderer(userId: string, enabled: boolean): void {
     capture_pageview: false,
     capture_pageleave: false,
     disable_session_recording: true,
+    property_denylist: [IP_PROPERTY],
+    before_send: (event) => disableGeoipForEvent(event),
     loaded: (ph) => {
       if (enabled) {
         ph.identify(userId);

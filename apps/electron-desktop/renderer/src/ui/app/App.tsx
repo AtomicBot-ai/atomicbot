@@ -38,12 +38,15 @@ import { DefenderBanner } from "../updates/DefenderBanner";
 import { AppBanners } from "../shared/banners/AppBanners";
 import { SkillsPage } from "@ui/skills/SkillsPage";
 import { ModelsPage } from "@ui/models/ModelsPage";
-import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
+import { useAppOpenedEvent } from "@analytics/use-app-opened-event";
 import a from "./App.module.css";
 
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const [searchParams] = useSearchParams();
   const session = searchParams.get("session");
+
+  useAppOpenedEvent();
+
   return (
     <>
       <UpdateBanner />
@@ -160,11 +163,6 @@ export function App() {
   const location = useLocation();
   const didAutoNavRef = React.useRef(false);
   usePaidStatusBridge();
-
-  // Track page views on every route change.
-  React.useEffect(() => {
-    captureRenderer(ANALYTICS_EVENTS.pageView, { path: location.pathname });
-  }, [location.pathname]);
 
   React.useEffect(() => {
     void dispatch(initGatewayState());

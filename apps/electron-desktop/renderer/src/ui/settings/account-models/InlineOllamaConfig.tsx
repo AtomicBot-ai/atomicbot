@@ -15,6 +15,19 @@ type ConnStatus = "idle" | "testing" | "ok" | "error";
 const LS_MODE_KEY = "openclaw.ollama.mode";
 const LS_BASE_URL_KEY = "openclaw.ollama.baseUrl";
 const DEFAULT_BASE_URL = "http://127.0.0.1:11434";
+const OLLAMA_SETUP_STEPS: Record<OllamaMode, string[]> = {
+  local: [
+    "Download Ollama from ollama.com",
+    "Launch it and download an AI model",
+    "Test the connection and start using it in Atomic Bot",
+  ],
+  cloud: [
+    "Download Ollama from ollama.com",
+    "Launch it and download an AI model",
+    "Create an API key in your Ollama Dashboard",
+    "Paste it below and start using it in Atomic Bot",
+  ],
+};
 
 function readSavedMode(): OllamaMode {
   try {
@@ -110,7 +123,7 @@ export function InlineOllamaConfig(props: {
 
   return (
     <div className={s.apiKeySection}>
-      <div className={s.apiKeyLabel}>Ollama Configuration</div>
+      <div className={s.apiKeyLabel}>Use your local or cloud AI models with Ollama</div>
 
       <div className={s.authToggle} role="radiogroup" aria-label="Ollama mode">
         <button
@@ -136,6 +149,12 @@ export function InlineOllamaConfig(props: {
           ? "Connect to a local Ollama instance running on your machine."
           : "Use Ollama Cloud models with your API key, plus local models."}
       </div>
+
+      <ol className={`${s.apiKeyHelpText} ${s.apiKeySetupSteps}`}>
+        {OLLAMA_SETUP_STEPS[mode].map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
 
       <div
         className={s.dropdownRowWithoutMargin}

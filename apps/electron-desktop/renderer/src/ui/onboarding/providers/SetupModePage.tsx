@@ -8,6 +8,7 @@ import {
   SecondaryButton,
   SplashLogo,
 } from "@shared/kit";
+import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 import layoutStyles from "../OnboardingStepLayout.module.css";
 import s from "./SetupModePage.module.css";
 import cursorIcon from "@assets/сursor.svg";
@@ -24,6 +25,7 @@ export function SetupModePage(props: {
   authError?: string | null;
   onBack?: () => void;
 }) {
+  useOnboardingStepEvent("setup_mode", null);
   const [selected, setSelected] = React.useState<SetupModeChoice>("paid");
 
   return (

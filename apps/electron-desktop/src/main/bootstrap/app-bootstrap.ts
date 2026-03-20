@@ -104,14 +104,6 @@ export async function bootstrapApp(params: {
   params.state.preloadPath = resolvePreloadPath(params.mainDir);
   params.state.rendererIndex = rendererIndex;
 
-  await params.ensureWindow();
-  params.ensureTray();
-
-  killUpdateSplash();
-  if (app.isPackaged) {
-    initAutoUpdater(() => params.state.mainWindow);
-  }
-
   const consentPath = path.join(stateDir, "consent.json");
   params.state.consentAccepted = readConsentAccepted(consentPath);
 
@@ -152,6 +144,8 @@ export async function bootstrapApp(params: {
     whisperDataDir,
   });
 
+  // Register IPC handlers before opening the window so the renderer can call
+  // them immediately on load without hitting "No handler registered" errors.
   registerIpcHandlers({
     ...bins,
     getMainWindow: () => params.state.mainWindow,
@@ -182,6 +176,14 @@ export async function bootstrapApp(params: {
     openclawDir,
     nodeBin,
   });
+
+  await params.ensureWindow();
+  params.ensureTray();
+
+  killUpdateSplash();
+  if (app.isPackaged) {
+    initAutoUpdater(() => params.state.mainWindow);
+  }
 
   await startGateway();
 }

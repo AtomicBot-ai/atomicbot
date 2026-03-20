@@ -38,6 +38,12 @@
   min-height: 20px;
 }
 
+.UiModalSetupSteps {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  height: 96px;
+}
+
 .UiModalModeToggle {
   display: flex;
   gap: 0;

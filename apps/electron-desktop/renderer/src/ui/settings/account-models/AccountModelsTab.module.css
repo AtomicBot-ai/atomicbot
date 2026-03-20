@@ -205,7 +205,13 @@
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.5;
   margin-bottom: 12px;
-  height: 20px;
+  min-height: 20px;
+}
+
+.apiKeySetupSteps {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  height: 96px;
 }
 
 .apiKeyInputRow {

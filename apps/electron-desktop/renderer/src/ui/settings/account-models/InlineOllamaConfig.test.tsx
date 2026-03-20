@@ -74,18 +74,18 @@ describe("InlineOllamaConfig", () => {
   it("renders heading and mode toggle", () => {
     render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
-    expect(screen.getByText("Ollama Configuration")).not.toBeNull();
+    expect(screen.getByText("Use your local or cloud AI models with Ollama")).not.toBeNull();
     expect(screen.getByRole("radiogroup", { name: "Ollama mode" })).not.toBeNull();
     expect(screen.getByText("Local")).not.toBeNull();
     expect(screen.getByText("Cloud + Local")).not.toBeNull();
   });
 
-  it("shows local help text by default", () => {
+  it("shows local setup steps by default", () => {
     render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
-    expect(
-      screen.getByText("Connect to a local Ollama instance running on your machine.")
-    ).not.toBeNull();
+    expect(screen.getByText("Download Ollama from ollama.com")).not.toBeNull();
+    expect(screen.getByText("Launch it and download an AI model")).not.toBeNull();
+    expect(screen.getByText("Test the connection and start using it in Atomic Bot")).not.toBeNull();
   });
 
   it("shows base URL input with default value", () => {
@@ -108,9 +108,8 @@ describe("InlineOllamaConfig", () => {
 
     fireEvent.click(screen.getByText("Cloud + Local"));
 
-    expect(
-      screen.getByText("Use Ollama Cloud models with your API key, plus local models.")
-    ).not.toBeNull();
+    expect(screen.getByText("Create an API key in your Ollama Dashboard")).not.toBeNull();
+    expect(screen.getByText("Paste it below and start using it in Atomic Bot")).not.toBeNull();
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     expect(passwordInputs.length).toBe(1);
   });
@@ -336,9 +335,7 @@ describe("InlineOllamaConfig", () => {
 
       render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
-      expect(
-        screen.getByText("Use Ollama Cloud models with your API key, plus local models.")
-      ).not.toBeNull();
+      expect(screen.getByText("Create an API key in your Ollama Dashboard")).not.toBeNull();
 
       const passwordInputs = document.querySelectorAll('input[type="password"]');
       expect(passwordInputs.length).toBe(1);
@@ -353,7 +350,7 @@ describe("InlineOllamaConfig", () => {
       render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
       expect(
-        screen.getByText("Connect to a local Ollama instance running on your machine.")
+        screen.getByText("Test the connection and start using it in Atomic Bot")
       ).not.toBeNull();
 
       const passwordInputs = document.querySelectorAll('input[type="password"]');
@@ -364,7 +361,7 @@ describe("InlineOllamaConfig", () => {
       render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
       expect(
-        screen.getByText("Connect to a local Ollama instance running on your machine.")
+        screen.getByText("Test the connection and start using it in Atomic Bot")
       ).not.toBeNull();
     });
   });

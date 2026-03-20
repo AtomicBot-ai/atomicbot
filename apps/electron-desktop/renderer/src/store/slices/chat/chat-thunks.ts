@@ -9,6 +9,7 @@ import type {
 } from "./chat-types";
 import { dataUrlToBase64, parseHistoryMessages } from "./chat-utils";
 import { chatActions } from "./chatSlice";
+import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 
 export const loadChatHistory = createAsyncThunk(
   "chat/loadChatHistory",
@@ -113,6 +114,7 @@ export const sendChatMessage = createAsyncThunk(
         idempotencyKey: runId,
         ...(apiAttachments.length > 0 ? { attachments: apiAttachments } : {}),
       });
+      captureRenderer(ANALYTICS_EVENTS.messageSent);
       thunkApi.dispatch(chatActions.markUserMessageDelivered({ localId }));
     } catch (err) {
       console.error("[Chat] sendChatMessage failed:", {
