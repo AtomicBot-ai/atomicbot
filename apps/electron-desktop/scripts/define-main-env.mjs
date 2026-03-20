@@ -38,12 +38,7 @@ const defineArgs = Object.entries(defines).map(
 // esbuild with --define but WITHOUT --bundle: only replaces literals in-place.
 // tsc outputs modules individually under dist/main/, so we target each file that
 // contains build-time env var references rather than the single entry dist/main.js.
-const esbuildBin = join(
-  root,
-  "node_modules",
-  ".bin",
-  process.platform === "win32" ? "esbuild.cmd" : "esbuild"
-);
+const esbuildBin = join(root, "node_modules", ".bin", "esbuild");
 
 const targets = ["dist/main/analytics/posthog-main.js"];
 
@@ -58,7 +53,7 @@ for (const target of targets) {
       "--allow-overwrite",
       ...defineArgs,
     ],
-    { stdio: "inherit", cwd: root }
+    { stdio: "inherit", cwd: root, shell: true }
   );
 }
 
