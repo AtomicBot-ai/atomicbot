@@ -51,7 +51,7 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
       sendLabel = "Send",
       sendingLabel = "Sending...",
       stopLabel = "Stop",
-      placeholder = "Message...",
+      placeholder = "Assign me a task or ask anything...",
       maxAttachments = MAX_ATTACHMENTS_DEFAULT,
       onAttachmentsLimitError,
       isVoiceRecording = false,
