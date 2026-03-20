@@ -31,6 +31,7 @@ export function HeroPageLayout(props: {
   align?: "start" | "center";
   variant?: "default" | "compact";
   color?: "primary" | "secondary";
+  context?: "default" | "onboarding";
   hideTopbar?: boolean;
   className?: string;
 }) {
@@ -39,8 +40,9 @@ export function HeroPageLayout(props: {
   const variant = props.variant ?? "default";
   const color = props.color ?? "primary";
   const hideTopbar = props.hideTopbar ?? false;
+  const context = props.context ?? "default";
   const brandIconUrl = useAppIconUrl();
-  const heroClassName = `UiHero UiHero-align-${align}${variant === "compact" ? " UiHero-compact" : ""}${color === "secondary" ? " UiHero-secondary-color" : ""} ${className}`;
+  const heroClassName = `UiHero UiHero-align-${align}${variant === "compact" ? " UiHero-compact" : ""}${context === "onboarding" ? " UiHero-onboarding" : ""}${color === "secondary" ? " UiHero-secondary-color" : ""} ${className}`;
   return (
     <div className="UiHeroShell" role={role} aria-label={props["aria-label"]}>
       {!hideTopbar && (

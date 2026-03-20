@@ -1,0 +1,23 @@
+.UiSetupHeader {
+  width: 566px;
+  display: flex;
+  align-items: center;
+}
+
+.UiSetupHeaderButton {
+  width: 50px;
+}
+
+.UiSetupHeaderCenter {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.UiSetupHeaderRight {
+  width: 50px;
+  min-width: 50px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
