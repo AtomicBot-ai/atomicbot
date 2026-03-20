@@ -60,8 +60,13 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const composerRef = React.useRef<ChatComposerRef | null>(null);
 
-  const scrollToBottom = React.useCallback(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  const scrollToBottom = React.useCallback((behavior: ScrollBehavior = "smooth") => {
+    console.log(behavior, "behavior");
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
   const markdownComponents = useMarkdownComponents();
@@ -135,7 +140,8 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
     prevMessagesLengthRef.current = messages.length;
 
     if (loaded || userJustSent) {
-      const id = requestAnimationFrame(() => scrollToBottom());
+      const behavior: ScrollBehavior = loaded ? "instant" : "smooth";
+      const id = requestAnimationFrame(() => scrollToBottom(behavior));
       return () => cancelAnimationFrame(id);
     }
   }, [displayMessages.length, messages.length, lastMessageRole, scrollToBottom]);
@@ -148,6 +154,9 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   }, [error, dispatch]);
 
   const send = React.useCallback(() => {
+    if (sending || hasActiveStream) {
+      return;
+    }
     const message = input.trim();
     const hasAttachments = attachments.length > 0;
     if (!message && !hasAttachments) {
@@ -163,7 +172,16 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
     void dispatch(
       sendChatMessage({ request: gw.request, sessionKey, message, attachments: toSend })
     );
-  }, [dispatch, gw.request, input, sessionKey, attachments, needsUpgradePaywall]);
+  }, [
+    dispatch,
+    gw.request,
+    input,
+    sessionKey,
+    attachments,
+    needsUpgradePaywall,
+    sending,
+    hasActiveStream,
+  ]);
 
   return (
     <div className={ct.UiChatShell}>
