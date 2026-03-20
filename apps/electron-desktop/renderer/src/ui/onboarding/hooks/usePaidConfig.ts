@@ -3,6 +3,7 @@ import type { ConfigSnapshot, GatewayRpcLike, ModelsListResult } from "./types";
 import type { ModelEntry } from "@shared/models/modelPresentation";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { getObject } from "./utils";
+import { loadExtraModels, mergeExtraModels } from "@shared/models/merge-extra-models";
 
 type PaidConfigInput = {
   gw: GatewayRpcLike;
@@ -77,13 +78,15 @@ export function usePaidConfig({ gw }: PaidConfigInput) {
     setModelsError(null);
     try {
       const result = await gw.request<ModelsListResult>("models.list", {});
-      const entries: ModelEntry[] = (result.models ?? []).map((m) => ({
+      const rawEntries: ModelEntry[] = (result.models ?? []).map((m) => ({
         id: m.id,
         name: m.name ?? m.id,
         provider: m.provider,
         contextWindow: m.contextWindow,
         reasoning: m.reasoning,
       }));
+      const extras = await loadExtraModels();
+      const entries = mergeExtraModels(rawEntries, extras);
       setModels(entries);
     } catch (err) {
       setModelsError(String(err));

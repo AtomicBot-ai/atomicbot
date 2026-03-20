@@ -2,6 +2,7 @@ import React from "react";
 import { errorToMessage } from "@shared/toast";
 import type { ConfigSnapshot, GatewayRpcLike, ModelsListResult } from "./types";
 import { ModelEntry } from "@shared/models/modelPresentation";
+import { loadExtraModels, mergeExtraModels } from "@shared/models/merge-extra-models";
 
 type UseWelcomeModelsInput = {
   gw: GatewayRpcLike;
@@ -27,13 +28,15 @@ export function useWelcomeModels({
     setModelsError(null);
     try {
       const result = await gw.request<ModelsListResult>("models.list", {});
-      const entries: ModelEntry[] = (result.models ?? []).map((m) => ({
+      const rawEntries: ModelEntry[] = (result.models ?? []).map((m) => ({
         id: m.id,
         name: m.name ?? m.id,
         provider: m.provider,
         contextWindow: m.contextWindow,
         reasoning: m.reasoning,
       }));
+      const extras = await loadExtraModels();
+      const entries = mergeExtraModels(rawEntries, extras);
       setModels(entries);
     } catch (err) {
       setModelsError(errorToMessage(err));

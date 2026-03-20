@@ -96,6 +96,9 @@ export const IPC = {
   analyticsGet: "analytics-get",
   analyticsSet: "analytics-set",
 
+  // Extra models (desktop-only model injection for the picker)
+  extraModels: "extra-models",
+
   // Reset
   resetAndClose: "reset-and-close",
 

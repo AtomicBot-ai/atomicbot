@@ -3,7 +3,10 @@
  * Each domain has been extracted into its own module; this file
  * composes them all into a single registration call.
  */
+import { ipcMain } from "electron";
+
 import { registerGogIpcHandlers } from "../gog/ipc";
+import { getExtraModels } from "../gateway/extra-models";
 import { registerResetAndCloseIpcHandler } from "../reset/ipc";
 import { registerWhisperIpcHandlers } from "../whisper/ipc";
 import { registerAnalyticsHandlers } from "./analytics-ipc";
@@ -22,6 +25,7 @@ import { registerUpdaterIpcHandlers } from "./updater-ipc";
 import { registerSkillHandlers } from "./skills-ipc";
 import { registerBackupHandlers } from "./backup-ipc";
 import { registerDefenderHandlers } from "./defender-ipc";
+import { IPC } from "../../shared/ipc-channels";
 
 export { type RegisterParams } from "./types";
 
@@ -44,4 +48,6 @@ export function registerIpcHandlers(params: RegisterParams) {
   registerWhisperIpcHandlers(params);
   registerResetAndCloseIpcHandler(params);
   registerAnalyticsHandlers(params);
+
+  ipcMain.handle(IPC.extraModels, () => getExtraModels());
 }

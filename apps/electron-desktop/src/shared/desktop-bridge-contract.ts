@@ -36,6 +36,15 @@ export interface OpenclawDesktopApi {
   acceptConsent: () => Promise<{ ok: true }>;
   startGateway: () => Promise<{ ok: true }>;
   openExternal: (url: string) => Promise<void>;
+  extraModels: () => Promise<
+    Array<{
+      id: string;
+      name: string;
+      provider: string;
+      contextWindow?: number;
+      reasoning?: boolean;
+    }>
+  >;
   setApiKey: (provider: string, apiKey: string) => Promise<{ ok: true }>;
   setSetupToken: (provider: string, token: string) => Promise<{ ok: true }>;
   validateApiKey: (provider: string, apiKey: string) => Promise<{ valid: boolean; error?: string }>;
@@ -181,6 +190,7 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "acceptConsent",
   "startGateway",
   "openExternal",
+  "extraModels",
   "setApiKey",
   "setSetupToken",
   "validateApiKey",

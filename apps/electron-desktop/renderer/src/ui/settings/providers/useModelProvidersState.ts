@@ -13,6 +13,7 @@ import {
   type ModelEntry,
   sortModelsByProviderTierName,
 } from "@shared/models/modelPresentation";
+import { loadExtraModels, mergeExtraModels } from "@shared/models/merge-extra-models";
 import { errorToMessage } from "@shared/toast";
 import type { ConfigData } from "@store/slices/configSlice";
 import { patchAuthProfile } from "../../shared/utils/authProfiles";
@@ -178,13 +179,15 @@ export function useModelProvidersState(props: {
           reasoning?: boolean;
         }>;
       }>("models.list", {});
-      const entries: ModelEntry[] = (result.models ?? []).map((m) => ({
+      const rawEntries: ModelEntry[] = (result.models ?? []).map((m) => ({
         id: m.id,
         name: m.name ?? m.id,
         provider: m.provider,
         contextWindow: m.contextWindow,
         reasoning: m.reasoning,
       }));
+      const extras = await loadExtraModels();
+      const entries = mergeExtraModels(rawEntries, extras);
       setModels(entries);
       hasModelsRef.current = entries.length > 0;
     } catch (err) {

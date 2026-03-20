@@ -34,6 +34,7 @@ const api: OpenclawDesktopApi = {
   acceptConsent: async () => ipcRenderer.invoke(IPC.consentAccept),
   startGateway: async () => ipcRenderer.invoke(IPC.gatewayStart),
   openExternal: async (url: string) => ipcRenderer.invoke(IPC.openExternal, { url }),
+  extraModels: async () => ipcRenderer.invoke(IPC.extraModels),
   setApiKey: async (provider: string, apiKey: string) =>
     ipcRenderer.invoke(IPC.authSetApiKey, { provider, apiKey }),
   setSetupToken: async (provider: string, token: string) =>
