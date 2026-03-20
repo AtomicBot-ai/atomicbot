@@ -53,6 +53,7 @@
     "format:fix": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p renderer/tsconfig.typecheck.json && tsc -p tsconfig.tools.json",
     "check:ci": "npm run lint && npm run prettier:check && npm run typecheck",
+    "precommit": "npm run format:fix && npm run lint && npm run typecheck",
     "dist:local": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist -- --publish never",
     "dist:local:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false ELECTRON_BUILDER_COMPRESSION_LEVEL=1 npm run dist -- --publish never --win",
     "dist": "npm run build:all && electron-builder",

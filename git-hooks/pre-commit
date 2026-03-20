@@ -57,7 +57,7 @@ for f in "${files[@]}"; do
 done
 
 if $has_electron_files; then
-  npm run format:fix --prefix "$ROOT_DIR/$electron_prefix"
+  npm run precommit --prefix "$ROOT_DIR/$electron_prefix"
 fi
 
 git add -f -- "${files[@]}"
