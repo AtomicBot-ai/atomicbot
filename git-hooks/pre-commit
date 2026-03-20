@@ -2,6 +2,21 @@
 
 set -euo pipefail
 
+# IDE-launched hooks (VS Code/Cursor) run with a stripped PATH that does not
+# include node/npm. Augment PATH from common install locations before anything else.
+if ! command -v node >/dev/null 2>&1; then
+  # nvm
+  if [[ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]]; then
+    \. "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use
+  fi
+  # fnm
+  if command -v fnm >/dev/null 2>&1; then
+    eval "$(fnm env --use-on-cd 2>/dev/null)" || true
+  fi
+  # Homebrew (Apple Silicon / Intel)
+  export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+fi
+
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 RUN_NODE_TOOL="$ROOT_DIR/scripts/pre-commit/run-node-tool.sh"
 FILTER_FILES="$ROOT_DIR/scripts/pre-commit/filter-staged-files.mjs"
