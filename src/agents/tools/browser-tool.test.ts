@@ -793,7 +793,7 @@ describe("browser tool act stale target recovery", () => {
           ref: "btn-1",
         },
       }),
-    ).rejects.toThrow(/Run action=tabs profile="chrome-relay"/i);
+    ).rejects.toThrow(/Run action=tabs and use one of the returned targetIds/i);
 
     expect(browserActionsMocks.browserAct).toHaveBeenCalledTimes(1);
   });

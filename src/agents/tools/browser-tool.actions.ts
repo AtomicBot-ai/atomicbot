@@ -73,8 +73,8 @@ function formatConsoleToolResult(result: {
   };
 }
 
-function isChromeStaleTargetError(profile: string | undefined, err: unknown): boolean {
-  if (profile !== "chrome-relay" && profile !== "chrome") {
+function isRelayStaleTargetError(profile: string | undefined, err: unknown): boolean {
+  if (profile !== "chrome-relay" && profile !== "chrome" && profile !== "user") {
     return false;
   }
   const msg = String(err);
@@ -93,7 +93,7 @@ function stripTargetIdFromActRequest(
   return retryRequest as Parameters<typeof browserAct>[1];
 }
 
-function canRetryChromeActWithoutTargetId(request: Parameters<typeof browserAct>[1]): boolean {
+function canRetryRelayActWithoutTargetId(request: Parameters<typeof browserAct>[1]): boolean {
   const typedRequest = request as Partial<Record<"kind" | "action", unknown>>;
   const kind =
     typeof typedRequest.kind === "string"
@@ -303,7 +303,7 @@ export async function executeActAction(params: {
         });
     return jsonResult(result);
   } catch (err) {
-    if (isChromeStaleTargetError(profile, err)) {
+    if (isRelayStaleTargetError(profile, err)) {
       const retryRequest = stripTargetIdFromActRequest(request);
       const tabs = proxyRequest
         ? ((
@@ -314,9 +314,9 @@ export async function executeActAction(params: {
             })) as { tabs?: unknown[] }
           ).tabs ?? [])
         : await browserTabs(baseUrl, { profile }).catch(() => []);
-      // Some Chrome relay targetIds can go stale between snapshots and actions.
+      // Some relay targetIds can go stale between snapshots and actions.
       // Only retry safe read-only actions, and only when exactly one tab remains attached.
-      if (retryRequest && canRetryChromeActWithoutTargetId(request) && tabs.length === 1) {
+      if (retryRequest && canRetryRelayActWithoutTargetId(request) && tabs.length === 1) {
         try {
           const retryResult = proxyRequest
             ? await proxyRequest({
@@ -335,12 +335,12 @@ export async function executeActAction(params: {
       }
       if (!tabs.length) {
         throw new Error(
-          "No Chrome tabs are attached via the OpenClaw Browser Relay extension. Click the toolbar icon on the tab you want to control (badge ON), then retry.",
+          "No tabs are attached via the Sigma Eclipse Extension relay. The extension auto-attaches the active tab — navigate to a page and retry.",
           { cause: err },
         );
       }
       throw new Error(
-        `Chrome tab not found (stale targetId?). Run action=tabs profile="chrome-relay" and use one of the returned targetIds.`,
+        `Tab not found (stale targetId?). Run action=tabs and use one of the returned targetIds.`,
         { cause: err },
       );
     }

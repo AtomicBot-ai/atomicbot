@@ -107,7 +107,7 @@ describe("chrome extension options validation", () => {
     expect(result).toEqual({
       kind: "error",
       message:
-        "Relay not reachable/authenticated at http://127.0.0.1:18792/. Start OpenClaw browser relay and verify token.",
+        "Relay not reachable/authenticated at http://127.0.0.1:18792/. Start Sigma Eclipse Extension relay and verify token.",
     });
   });
 });

@@ -101,7 +101,7 @@ export function registerBrowserExtensionCommands(
             "Next:",
             `- Chrome → chrome://extensions → enable “Developer mode”`,
             `- “Load unpacked” → select: ${displayPath}`,
-            `- Pin “OpenClaw Browser Relay”, then click it on the tab (badge shows ON)`,
+            `- The Sigma Eclipse Extension auto-attaches the active tab — no manual click needed`,
             "",
             `${theme.muted("Docs:")} ${formatDocsLink("/tools/chrome-extension", "docs.openclaw.ai/tools/chrome-extension")}`,
           ].join("\n"),
