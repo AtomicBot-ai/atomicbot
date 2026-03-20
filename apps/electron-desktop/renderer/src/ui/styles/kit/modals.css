@@ -60,6 +60,7 @@
 }
 
 .UiModalContent {
+  min-height: 0;
   overflow-y: auto;
   flex: 1;
 }

@@ -84,12 +84,10 @@ export function OllamaSetupPage(props: {
 
       <GlassCard className="UiApiKeyCard UiGlassCardOnboarding">
         <div className="UiApiKeyTitle" style={{ marginBottom: 2 }}>
-          Use your local or cloud AI models with Ollama
+          Set up Ollama
         </div>
         <div className="UiApiKeySubtitle" style={{ marginBottom: 10 }}>
-          {mode === "local"
-            ? "Connect to a local Ollama instance running on your machine."
-            : "Use Ollama Cloud models with your API key, plus local models."}
+          Use your local or cloud AI models with Ollama
         </div>
 
         <div
@@ -165,32 +163,34 @@ export function OllamaSetupPage(props: {
           </div>
         )}
 
-        {connectionStatus !== "idle" && (
-          <div
-            className="UiApiKeySubtitle"
-            style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                flexShrink: 0,
-                background:
-                  connectionStatus === "ok"
-                    ? "#22c55e"
-                    : connectionStatus === "error"
-                      ? "#ef4444"
-                      : "rgba(255,255,255,0.3)",
-              }}
-            />
-            <span>
-              {connectionStatus === "testing" && "Testing connection..."}
-              {connectionStatus === "ok" && "Connected to Ollama"}
-              {connectionStatus === "error" && `Connection failed: ${connectionError}`}
-            </span>
-          </div>
-        )}
+        <div
+          className="UiApiKeySubtitle"
+          style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
+        >
+          {connectionStatus !== "idle" && (
+            <>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background:
+                    connectionStatus === "ok"
+                      ? "#22c55e"
+                      : connectionStatus === "error"
+                        ? "#ef4444"
+                        : "rgba(255,255,255,0.3)",
+                }}
+              />
+              <span>
+                {connectionStatus === "testing" && "Testing connection..."}
+                {connectionStatus === "ok" && "Connected to Ollama"}
+                {connectionStatus === "error" && `Connection failed: ${connectionError}`}
+              </span>
+            </>
+          )}
+        </div>
 
         <div className="UiApiKeySpacer" aria-hidden="true" />
 
