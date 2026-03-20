@@ -155,7 +155,7 @@ export function SettingsTab({ tab }: { tab: SettingsTabId }) {
 }
 
 export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
-  const [pageError, setPageError] = React.useState<string | null>(null);
+  const [_, setPageError] = React.useState<string | null>(null);
   const dispatch = useAppDispatch();
   const configSnap = useAppSelector((st) => st.config.snap);
   const configError = useAppSelector((st) => st.config.error);

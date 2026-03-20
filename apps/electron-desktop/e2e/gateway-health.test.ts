@@ -40,7 +40,7 @@ test.describe("Gateway health (process & IPC verification)", () => {
   test("gateway state is ready after onboarding", async () => {
     test.setTimeout(15_000);
     const info = await page.evaluate(async () => {
-      const api = (window as Record<string, unknown>).openclawDesktop as
+      const api = (globalThis as Record<string, unknown>).openclawDesktop as
         | { getGatewayInfo: () => Promise<{ state: { kind: string } | null }> }
         | undefined;
       if (!api?.getGatewayInfo) throw new Error("Desktop API not available");

@@ -5,8 +5,7 @@
  *
  * @deprecated Part of the legacy Providers tab — scheduled for removal.
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
-
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { useGatewayRpc } from "@gateway/context";
 import { openExternal } from "@shared/utils/openExternal";
@@ -24,7 +23,7 @@ export function OAuthModalContent(props: {
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const { provider } = props;
+  const { provider, configHash, onSuccess, onClose } = props;
   const gw = useGatewayRpc();
   const [state, setState] = useState<OAuthState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -66,11 +65,11 @@ export function OAuthModalContent(props: {
 
         // Update config with auth profile entry via config.patch (same
         // pattern as saveApiKey) so the provider shows as configured.
-        if (props.configHash) {
+        if (configHash) {
           try {
             const providerId = result.profileId.split(":")[0] ?? "";
             await gw.request("config.patch", {
-              baseHash: props.configHash,
+              baseHash: configHash,
               raw: JSON.stringify(
                 {
                   auth: {
@@ -94,7 +93,7 @@ export function OAuthModalContent(props: {
         }
 
         setState("done");
-        props.onSuccess();
+        onSuccess();
       } else {
         setState("error");
         setError("OAuth flow did not complete successfully.");
@@ -107,7 +106,7 @@ export function OAuthModalContent(props: {
       setState("error");
       setError(errorToMessage(err));
     }
-  }, [gw, provider.id, props.configHash, props.onSuccess]);
+  }, [configHash, gw, onSuccess, provider.id]);
 
   useEffect(() => {
     return () => {
@@ -180,7 +179,7 @@ export function OAuthModalContent(props: {
       )}
 
       <div className={s.UiModalActions}>
-        <ActionButton disabled={isBusy} onClick={props.onClose}>
+        <ActionButton disabled={isBusy} onClick={onClose}>
           {state === "done" ? "Close" : "Cancel"}
         </ActionButton>
         {state !== "done" && (

@@ -2,7 +2,7 @@ import React from "react";
 
 import sm from "./SkillModal.module.css";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
-import { ActionButton, InlineError, TextInput } from "@shared/kit";
+import { ActionButton, TextInput } from "@shared/kit";
 import { errorToMessage } from "@shared/toast";
 import connectGoogleImage from "@assets/connect-google.png";
 
@@ -23,7 +23,7 @@ export function GoogleWorkspaceModalContent(props: {
   const [account, setAccount] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | undefined>();
-  const [output, setOutput] = React.useState<string | null>(null);
+  const [_, setOutput] = React.useState<string | null>(null);
   const [errorText, setErrorText] = React.useState("");
 
   // Auto-check connected accounts on mount when already connected.
@@ -120,7 +120,7 @@ export function GoogleWorkspaceModalContent(props: {
     } catch {
       // Error already set by runGog.
     }
-  }, [runGog]);
+  }, [account, errorText, runGog]);
 
   return (
     <div className={sm.UiSkillModalContent}>

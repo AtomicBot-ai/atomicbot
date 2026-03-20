@@ -1,5 +1,3 @@
-import React from "react";
-
 import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { useOnboardingFlow } from "../hooks/onboarding-flow-context";
@@ -294,7 +292,6 @@ export function SkillsSetupPage(props: {
                                     : undefined;
               const effectiveStatus: SkillStatus =
                 onConnect || status === "connected" ? status : "coming-soon";
-              const connected = effectiveStatus === "connected";
               return (
                 <div key={skill.id} className={`UiSkillCard`} role="group" aria-label={skill.name}>
                   <div className="UiSkillTopRow">

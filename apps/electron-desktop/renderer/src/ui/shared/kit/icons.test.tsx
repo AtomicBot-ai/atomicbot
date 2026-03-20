@@ -4,7 +4,6 @@
  * Verifies each icon renders an SVG element without crashing.
  */
 import { describe, it, expect, afterEach } from "vitest";
-import React from "react";
 import { render, cleanup } from "@testing-library/react";
 
 import { CopyIcon, CheckIcon, SendIcon } from "./icons";

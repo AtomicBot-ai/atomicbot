@@ -93,7 +93,7 @@ export function RichSelect<T extends string>(props: {
     if (!open) setSearchQuery("");
   }, [open]);
 
-  const { shouldRender, isEntered, isExiting, onTransitionEnd } = usePresenceTransition(open);
+  const { shouldRender, isExiting, onTransitionEnd } = usePresenceTransition(open);
 
   return (
     <div className={s.wrapper} ref={wrapperRef}>

@@ -2,9 +2,6 @@
  * Shared SVG icon components extracted from individual page files.
  * Centralised here to avoid duplication and make them easy to find.
  */
-import React from "react";
-import css from "@ui/sidebar/Sidebar.module.css";
-
 /** Two-rectangle copy/duplicate icon (18×18). */
 export function CopyIcon() {
   return (

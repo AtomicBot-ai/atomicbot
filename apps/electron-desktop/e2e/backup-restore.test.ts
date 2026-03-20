@@ -36,7 +36,7 @@ test.describe("Backup & Restore (gateway IPC pipeline)", () => {
 
   test("createBackup IPC handler is available", async () => {
     const hasApi = await page.evaluate(() => {
-      const api = (window as Record<string, unknown>).openclawDesktop as
+      const api = (globalThis as Record<string, unknown>).openclawDesktop as
         | { createBackup?: unknown }
         | undefined;
       return typeof api?.createBackup === "function";

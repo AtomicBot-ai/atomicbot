@@ -1,4 +1,3 @@
-import React from "react";
 import type { GatewayState } from "@main/types";
 import { FooterText, FullscreenShell, SpinningSplashLogo } from "@shared/kit";
 import pkg from "../../../../package.json";

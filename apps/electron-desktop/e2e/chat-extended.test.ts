@@ -8,7 +8,6 @@ import {
   waitForAssistantResponse,
   getSessionsList,
   getTestCredentials,
-  gatewayRpc,
 } from "./helpers";
 
 const creds = getTestCredentials();

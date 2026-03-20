@@ -26,6 +26,15 @@ const mocks = vi.hoisted(() => ({
   pickPort: vi.fn(async () => 18789),
   killUpdateSplash: vi.fn(),
   initAutoUpdater: vi.fn(),
+  readAnalyticsState: vi.fn(() => ({
+    prompted: true,
+    enabled: false,
+    userId: "test-user-id",
+    enabledAt: null,
+  })),
+  writeAnalyticsState: vi.fn(),
+  initPosthogMain: vi.fn(),
+  captureMain: vi.fn(),
 }));
 
 vi.mock("../consent", () => ({
@@ -67,6 +76,14 @@ vi.mock("../util/net", () => ({
 }));
 vi.mock("../update-splash", () => ({ killUpdateSplash: mocks.killUpdateSplash }));
 vi.mock("../updater", () => ({ initAutoUpdater: mocks.initAutoUpdater }));
+vi.mock("../analytics/analytics-state", () => ({
+  readAnalyticsState: mocks.readAnalyticsState,
+  writeAnalyticsState: mocks.writeAnalyticsState,
+}));
+vi.mock("../analytics/posthog-main", () => ({
+  initPosthogMain: mocks.initPosthogMain,
+  captureMain: mocks.captureMain,
+}));
 
 import { bootstrapApp } from "./app-bootstrap";
 

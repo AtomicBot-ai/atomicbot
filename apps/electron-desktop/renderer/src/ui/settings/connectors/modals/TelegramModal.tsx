@@ -1,12 +1,10 @@
-import React from "react";
-
-import sm from "@ui/settings/skills/modals/SkillModal.module.css";
 import { ActionButton, InlineError } from "@shared/kit";
 import type { ConfigSnapshot, GatewayRpcLike } from "@ui/onboarding/hooks/types";
 import { useTelegramConfig } from "./telegram/useTelegramConfig";
 import { TelegramTokenStep } from "./telegram/TelegramTokenStep";
 import { TelegramAllowlistStep } from "./telegram/TelegramAllowlistStep";
 import { TelegramEditView } from "./telegram/TelegramEditView";
+import sm from "@ui/settings/skills/modals/SkillModal.module.css";
 
 export function TelegramModalContent(props: {
   gw: GatewayRpcLike;

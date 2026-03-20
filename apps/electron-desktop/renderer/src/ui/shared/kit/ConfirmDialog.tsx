@@ -14,24 +14,25 @@ export function ConfirmDialog(props: {
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { open, onCancel, onConfirm, title, subtitle, cancelLabel, confirmLabel, danger } = props;
   React.useEffect(() => {
-    if (!props.open) {
+    if (!open) {
       return;
     }
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        props.onCancel();
+        onCancel();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [props.open, props.onCancel]);
+  }, [onCancel, open]);
 
-  if (!props.open) {
+  if (!open) {
     return null;
   }
 
-  const confirmClass = props.danger
+  const confirmClass = danger
     ? "UiConfirmDialog__confirm UiConfirmDialog__confirm--danger"
     : "UiConfirmDialog__confirm";
 
@@ -40,22 +41,22 @@ export function ConfirmDialog(props: {
       className="UiModalOverlay"
       role="dialog"
       aria-modal="true"
-      aria-label={props.title}
+      aria-label={title}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          props.onCancel();
+          onCancel();
         }
       }}
     >
       <div className="UiConfirmDialog">
-        <p className="UiConfirmDialog__text">{props.title}</p>
-        {props.subtitle && <p className="UiConfirmDialog__sub">{props.subtitle}</p>}
+        <p className="UiConfirmDialog__text">{title}</p>
+        {subtitle && <p className="UiConfirmDialog__sub">{subtitle}</p>}
         <div className="UiConfirmDialog__actions">
-          <button type="button" className="UiConfirmDialog__cancel" onClick={props.onCancel}>
-            {props.cancelLabel ?? "Cancel"}
+          <button type="button" className="UiConfirmDialog__cancel" onClick={onCancel}>
+            {cancelLabel ?? "Cancel"}
           </button>
-          <button type="button" className={confirmClass} onClick={props.onConfirm} autoFocus>
-            {props.confirmLabel ?? "Confirm"}
+          <button type="button" className={confirmClass} onClick={onConfirm} autoFocus>
+            {confirmLabel ?? "Confirm"}
           </button>
         </div>
       </div>

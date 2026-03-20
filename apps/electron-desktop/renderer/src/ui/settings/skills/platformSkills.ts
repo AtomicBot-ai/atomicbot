@@ -1,5 +1,7 @@
 import type { SkillId } from "./useSkillsStatus";
 
+export type DesktopPlatform = "darwin" | "win32" | "linux";
+
 type SupportedPlatform = "darwin" | "win32" | "linux";
 
 /**
@@ -11,7 +13,7 @@ const PLATFORM_RESTRICTED_SKILLS: Partial<Record<SkillId, SupportedPlatform[]>> 
   "apple-reminders": ["darwin"],
 };
 
-export function isSkillAvailable(skillId: SkillId, platform: NodeJS.Platform): boolean {
+export function isSkillAvailable(skillId: SkillId, platform: DesktopPlatform): boolean {
   const allowed = PLATFORM_RESTRICTED_SKILLS[skillId];
   if (!allowed) return true;
   return allowed.includes(platform as SupportedPlatform);
@@ -19,7 +21,7 @@ export function isSkillAvailable(skillId: SkillId, platform: NodeJS.Platform): b
 
 export function filterSkillsForPlatform<T extends { id: SkillId }>(
   skills: T[],
-  platform: NodeJS.Platform
+  platform: DesktopPlatform
 ): T[] {
   return skills.filter((s) => isSkillAvailable(s.id, platform));
 }

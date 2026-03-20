@@ -9,21 +9,22 @@ export function Modal(props: {
   header?: string;
   "aria-label"?: string;
 }) {
+  const { open, onClose, children, header } = props;
   // Close on Escape key
   React.useEffect(() => {
-    if (!props.open) {
+    if (!open) {
       return;
     }
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        props.onClose();
+        onClose();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [props.open, props.onClose]);
+  }, [onClose, open]);
 
-  if (!props.open) {
+  if (!open) {
     return null;
   }
 
@@ -36,18 +37,18 @@ export function Modal(props: {
       onClick={(e) => {
         // Close when clicking the backdrop (not the card itself)
         if (e.target === e.currentTarget) {
-          props.onClose();
+          onClose();
         }
       }}
     >
       <div className="UiModalCard">
         <div className="UiModalHeader">
-          {props.header ? <div className="UiSectionTitle">{props.header}</div> : ""}
-          <button className="UiModalClose" type="button" aria-label="Close" onClick={props.onClose}>
+          {header ? <div className="UiSectionTitle">{header}</div> : ""}
+          <button className="UiModalClose" type="button" aria-label="Close" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
-        <div className="UiModalContent scrollable">{props.children}</div>
+        <div className="UiModalContent scrollable">{children}</div>
       </div>
     </div>
   );

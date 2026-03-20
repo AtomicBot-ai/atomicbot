@@ -7,7 +7,6 @@ import {
   waitForSetupModePage,
   selectSelfManaged,
   waitForProviderSelect,
-  clickBackButton,
 } from "./helpers";
 
 test.describe("Setup mode selection page", () => {

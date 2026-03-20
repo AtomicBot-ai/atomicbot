@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 import { openExternal } from "@shared/utils/openExternal";
@@ -18,7 +17,8 @@ export function OAuthProviderPage(props: {
   onBack: () => void;
 }) {
   useOnboardingStepEvent("api_key", "self-managed");
-  const meta = MODEL_PROVIDER_BY_ID[props.provider];
+  const { provider, onSuccess, onBack, totalSteps, activeStep } = props;
+  const meta = MODEL_PROVIDER_BY_ID[provider];
   const [state, setState] = useState<OAuthState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function OAuthProviderPage(props: {
 
     // Listen for progress events from the main process.
     const unsub = desktopApi.onOAuthProgress((payload) => {
-      if (payload.provider === props.provider) {
+      if (payload.provider === provider) {
         setState("signing-in");
         setProgressMsg(payload.message);
       }
@@ -47,7 +47,7 @@ export function OAuthProviderPage(props: {
 
     try {
       // The main process opens the browser and handles the full OAuth flow.
-      const result = await desktopApi.oauthLogin(props.provider);
+      const result = await desktopApi.oauthLogin(provider);
       unsub();
 
       if (abortRef.current) {
@@ -56,7 +56,7 @@ export function OAuthProviderPage(props: {
 
       if (result?.ok && result.profileId) {
         setState("saving");
-        props.onSuccess(result.profileId);
+        onSuccess(result.profileId);
       } else {
         setState("error");
         setError("OAuth flow did not return a valid profile.");
@@ -69,7 +69,7 @@ export function OAuthProviderPage(props: {
       setState("error");
       setError(errorToMessage(err));
     }
-  }, [props.provider, props.onSuccess]);
+  }, [onSuccess, provider]);
 
   // Clean up on unmount.
   useEffect(() => {
@@ -101,11 +101,11 @@ export function OAuthProviderPage(props: {
       context="onboarding"
     >
       <OnboardingHeader
-        totalSteps={props.totalSteps}
-        activeStep={props.activeStep}
+        totalSteps={totalSteps}
+        activeStep={activeStep}
         onBack={() => {
           abortRef.current = true;
-          props.onBack();
+          onBack();
         }}
       />
       <GlassCard className="UiApiKeyCard UiGlassCardOnboarding">

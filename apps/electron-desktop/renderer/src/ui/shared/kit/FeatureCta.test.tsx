@@ -5,7 +5,6 @@
  * correctly and fire the right callbacks.
  */
 import { describe, it, expect, vi, afterEach } from "vitest";
-import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 
 import { FeatureCta } from "./FeatureCta";
@@ -77,7 +76,7 @@ describe("FeatureCta", () => {
 
     it("is disabled when onConnect is not provided", () => {
       render(<FeatureCta status="connect" />);
-      const btn = screen.getByRole("button", { name: "Connect" });
+      const btn: HTMLButtonElement = screen.getByRole("button", { name: "Connect" });
       expect(btn.disabled).toBe(true);
       expect(btn.getAttribute("title")).toBe("Not available yet");
     });

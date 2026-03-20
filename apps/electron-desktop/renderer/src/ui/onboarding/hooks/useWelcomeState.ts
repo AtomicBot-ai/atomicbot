@@ -65,6 +65,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
   const { skills, markSkillConnected } = skillState;
 
   const nav = useWelcomeNavigation(navigate);
+  const { goApiKey, goOAuthProvider, goOllamaSetup, goModelSelect } = nav;
 
   const goSetupMode = React.useCallback(() => {
     void navigate(`${routes.welcome}/setup-mode`);
@@ -84,8 +85,10 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
   const commonDeps = { gw, loadConfig, setError, setStatus } as const;
   const skillCommon = { ...commonDeps, markSkillConnected, goSkills: nav.goSkills } as const;
 
-  const { loadModels, models, modelsError, modelsLoading, onModelSelect, saveDefaultModel } =
-    useWelcomeModels({ ...commonDeps, goSkills: nav.goSkills });
+  const { loadModels, models, modelsError, modelsLoading, onModelSelect } = useWelcomeModels({
+    ...commonDeps,
+    goSkills: nav.goSkills,
+  });
 
   const { saveApiKey, saveSetupToken, onMediaProviderKeySubmit } = useWelcomeApiKey({
     ...commonDeps,
@@ -167,14 +170,14 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
       setStatus(null);
       const info = MODEL_PROVIDER_BY_ID[provider];
       if (info?.authType === "oauth") {
-        nav.goOAuthProvider();
+        goOAuthProvider();
       } else if (info?.authType === "ollama") {
-        nav.goOllamaSetup();
+        goOllamaSetup();
       } else {
-        nav.goApiKey();
+        goApiKey();
       }
     },
-    [nav.goApiKey, nav.goOAuthProvider, nav.goOllamaSetup, setError]
+    [goApiKey, goOAuthProvider, goOllamaSetup, setError]
   );
 
   const onOAuthSuccess = React.useCallback(
@@ -197,12 +200,12 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
           await gw.request("secrets.reload", {});
         }
         await loadModels();
-        nav.goModelSelect();
+        goModelSelect();
       } catch (err) {
         setError(errorToMessage(err));
       }
     },
-    [gw, loadConfig, loadModels, nav.goModelSelect, setError]
+    [goModelSelect, gw, loadConfig, loadModels, setError]
   );
 
   const onApiKeySubmit = React.useCallback(
@@ -219,7 +222,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
             setVoiceProvider("openai");
           }
           await loadModels();
-          nav.goModelSelect();
+          goModelSelect();
         }
       } catch (err) {
         setError(errorToMessage(err));
@@ -227,7 +230,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         setApiKeyBusy(false);
       }
     },
-    [selectedProvider, saveApiKey, loadModels, nav.goModelSelect, setError]
+    [goModelSelect, loadModels, saveApiKey, selectedProvider, setError]
   );
 
   const onOllamaSubmit = React.useCallback(
@@ -273,14 +276,14 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         });
         await gw.request("secrets.reload", {});
         await loadModels();
-        nav.goModelSelect();
+        goModelSelect();
       } catch (err) {
         setError(errorToMessage(err));
       } finally {
         setApiKeyBusy(false);
       }
     },
-    [gw, loadConfig, loadModels, nav.goModelSelect, setError]
+    [goModelSelect, gw, loadConfig, loadModels, setError]
   );
 
   const retryOllamaSubmit = React.useCallback(async () => {
@@ -302,7 +305,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         const ok = await saveSetupToken(selectedProvider, token);
         if (ok) {
           await loadModels();
-          nav.goModelSelect();
+          goModelSelect();
         }
       } catch (err) {
         setError(errorToMessage(err));
@@ -310,7 +313,7 @@ export function useWelcomeState({ state, navigate }: WelcomeStateInput) {
         setApiKeyBusy(false);
       }
     },
-    [selectedProvider, saveSetupToken, loadModels, nav.goModelSelect, setError]
+    [goModelSelect, loadModels, saveSetupToken, selectedProvider, setError]
   );
 
   return {

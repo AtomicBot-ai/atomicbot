@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type {
+  DesktopPlatform,
   OpenclawDesktopApi,
   UpdateAvailablePayload,
   UpdateDownloadProgressPayload,
@@ -18,10 +19,17 @@ function onIpc<T>(channel: string, cb: (payload: T) => void): () => void {
   };
 }
 
+function toDesktopPlatform(value: string): DesktopPlatform {
+  if (value === "darwin" || value === "win32" || value === "linux") {
+    return value;
+  }
+  return "linux";
+}
+
 // Expose only the bare minimum to the renderer. The Control UI is served by the Gateway and
 // does not require Electron privileged APIs.
 const api: OpenclawDesktopApi = {
-  platform: process.platform,
+  platform: toDesktopPlatform(process.platform),
   version: "0.0.0",
   openLogs: async () => ipcRenderer.invoke(IPC.openLogs),
   openWorkspaceFolder: async () => ipcRenderer.invoke(IPC.openWorkspaceFolder),

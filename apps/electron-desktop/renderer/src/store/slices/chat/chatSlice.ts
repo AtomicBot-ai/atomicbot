@@ -79,7 +79,10 @@ const chatSlice = createSlice({
       }
       state.messages =
         liveOnly.length > 0
-          ? [...fromHistory, ...liveOnly.toSorted((a, b) => (a.ts ?? 0) - (b.ts ?? 0))]
+          ? [
+              ...fromHistory,
+              ...[...liveOnly].sort((a: UiMessage, b: UiMessage) => (a.ts ?? 0) - (b.ts ?? 0)),
+            ]
           : fromHistory;
       // Selectively clean up completed streams instead of clearing all.
       // Active streams for in-flight runs must persist so the UI keeps

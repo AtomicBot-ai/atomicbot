@@ -30,6 +30,7 @@ export function MediaUnderstandingModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
+  const { gw, loadConfig, isConnected, onConnected, onDisabled } = props;
   const [image, setImage] = React.useState(true);
   const [audio, setAudio] = React.useState(true);
   const [video, setVideo] = React.useState(false);
@@ -42,8 +43,8 @@ export function MediaUnderstandingModalContent(props: {
   const [keyError, setKeyError] = React.useState<string | null>(null);
 
   const { saveApiKey } = useWelcomeApiKey({
-    gw: props.gw,
-    loadConfig: props.loadConfig,
+    gw,
+    loadConfig,
     setError: setKeyError,
     setStatus,
   });
@@ -53,14 +54,14 @@ export function MediaUnderstandingModalContent(props: {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await props.loadConfig();
+        const snap = await loadConfig();
         if (cancelled) {
           return;
         }
         const cfg = getObject(snap.config);
         setHasOpenAi(detectOpenAiProvider(cfg));
 
-        if (props.isConnected) {
+        if (isConnected) {
           const tools = getObject(cfg.tools);
           const media = getObject(tools.media);
           const img = getObject(media.image);
@@ -77,7 +78,7 @@ export function MediaUnderstandingModalContent(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.isConnected, props.loadConfig]);
+  }, [isConnected, loadConfig]);
 
   const handleSaveKey = React.useCallback(async () => {
     setKeyBusy(true);
@@ -100,12 +101,12 @@ export function MediaUnderstandingModalContent(props: {
     setError(null);
     setStatus("Saving media understanding settings…");
     try {
-      const snap = await props.loadConfig();
+      const snap = await loadConfig();
       const baseHash = typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
       if (!baseHash) {
         throw new Error("Config base hash missing. Reload and try again.");
       }
-      await props.gw.request("config.patch", {
+      await gw.request("config.patch", {
         baseHash,
         raw: JSON.stringify(
           {
@@ -123,14 +124,14 @@ export function MediaUnderstandingModalContent(props: {
         note: "Settings: configure media understanding",
       });
       setStatus("Media understanding enabled.");
-      props.onConnected();
+      onConnected();
     } catch (err) {
       setError(errorToMessage(err));
       setStatus(null);
     } finally {
       setBusy(false);
     }
-  }, [audio, image, video, props]);
+  }, [audio, gw, image, loadConfig, onConnected, video]);
 
   const canSave = image || audio || video;
   const needsKey = canSave && !hasOpenAi;
@@ -195,13 +196,13 @@ export function MediaUnderstandingModalContent(props: {
         </ActionButton>
       </div>
 
-      {props.isConnected && (
+      {isConnected && (
         <div className={sm.UiSkillModalDangerZone}>
           <button
             type="button"
             className={sm.UiSkillModalDisableButton}
             disabled={busy}
-            onClick={props.onDisabled}
+            onClick={onDisabled}
           >
             Disable
           </button>

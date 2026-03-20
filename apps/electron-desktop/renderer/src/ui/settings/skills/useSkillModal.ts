@@ -24,6 +24,7 @@ export function useSkillModal(props: {
   loadConfig: () => Promise<ConfigSnapshotLike>;
   onError: (value: string | null) => void;
 }) {
+  const { gw, markConnected, markDisabled, refresh, loadConfig, onError } = props;
   const [activeModal, setActiveModal] = React.useState<SkillId | null>(null);
 
   const openModal = React.useCallback((skillId: SkillId) => {
@@ -37,27 +38,27 @@ export function useSkillModal(props: {
   /** Called by modal content after a successful connection. */
   const handleConnected = React.useCallback(
     (skillId: SkillId) => {
-      props.markConnected(skillId);
-      void props.refresh();
+      markConnected(skillId);
+      void refresh();
       setActiveModal(null);
     },
-    [props.markConnected, props.refresh]
+    [markConnected, refresh]
   );
 
   /** Called by modal content after disabling a skill. */
   const handleDisabled = React.useCallback(
     async (skillId: SkillId) => {
-      props.onError(null);
+      onError(null);
       try {
-        await disableSkill(props.gw, props.loadConfig, skillId);
-        props.markDisabled(skillId);
-        void props.refresh();
+        await disableSkill(gw, loadConfig, skillId);
+        markDisabled(skillId);
+        void refresh();
         setActiveModal(null);
       } catch (err) {
-        props.onError(errorToMessage(err));
+        onError(errorToMessage(err));
       }
     },
-    [props.gw, props.loadConfig, props.markDisabled, props.onError, props.refresh]
+    [gw, loadConfig, markDisabled, onError, refresh]
   );
 
   return {

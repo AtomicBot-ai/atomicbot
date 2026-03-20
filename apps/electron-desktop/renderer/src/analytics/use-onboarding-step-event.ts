@@ -13,5 +13,5 @@ export function useOnboardingStepEvent(step: string, flow: OnboardingFlow | null
     if (firedRef.current) return;
     captureRenderer(ANALYTICS_EVENTS.onboardingStep, { step, flow });
     firedRef.current = true;
-  }, []);
+  }, [flow, step]);
 }

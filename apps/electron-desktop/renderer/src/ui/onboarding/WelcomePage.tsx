@@ -28,6 +28,7 @@ function WelcomeAutoStart(props: {
   error: string | null;
   onStart: () => void;
 }) {
+  const { startBusy, error, onStart } = props;
   const didStartRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -35,21 +36,21 @@ function WelcomeAutoStart(props: {
       return;
     }
     didStartRef.current = true;
-    props.onStart();
-  }, [props.onStart]);
+    onStart();
+  }, [onStart]);
 
-  if (props.startBusy) {
+  if (startBusy) {
     return null;
   }
 
-  if (props.error) {
+  if (error) {
     return (
       <HeroPageLayout title="WELCOME" variant="compact" align="center" aria-label="Welcome setup">
         <GlassCard className="UiGlassCard-intro">
           <div className="UiIntroInner">
             <div className="UiSectionTitle">Setup failed.</div>
             <div className="UiSectionSubtitle">Please retry to continue onboarding.</div>
-            <PrimaryButton onClick={props.onStart}>Retry</PrimaryButton>
+            <PrimaryButton onClick={onStart}>Retry</PrimaryButton>
           </div>
         </GlassCard>
       </HeroPageLayout>
@@ -79,15 +80,17 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   const fs = flow === "paid" ? paid : welcome;
   const flowStatus = flow === "paid" ? paid.skillStatus : welcome.status;
   const flowError = flow === "paid" ? paid.skillError : welcome.error;
+  const onPaidConnectionsContinue = paid.flow.onPaidConnectionsContinue;
+  const finishWelcome = welcome.finish;
 
   const skillsOnBack = flow === "paid" ? paid.nav.goPaidModelSelect : welcome.goModelSelect;
   const connectionsFinish = React.useCallback(() => {
     if (flow === "paid") {
-      void paid.flow.onPaidConnectionsContinue();
+      void onPaidConnectionsContinue();
     } else {
-      welcome.finish();
+      finishWelcome();
     }
-  }, [flow, paid.flow.onPaidConnectionsContinue, welcome.finish]);
+  }, [finishWelcome, flow, onPaidConnectionsContinue]);
 
   const goMediaUnderstanding =
     flow === "paid" ? paid.nav.goPaidMediaUnderstanding : welcome.goMediaUnderstanding;

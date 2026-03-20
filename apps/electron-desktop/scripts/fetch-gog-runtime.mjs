@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 
 import {
   ensureDir,
-  rmrf,
   extractZip,
   extractTarGz,
   copyExecutable,

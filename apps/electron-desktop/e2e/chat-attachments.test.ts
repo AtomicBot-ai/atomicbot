@@ -24,7 +24,7 @@ test.describe("Chat — file attachments", () => {
 
   let ctx: AppContext;
   let page: Page;
-  let tempFiles: string[] = [];
+  const tempFiles: string[] = [];
 
   test.skip(!creds, "No API key — create e2e/e2e.config.json (see e2e.config.example.json)");
 

@@ -43,6 +43,7 @@ export function SlackConnectorModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
+  const { gw, loadConfig, isConnected, onConnected, onDisabled } = props;
   const [botToken, setBotToken] = React.useState("");
   const [appToken, setAppToken] = React.useState("");
   const [groupPolicy, setGroupPolicy] = React.useState<GroupPolicy>("allowlist");
@@ -55,13 +56,13 @@ export function SlackConnectorModalContent(props: {
 
   // Pre-fill from config when already connected.
   React.useEffect(() => {
-    if (!props.isConnected) {
+    if (!isConnected) {
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const snap = await props.loadConfig();
+        const snap = await loadConfig();
         if (cancelled) {
           return;
         }
@@ -109,25 +110,25 @@ export function SlackConnectorModalContent(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.isConnected, props.loadConfig]);
+  }, [isConnected, loadConfig]);
 
   const canSave = React.useMemo(() => {
     // Need tokens for first connect; for update, can save policy changes alone.
-    if (!props.isConnected && (!botToken.trim() || !appToken.trim())) {
+    if (!isConnected && (!botToken.trim() || !appToken.trim())) {
       return false;
     }
     if (dmPolicy === "allowlist" && parseList(dmAllowFromRaw).length === 0) {
       return false;
     }
     return true;
-  }, [appToken, botToken, dmAllowFromRaw, dmPolicy, props.isConnected]);
+  }, [appToken, botToken, dmAllowFromRaw, dmPolicy, isConnected]);
 
   const handleSave = React.useCallback(async () => {
     setBusy(true);
     setError(null);
     setStatus("Saving Slack configuration…");
     try {
-      const snap = await props.loadConfig();
+      const snap = await loadConfig();
       const baseHash = typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
       if (!baseHash) {
         throw new Error("Config base hash missing. Reload and try again.");
@@ -163,7 +164,7 @@ export function SlackConnectorModalContent(props: {
         patch.appToken = appToken.trim();
       }
 
-      await props.gw.request("config.patch", {
+      await gw.request("config.patch", {
         baseHash,
         raw: JSON.stringify(
           {
@@ -176,14 +177,24 @@ export function SlackConnectorModalContent(props: {
         note: "Settings: configure Slack connector",
       });
       setStatus("Slack configured.");
-      props.onConnected();
+      onConnected();
     } catch (err) {
       setError(errorToMessage(err));
       setStatus(null);
     } finally {
       setBusy(false);
     }
-  }, [appToken, botToken, channelsRaw, dmAllowFromRaw, dmPolicy, groupPolicy, props]);
+  }, [
+    appToken,
+    botToken,
+    channelsRaw,
+    dmAllowFromRaw,
+    dmPolicy,
+    groupPolicy,
+    gw,
+    loadConfig,
+    onConnected,
+  ]);
 
   return (
     <div className={sm.UiSkillModalContent}>
@@ -211,7 +222,7 @@ export function SlackConnectorModalContent(props: {
           type="password"
           value={botToken}
           onChange={setBotToken}
-          placeholder={props.isConnected ? "••••••••  (leave empty to keep)" : "xoxb-..."}
+          placeholder={isConnected ? "••••••••  (leave empty to keep)" : "xoxb-..."}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
@@ -226,7 +237,7 @@ export function SlackConnectorModalContent(props: {
           type="password"
           value={appToken}
           onChange={setAppToken}
-          placeholder={props.isConnected ? "••••••••  (leave empty to keep)" : "xapp-..."}
+          placeholder={isConnected ? "••••••••  (leave empty to keep)" : "xapp-..."}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
@@ -340,17 +351,17 @@ export function SlackConnectorModalContent(props: {
           disabled={busy || !canSave}
           onClick={() => void handleSave()}
         >
-          {busy ? "Saving…" : props.isConnected ? "Update" : "Connect"}
+          {busy ? "Saving…" : isConnected ? "Update" : "Connect"}
         </ActionButton>
       </div>
 
-      {props.isConnected && (
+      {isConnected && (
         <div className={sm.UiSkillModalDangerZone}>
           <button
             type="button"
             className={sm.UiSkillModalDisableButton}
             disabled={busy}
-            onClick={props.onDisabled}
+            onClick={onDisabled}
           >
             Disable
           </button>

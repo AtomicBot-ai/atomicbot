@@ -96,27 +96,40 @@ export function AccountModelsTab(props: {
   const [tabMode, setTabMode] = useState<SetupMode | null>(authMode);
 
   const [modeSwitchBusy, setModeSwitchBusy] = React.useState(false);
+  const { gw, reload, onError, configSnap, noTitle } = props;
 
   const state = useModelProvidersState({
     ...props,
     isPaidMode,
   });
+  const {
+    activeProviderKey,
+    providerFilter,
+    setProviderFilter,
+    sortedModels,
+    saveDefaultModel,
+    activeModelId,
+    isProviderConfigured,
+    modelsLoading,
+    modelBusy,
+    busyProvider,
+    saveProviderApiKey,
+    saveProviderSetupToken,
+    saveOllamaProvider,
+    loadModels,
+    pasteFromClipboard,
+  } = state;
 
   // Auto-select provider from current active model on first load (self-managed only)
   const autoSelectedRef = React.useRef(false);
   React.useEffect(() => {
-    if (
-      !isPaidMode &&
-      !autoSelectedRef.current &&
-      state.activeProviderKey &&
-      !state.providerFilter
-    ) {
+    if (!isPaidMode && !autoSelectedRef.current && activeProviderKey && !providerFilter) {
       autoSelectedRef.current = true;
-      state.setProviderFilter(state.activeProviderKey);
+      setProviderFilter(activeProviderKey);
     }
-  }, [isPaidMode, state.activeProviderKey, state.providerFilter, state.setProviderFilter]);
+  }, [activeProviderKey, isPaidMode, providerFilter, setProviderFilter]);
 
-  const selectedProvider = state.providerFilter;
+  const selectedProvider = providerFilter;
   const selectedProviderInfo = selectedProvider
     ? (MODEL_PROVIDER_BY_ID[selectedProvider] ?? null)
     : null;
@@ -140,7 +153,7 @@ export function AccountModelsTab(props: {
   const modelOptions: RichOption<string>[] = React.useMemo(() => {
     if (isPaidMode) {
       const TIER_RANK: Record<string, number> = { ultra: 0, pro: 1, fast: 2 };
-      const withTiers = state.sortedModels
+      const withTiers = sortedModels
         .filter((m) => m.provider === "openrouter")
         .map((m) => ({
           model: m,
@@ -164,7 +177,7 @@ export function AccountModelsTab(props: {
       });
     }
     if (!selectedProvider) return [];
-    return state.sortedModels
+    return sortedModels
       .filter((m) => m.provider === selectedProvider)
       .map((m) => {
         const tier = getModelTier(m);
@@ -178,20 +191,20 @@ export function AccountModelsTab(props: {
           icon: getProviderIconUrl(m.provider),
         };
       });
-  }, [isPaidMode, selectedProvider, state.sortedModels]);
+  }, [isPaidMode, selectedProvider, sortedModels]);
 
   const handleProviderChange = React.useCallback(
     (value: ModelProvider) => {
-      state.setProviderFilter(value);
+      setProviderFilter(value);
     },
-    [state.setProviderFilter]
+    [setProviderFilter]
   );
 
   const handleModelChange = React.useCallback(
     (value: string) => {
-      void state.saveDefaultModel(value);
+      void saveDefaultModel(value);
     },
-    [state.saveDefaultModel]
+    [saveDefaultModel]
   );
 
   // Auto-select first model when provider changes and current model doesn't belong to it
@@ -200,17 +213,17 @@ export function AccountModelsTab(props: {
       !isPaidMode &&
       selectedProvider &&
       modelOptions.length > 0 &&
-      !modelOptions.some((opt) => opt.value === state.activeModelId)
+      !modelOptions.some((opt) => opt.value === activeModelId)
     ) {
       handleModelChange(modelOptions[0]!.value);
     }
-  }, [isPaidMode, selectedProvider, modelOptions, state.activeModelId, handleModelChange]);
+  }, [activeModelId, handleModelChange, isPaidMode, modelOptions, selectedProvider]);
 
   const handleOAuthSuccess = React.useCallback(() => {
-    void props.reload();
-  }, [props.reload]);
+    void reload();
+  }, [reload]);
 
-  const configHash = typeof props.configSnap?.hash === "string" ? props.configSnap.hash : null;
+  const configHash = typeof configSnap?.hash === "string" ? configSnap.hash : null;
 
   // ── Mode switching ──
 
@@ -225,13 +238,11 @@ export function AccountModelsTab(props: {
         let restoredProvider: ModelProvider | null = null;
 
         if (mode === "paid") {
-          await dispatch(switchToSubscription({ request: props.gw.request })).unwrap();
+          await dispatch(switchToSubscription({ request: gw.request })).unwrap();
         } else {
-          const result = await dispatch(
-            switchToSelfManaged({ request: props.gw.request })
-          ).unwrap();
+          const result = await dispatch(switchToSelfManaged({ request: gw.request })).unwrap();
           if (!result.hasBackup) {
-            props.onError("No saved configuration found. Please set up your API keys.");
+            onError("No saved configuration found. Please set up your API keys.");
           }
           if (result.restoredModel) {
             const idx = result.restoredModel.indexOf("/");
@@ -240,11 +251,11 @@ export function AccountModelsTab(props: {
           }
         }
 
-        await dispatch(reloadConfig({ request: props.gw.request }));
+        await dispatch(reloadConfig({ request: gw.request }));
 
         // Set provider directly from the restored model to avoid
         // race conditions with the auto-select effect
-        state.setProviderFilter(restoredProvider);
+        setProviderFilter(restoredProvider);
         autoSelectedRef.current = !!restoredProvider;
       } catch (err) {
         addToastError(err);
@@ -252,7 +263,7 @@ export function AccountModelsTab(props: {
         setModeSwitchBusy(false);
       }
     },
-    [isPaidMode, dispatch, props, state.setProviderFilter]
+    [dispatch, gw.request, isPaidMode, onError, setProviderFilter]
   );
 
   const isLoading = modeSwitchBusy || accountState.loading;
@@ -268,7 +279,7 @@ export function AccountModelsTab(props: {
 
   return (
     <div className={s.root}>
-      {!props.noTitle && <div className={s.title}>AI Models</div>}
+      {!noTitle && <div className={s.title}>AI Models</div>}
 
       <ConnectionToggle
         isPaid={tabMode === "paid"}
@@ -281,16 +292,16 @@ export function AccountModelsTab(props: {
           <div className={s.dropdownGroup}>
             <div className={s.dropdownLabel}>Model</div>
             <RichSelect
-              value={state.activeModelId ?? null}
+              value={activeModelId ?? null}
               onChange={handleModelChange}
               options={modelOptions}
               placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
-              disabled={state.modelsLoading || state.modelBusy || modelOptions.length === 0}
+              disabled={modelsLoading || modelBusy || modelOptions.length === 0}
               disabledStyles={modelOptions.length === 0}
               onlySelectedIcon
             />
           </div>
-          {modelOptions.length === 0 && !state.modelsLoading ? (
+          {modelOptions.length === 0 && !modelsLoading ? (
             <div className={s.noModelsHint}>
               No models loaded. Try restarting the app to refresh the model catalog.
             </div>
@@ -308,13 +319,13 @@ export function AccountModelsTab(props: {
                 onChange={handleProviderChange}
                 options={providerOptions}
                 placeholder="Select provider…"
-                disabled={state.modelsLoading}
+                disabled={modelsLoading}
               />
             </div>
             <div className={s.dropdownGroup}>
               <div className={s.dropdownLabel}>Model</div>
               <RichSelect
-                value={state.activeModelId ?? null}
+                value={activeModelId ?? null}
                 onChange={handleModelChange}
                 options={modelOptions}
                 placeholder={
@@ -325,10 +336,7 @@ export function AccountModelsTab(props: {
                       : "Select model…"
                 }
                 disabled={
-                  !selectedProvider ||
-                  state.modelsLoading ||
-                  state.modelBusy ||
-                  modelOptions.length === 0
+                  !selectedProvider || modelsLoading || modelBusy || modelOptions.length === 0
                 }
                 disabledStyles={!selectedProvider || modelOptions.length === 0}
                 onlySelectedIcon
@@ -336,7 +344,7 @@ export function AccountModelsTab(props: {
             </div>
           </div>
 
-          {selectedProvider && modelOptions.length === 0 && !state.modelsLoading && (
+          {selectedProvider && modelOptions.length === 0 && !modelsLoading && (
             <div className={s.noModelsHint}>
               {!isSelectedProviderConfigured
                 ? "Add an API key below to load models for this provider."
@@ -348,13 +356,13 @@ export function AccountModelsTab(props: {
           {selectedProviderInfo && (
             <InlineApiKey
               provider={selectedProviderInfo}
-              configured={state.isProviderConfigured(selectedProvider!)}
-              busy={state.busyProvider === selectedProvider}
-              onSave={state.saveProviderApiKey}
-              onSaveSetupToken={state.saveProviderSetupToken}
-              onSaveOllama={state.saveOllamaProvider}
-              onRefreshModels={state.loadModels}
-              onPaste={state.pasteFromClipboard}
+              configured={isProviderConfigured(selectedProvider!)}
+              busy={busyProvider === selectedProvider}
+              onSave={saveProviderApiKey}
+              onSaveSetupToken={saveProviderSetupToken}
+              onSaveOllama={saveOllamaProvider}
+              onRefreshModels={loadModels}
+              onPaste={pasteFromClipboard}
               configHash={configHash}
               onOAuthSuccess={handleOAuthSuccess}
             />

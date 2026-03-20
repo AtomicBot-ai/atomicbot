@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, cleanup, act } from "@testing-library/react";
 import { AnimatedBalance } from "./AnimatedBalance";

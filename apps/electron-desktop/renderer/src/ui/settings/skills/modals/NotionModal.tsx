@@ -14,28 +14,35 @@ export function NotionModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
+  const { gw, loadConfig, isConnected, onConnected, onDisabled } = props;
   const [apiKey, setApiKey] = React.useState("");
   const [hasExistingKey, setHasExistingKey] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<string | null>(null);
+  const run = React.useCallback(async <T,>(fn: () => Promise<T>) => fn(), []);
+  const markSkillConnected = React.useCallback(() => {}, []);
+  const goSkills = React.useCallback(() => {}, []);
 
   const { saveNotionApiKey } = useWelcomeNotion({
-    gw: props.gw,
-    loadConfig: props.loadConfig,
+    gw,
+    loadConfig,
     setError,
     setStatus,
+    run,
+    markSkillConnected,
+    goSkills,
   });
 
   // Pre-fill: detect if API key is already configured.
   React.useEffect(() => {
-    if (!props.isConnected) {
+    if (!isConnected) {
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const snap = await props.loadConfig();
+        const snap = await loadConfig();
         if (cancelled) {
           return;
         }
@@ -53,7 +60,7 @@ export function NotionModalContent(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.isConnected, props.loadConfig]);
+  }, [isConnected, loadConfig]);
 
   const handleConnect = React.useCallback(async () => {
     setBusy(true);
@@ -62,14 +69,14 @@ export function NotionModalContent(props: {
     try {
       const ok = await saveNotionApiKey(apiKey);
       if (ok) {
-        props.onConnected();
+        onConnected();
       }
     } catch (err) {
       setError(errorToMessage(err));
     } finally {
       setBusy(false);
     }
-  }, [apiKey, props, saveNotionApiKey]);
+  }, [apiKey, onConnected, saveNotionApiKey]);
 
   return (
     <div className={sm.UiSkillModalContent}>
@@ -99,20 +106,20 @@ export function NotionModalContent(props: {
       <div className={sm.UiSkillModalActions}>
         <ActionButton
           variant="primary"
-          disabled={busy || (!apiKey.trim() && !props.isConnected)}
+          disabled={busy || (!apiKey.trim() && !isConnected)}
           onClick={() => void handleConnect()}
         >
-          {busy ? "Connecting…" : props.isConnected ? "Update" : "Connect"}
+          {busy ? "Connecting…" : isConnected ? "Update" : "Connect"}
         </ActionButton>
       </div>
 
-      {(props.isConnected || hasExistingKey) && (
+      {(isConnected || hasExistingKey) && (
         <div className={sm.UiSkillModalDangerZone}>
           <button
             type="button"
             className={sm.UiSkillModalDisableButton}
             disabled={busy}
-            onClick={props.onDisabled}
+            onClick={onDisabled}
           >
             Disable
           </button>

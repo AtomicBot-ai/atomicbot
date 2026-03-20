@@ -1,7 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import {
   type AppContext,
-  type ConfigSnapshot,
   launchApp,
   closeApp,
   finishOnboarding,
@@ -44,16 +43,12 @@ test.describe("Gateway core RPC", () => {
 
   // ── Config roundtrip ──────────────────────────────────────
 
-  let originalHash: string;
-
   test("config.get returns valid snapshot", async () => {
     test.setTimeout(30_000);
     const snap = await getConfig(page);
 
     expect(snap.hash).toBeTruthy();
     expect(typeof snap.hash).toBe("string");
-    originalHash = snap.hash!;
-
     const cfg = getObj(snap.config);
     expect(cfg.auth).toBeTruthy();
     expect(cfg.agents).toBeTruthy();

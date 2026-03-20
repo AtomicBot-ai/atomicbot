@@ -1,4 +1,3 @@
-import React from "react";
 import type { DownloadStatus } from "@store/slices/whisperSlice";
 import s from "./ChatComposer.module.css";
 

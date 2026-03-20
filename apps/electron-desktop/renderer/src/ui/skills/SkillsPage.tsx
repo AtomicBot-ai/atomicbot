@@ -11,7 +11,7 @@ import { useCustomSkills } from "@ui/settings/skills/useCustomSkills";
 import s from "./SkillsPage.module.css";
 
 export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
-  const [pageError, setPageError] = React.useState<string | null>(null);
+  const [_, setPageError] = React.useState<string | null>(null);
   const dispatch = useAppDispatch();
   const configSnap = useAppSelector((st) => st.config.snap);
   const configError = useAppSelector((st) => st.config.error);

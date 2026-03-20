@@ -1,4 +1,3 @@
-import React from "react";
 import { OnboardingDots } from "@shared/kit";
 import s from "./OnboardingHeader.module.css";
 

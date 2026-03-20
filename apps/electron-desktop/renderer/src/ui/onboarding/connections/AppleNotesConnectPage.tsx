@@ -1,4 +1,3 @@
-import React from "react";
 import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
 import { OnboardingHeader } from "../OnboardingHeader";
 

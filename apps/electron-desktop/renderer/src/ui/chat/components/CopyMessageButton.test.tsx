@@ -3,9 +3,7 @@
  * Tests for CopyMessageButton — copy-to-clipboard button with Copy/Copied state toggle.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import React from "react";
 import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
-
 import { CopyMessageButton } from "./CopyMessageButton";
 
 afterEach(cleanup);

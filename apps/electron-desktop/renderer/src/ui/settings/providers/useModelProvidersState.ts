@@ -391,7 +391,7 @@ export function useModelProvidersState(props: {
         setBusyProvider(null);
       }
     },
-    [props, loadFreshBaseHash, refreshKeyConfiguredProviders]
+    [props, loadFreshBaseHash, refreshKeyConfiguredProviders, loadModels]
   );
 
   const clearSessionModelOverrides = React.useCallback(async () => {

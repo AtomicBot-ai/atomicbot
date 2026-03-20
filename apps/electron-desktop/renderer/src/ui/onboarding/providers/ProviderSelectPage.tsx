@@ -30,7 +30,7 @@ export function ProviderSelectPage(props: {
     if (!selected) {
       setSelected(MODEL_PROVIDERS[0].id);
     }
-  }, []);
+  }, [selected]);
 
   return (
     <HeroPageLayout

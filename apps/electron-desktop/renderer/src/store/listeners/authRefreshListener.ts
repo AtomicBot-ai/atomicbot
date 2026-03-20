@@ -1,5 +1,6 @@
 import { createListenerMiddleware, isAnyOf, type TypedStartListening } from "@reduxjs/toolkit";
 import type { UnknownAction } from "@reduxjs/toolkit";
+import type { Dispatch } from "redux";
 import {
   authActions,
   clearAuth,
@@ -16,7 +17,8 @@ const BACKOFF_BASE_MS = 5_000;
 const BACKOFF_MAX_MS = 120_000;
 
 type RootLikeState = { auth: AuthSliceState };
-type StartListening = TypedStartListening<RootLikeState, unknown>;
+type ListenerDispatch = Dispatch<UnknownAction>;
+type StartListening = TypedStartListening<RootLikeState, ListenerDispatch>;
 
 type IntervalHandle = ReturnType<typeof setInterval>;
 
@@ -45,6 +47,21 @@ function computeBackoffMs(failureCount: number): number {
   return Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** power);
 }
 
+function extractErrorMessage(result: unknown): string {
+  if (
+    typeof result === "object" &&
+    result !== null &&
+    "error" in result &&
+    typeof result.error === "object" &&
+    result.error !== null &&
+    "message" in result.error &&
+    typeof result.error.message === "string"
+  ) {
+    return result.error.message;
+  }
+  return "Failed to refresh status";
+}
+
 async function runRefresh(listenerApi: {
   dispatch: (action: UnknownAction) => unknown;
   getState: () => RootLikeState;
@@ -68,10 +85,7 @@ async function runRefresh(listenerApi: {
       fetchDesktopStatus()
     );
     if (!fetchDesktopStatus.fulfilled.match(result)) {
-      const message =
-        typeof result.error?.message === "string"
-          ? result.error.message
-          : "Failed to refresh status";
+      const message = extractErrorMessage(result);
       throw new Error(message);
     }
     const completedAt = Date.now();

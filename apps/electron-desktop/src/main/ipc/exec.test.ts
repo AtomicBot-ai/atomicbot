@@ -2,7 +2,6 @@
  * Tests for shared exec helpers (createBinaryNotFoundResult, checkBinaryExists,
  * runSyncCheck, runCommand).
  */
-import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -6,7 +6,6 @@ import { optInRenderer, optOutRenderer, getCurrentUserId } from "@analytics";
 import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
 import { authActions, clearAuth, persistMode } from "@store/slices/auth/authSlice";
-import { reloadConfig } from "@store/slices/configSlice";
 import { errorToMessage } from "@shared/toast";
 import { ConfirmDialog } from "@shared/kit";
 import { routes } from "../app/routes";

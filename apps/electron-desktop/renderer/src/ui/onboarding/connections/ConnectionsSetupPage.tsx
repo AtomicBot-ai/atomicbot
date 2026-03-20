@@ -1,5 +1,3 @@
-import React from "react";
-
 import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
 import { useOnboardingFlow } from "../hooks/onboarding-flow-context";
 import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
@@ -104,7 +102,6 @@ export function ConnectionsSetupPage(props: {
               const status = conn.id === "telegram" ? props.telegramStatus : props.slackStatus;
               const onConnect =
                 conn.id === "telegram" ? props.onTelegramConnect : props.onSlackConnect;
-              const connected = status === "connected";
               return (
                 <div key={conn.id} className={`UiSkillCard`} role="group" aria-label={conn.name}>
                   <div className="UiSkillTopRow">

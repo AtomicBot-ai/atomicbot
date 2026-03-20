@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
 import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";

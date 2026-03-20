@@ -529,13 +529,13 @@ const authSlice = createSlice({
     clearAuthState(state) {
       resetAuthFields(state);
     },
-    requestBackgroundRefresh(state, _action: PayloadAction<{ reason: AuthRefreshReason }>) {
+    requestBackgroundRefresh(_state, _action: PayloadAction<{ reason: AuthRefreshReason }>) {
       // reducer is intentionally empty; handled by listener middleware
     },
-    appFocused(state) {
+    appFocused(_state) {
       // reducer is intentionally empty; handled by listener middleware
     },
-    appVisible(state) {
+    appVisible(_state) {
       // reducer is intentionally empty; handled by listener middleware
     },
     markRefreshStarted(state) {

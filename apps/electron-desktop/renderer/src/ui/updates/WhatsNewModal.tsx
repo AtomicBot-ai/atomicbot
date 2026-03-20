@@ -35,7 +35,7 @@ export function WhatsNewModal() {
         return;
       }
 
-      let { version } = await api.getAppVersion();
+      const { version } = await api.getAppVersion();
 
       const lastVersion = localStorage.getItem(STORAGE_KEY);
 

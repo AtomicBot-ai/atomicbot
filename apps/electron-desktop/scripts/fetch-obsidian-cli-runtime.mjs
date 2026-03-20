@@ -12,7 +12,6 @@ import {
   copyExecutable,
   findFileRecursive,
   binName,
-  resolveArch,
   ghHeaders,
   targetPlatform,
   targetArch,

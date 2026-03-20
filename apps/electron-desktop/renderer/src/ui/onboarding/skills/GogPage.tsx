@@ -71,7 +71,8 @@ export function GogPage(props: {
   finishText?: string;
   skipText?: string;
 }) {
-  const [connected, setConnected] = React.useState(false);
+  const { gogAccount, onRunAuthAdd } = props;
+  const [_, setConnected] = React.useState(false);
   const [errorText, setErrorText] = React.useState("");
   const [services, setServices] = React.useState<Record<string, boolean>>(() => {
     const defaults = new Set(parseDefaultServicesCsv());
@@ -84,13 +85,12 @@ export function GogPage(props: {
   );
   const servicesCsv = selectedServices.join(",");
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   const onConnect = React.useCallback(async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (errorText) {
       setErrorText("");
     }
-    const account = props.gogAccount.trim();
+    const account = gogAccount.trim();
     if (!account) {
       setErrorText("Please enter your email address to continue");
       return;
@@ -102,11 +102,11 @@ export function GogPage(props: {
     if (!servicesCsv) {
       return;
     }
-    const res = await props.onRunAuthAdd(servicesCsv);
+    const res = await onRunAuthAdd(servicesCsv);
     if (res.ok) {
       setConnected(true);
     }
-  }, [props, servicesCsv]);
+  }, [errorText, gogAccount, onRunAuthAdd, servicesCsv]);
 
   return (
     <HeroPageLayout

@@ -7,7 +7,7 @@
  * Also reads from a local .env file when env vars are not already set in the
  * shell — this covers both local dev builds and CI environments alike.
  */
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";

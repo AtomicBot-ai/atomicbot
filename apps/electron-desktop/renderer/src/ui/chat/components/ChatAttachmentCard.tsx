@@ -1,4 +1,3 @@
-import React from "react";
 import s from "./ChatComposer.module.css";
 
 /** Human-readable file type label from mimeType (exported for fallback display name). */

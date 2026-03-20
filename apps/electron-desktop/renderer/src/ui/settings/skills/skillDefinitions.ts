@@ -3,7 +3,6 @@ import type { SkillId } from "./useSkillsStatus";
 import googleImage from "@assets/set-up-skills/Google.svg";
 import notionImage from "@assets/set-up-skills/Notion.svg";
 import trelloImage from "@assets/set-up-skills/Trello.svg";
-import geminiImage from "@assets/ai-providers/gemini.svg";
 import nanoBananaImage from "@assets/set-up-skills/Nano-Banana.svg";
 import sagImage from "@assets/set-up-skills/Sag.svg";
 import remindersImage from "@assets/set-up-skills/Reminders.svg";

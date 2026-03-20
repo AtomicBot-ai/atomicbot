@@ -221,7 +221,9 @@ function stripJunkFiles(dir) {
           try {
             fs.rmSync(full, { recursive: true, force: true });
             stripped++;
-          } catch {}
+          } catch {
+            // Ignore failures while removing optional junk directories.
+          }
           continue;
         }
         if (!entry.isSymbolicLink()) queue.push(full);
@@ -233,7 +235,9 @@ function stripJunkFiles(dir) {
         try {
           fs.unlinkSync(full);
           stripped++;
-        } catch {}
+        } catch {
+          // Ignore failures while removing optional exact-name files.
+        }
         continue;
       }
       const lower = entry.name.toLowerCase();
@@ -242,7 +246,9 @@ function stripJunkFiles(dir) {
         try {
           fs.unlinkSync(full);
           stripped++;
-        } catch {}
+        } catch {
+          // Ignore failures while removing optional extension-matched files.
+        }
         break;
       }
     }
@@ -272,12 +278,16 @@ function traceKeepEntries(params) {
           const target = fs.realpathSync(p);
           const rel = path.relative(nmDir, target).split(path.sep);
           if (rel[0] === ".pnpm" && rel[1]) traceEntry(rel[1]);
-        } catch {}
+        } catch {
+          // Ignore broken/missing dependency symlinks while tracing.
+        }
       };
       if (dep.name.startsWith("@")) {
         try {
           for (const sub of fs.readdirSync(depPath)) resolveAndTrace(path.join(depPath, sub));
-        } catch {}
+        } catch {
+          // Ignore unreadable scoped dependency dirs while tracing.
+        }
       } else {
         resolveAndTrace(depPath);
       }
@@ -293,7 +303,9 @@ function traceKeepEntries(params) {
       const rel = path.relative(nmDir, target).split(path.sep);
       if (rel[0] === ".pnpm" && rel[1]) traceEntry(rel[1]);
       continue;
-    } catch {}
+    } catch {
+      // Ignore unresolved root symlink and fallback to prefix-based matching.
+    }
 
     const prefix = pnpmEntryPrefixForPackage(pkg);
     for (const entry of pnpmEntries) {
@@ -341,7 +353,9 @@ function deepHoistSubDependencies(pnpmStoreDir) {
               deepHoisted++;
             }
           }
-        } catch {}
+        } catch {
+          // Ignore unreadable scoped dirs during deep-hoisting.
+        }
       } else if (!fs.existsSync(rootTarget)) {
         if (safeLink(source, rootTarget)) {
           deepHoisted++;

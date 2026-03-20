@@ -24,7 +24,6 @@ export function ConsentScreen({
   const [busy, setBusy] = React.useState(false);
   const appVersion = pkg.version || "0.0.0";
   const termsUrl = "https://atomicbot.ai/terms-of-service";
-  const privacyUrl = "https://atomicbot.ai/privacy-policy";
 
   // Record consent acceptance, enable analytics by default, then invoke the callback.
   const acceptAndRun = React.useCallback(

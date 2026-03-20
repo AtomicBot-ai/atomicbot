@@ -1,4 +1,3 @@
-import React from "react";
 import { InfoIcon } from "./icons";
 import s from "./InfoTooltip.module.css";
 

@@ -47,20 +47,21 @@ function deriveStatusFromConfig(config: unknown): Record<ConnectorId, ConnectorS
   // Telegram: check botToken.
   const telegramStatus = resolveChannel("telegram", "botToken");
 
+  // NOTE commented unused variables discordStatus, whatsappStatus, signalStatus, imessageStatus
   // Discord: check token.
-  const discordStatus = resolveChannel("discord", "token");
+  // const discordStatus = resolveChannel("discord", "token");
 
   // WhatsApp: check accounts array or enabled flag.
-  const whatsapp = getObject(channels.whatsapp);
-  let whatsappStatus: ConnectorStatus = "connect";
-  if (whatsapp.enabled === false && "enabled" in whatsapp) {
-    whatsappStatus = "disabled";
-  } else if (
-    whatsapp.enabled === true ||
-    (Array.isArray(whatsapp.accounts) && whatsapp.accounts.length > 0)
-  ) {
-    whatsappStatus = "connected";
-  }
+  // const whatsapp = getObject(channels.whatsapp);
+  // let whatsappStatus: ConnectorStatus = "connect";
+  // if (whatsapp.enabled === false && "enabled" in whatsapp) {
+  //   whatsappStatus = "disabled";
+  // } else if (
+  //   whatsapp.enabled === true ||
+  //   (Array.isArray(whatsapp.accounts) && whatsapp.accounts.length > 0)
+  // ) {
+  //   whatsappStatus = "connected";
+  // }
 
   // Slack: check botToken + appToken.
   const slack = getObject(channels.slack);
@@ -76,24 +77,24 @@ function deriveStatusFromConfig(config: unknown): Record<ConnectorId, ConnectorS
   }
 
   // Signal: check account.
-  const signal = getObject(channels.signal);
-  let signalStatus: ConnectorStatus = "connect";
-  if (signal.enabled === false && "enabled" in signal) {
-    signalStatus = "disabled";
-  } else if (typeof signal.account === "string" && signal.account.trim().length > 0) {
-    signalStatus = "connected";
-  }
+  // const signal = getObject(channels.signal);
+  // let signalStatus: ConnectorStatus = "connect";
+  // if (signal.enabled === false && "enabled" in signal) {
+  //   signalStatus = "disabled";
+  // } else if (typeof signal.account === "string" && signal.account.trim().length > 0) {
+  //   signalStatus = "connected";
+  // }
 
   // iMessage: check cliPath or enabled.
-  const imessage = getObject(channels.imessage);
-  let imessageStatus: ConnectorStatus = "connect";
-  if (imessage.enabled === false && "enabled" in imessage) {
-    imessageStatus = "disabled";
-  } else if (typeof imessage.cliPath === "string" && imessage.cliPath.trim().length > 0) {
-    imessageStatus = "connected";
-  } else if (imessage.enabled === true) {
-    imessageStatus = "connected";
-  }
+  // const imessage = getObject(channels.imessage);
+  // let imessageStatus: ConnectorStatus = "connect";
+  // if (imessage.enabled === false && "enabled" in imessage) {
+  //   imessageStatus = "disabled";
+  // } else if (typeof imessage.cliPath === "string" && imessage.cliPath.trim().length > 0) {
+  //   imessageStatus = "connected";
+  // } else if (imessage.enabled === true) {
+  //   imessageStatus = "connected";
+  // }
 
   return {
     telegram: telegramStatus,

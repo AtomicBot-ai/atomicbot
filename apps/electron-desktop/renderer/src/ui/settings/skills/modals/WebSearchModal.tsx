@@ -17,28 +17,35 @@ export function WebSearchModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
+  const { gw, loadConfig, isConnected, onConnected, onDisabled } = props;
   const [provider, setProvider] = React.useState<WebSearchProvider>("brave");
   const [apiKey, setApiKey] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<string | null>(null);
+  const run = React.useCallback(async <T,>(fn: () => Promise<T>) => fn(), []);
+  const markSkillConnected = React.useCallback(() => {}, []);
+  const goSkills = React.useCallback(() => {}, []);
 
   const { saveWebSearch } = useWelcomeWebSearch({
-    gw: props.gw,
-    loadConfig: props.loadConfig,
+    gw,
+    loadConfig,
     setError,
     setStatus,
+    run,
+    markSkillConnected,
+    goSkills,
   });
 
   // Pre-fill provider from config when already connected.
   React.useEffect(() => {
-    if (!props.isConnected) {
+    if (!isConnected) {
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const snap = await props.loadConfig();
+        const snap = await loadConfig();
         if (cancelled) {
           return;
         }
@@ -57,7 +64,7 @@ export function WebSearchModalContent(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.isConnected, props.loadConfig]);
+  }, [isConnected, loadConfig]);
 
   const handleConnect = React.useCallback(async () => {
     setBusy(true);
@@ -66,14 +73,14 @@ export function WebSearchModalContent(props: {
     try {
       const ok = await saveWebSearch(provider, apiKey);
       if (ok) {
-        props.onConnected();
+        onConnected();
       }
     } catch (err) {
       setError(errorToMessage(err));
     } finally {
       setBusy(false);
     }
-  }, [apiKey, props, provider, saveWebSearch]);
+  }, [apiKey, onConnected, provider, saveWebSearch]);
 
   return (
     <div className={sm.UiSkillModalContent}>
@@ -82,7 +89,7 @@ export function WebSearchModalContent(props: {
       </div>
       {error && <InlineError>{error}</InlineError>}
       {status && <div className={sm.UiSkillModalStatus}>{status}</div>}
-      {props.isConnected && !apiKey && (
+      {isConnected && !apiKey && (
         <div className={sm.UiSkillModalStatus}>API key configured. Enter a new key to update.</div>
       )}
 
@@ -121,7 +128,7 @@ export function WebSearchModalContent(props: {
           value={apiKey}
           onChange={setApiKey}
           placeholder={
-            props.isConnected
+            isConnected
               ? "••••••••  (leave empty to keep current)"
               : provider === "brave"
                 ? "BSA..."
@@ -136,20 +143,20 @@ export function WebSearchModalContent(props: {
       <div className={sm.UiSkillModalActions}>
         <ActionButton
           variant="primary"
-          disabled={busy || (!apiKey.trim() && !props.isConnected)}
+          disabled={busy || (!apiKey.trim() && !isConnected)}
           onClick={() => void handleConnect()}
         >
-          {busy ? "Connecting…" : props.isConnected ? "Update" : "Connect"}
+          {busy ? "Connecting…" : isConnected ? "Update" : "Connect"}
         </ActionButton>
       </div>
 
-      {props.isConnected && (
+      {isConnected && (
         <div className={sm.UiSkillModalDangerZone}>
           <button
             type="button"
             className={sm.UiSkillModalDisableButton}
             disabled={busy}
-            onClick={props.onDisabled}
+            onClick={onDisabled}
           >
             Disable
           </button>

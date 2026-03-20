@@ -3,12 +3,7 @@ import { settingsStyles as ps } from "../SettingsPage";
 
 import { FeatureCta, Modal } from "@shared/kit";
 import { errorToMessage } from "@shared/toast";
-import {
-  useConnectorsStatus,
-  disableConnector,
-  type ConnectorId,
-  type ConnectorStatus,
-} from "./useConnectorsStatus";
+import { useConnectorsStatus, disableConnector, type ConnectorId } from "./useConnectorsStatus";
 import { TelegramModalContent, SlackConnectorModalContent } from "./modals";
 
 import telegramImage from "@assets/messangers/Telegram.svg";

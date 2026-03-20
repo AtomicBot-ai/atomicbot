@@ -8,7 +8,7 @@ import { AccountModelsTab } from "@ui/settings/account-models/AccountModelsTab";
 import s from "./ModelsPage.module.css";
 
 export function ModelsPage() {
-  const [pageError, setPageError] = React.useState<string | null>(null);
+  const [_, setPageError] = React.useState<string | null>(null);
   const dispatch = useAppDispatch();
   const configSnap = useAppSelector((st) => st.config.snap);
   const configError = useAppSelector((st) => st.config.error);

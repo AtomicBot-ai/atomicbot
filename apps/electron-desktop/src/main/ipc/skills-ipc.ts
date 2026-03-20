@@ -94,6 +94,10 @@ export async function listCustomSkillsFromDir(skillsDir: string): Promise<Custom
   try {
     await fsp.stat(skillsDir);
   } catch (err) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === "ENOENT") {
+      // Missing custom-skills folder is a normal state before the first install.
+      return [];
+    }
     console.warn("[ipc/skills] listCustomSkillsFromDir stat failed:", err);
     return [];
   }

@@ -86,7 +86,7 @@ export function StartChatPage({
     return () => {
       cancelled = true;
     };
-  }, [gw.request]);
+  }, [gw]);
 
   React.useEffect(() => {
     if (voice.error) {
@@ -194,7 +194,7 @@ export function StartChatPage({
     } finally {
       setSending(false);
     }
-  }, [dispatch, gw.request, input, navigate, sending, attachments, needsUpgradePaywall]);
+  }, [attachments, dispatch, gw, input, navigate, needsUpgradePaywall, sending]);
 
   return (
     <div className={ct.UiChatShell}>

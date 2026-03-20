@@ -1,4 +1,3 @@
-import React from "react";
 import { GlassCard, HeroPageLayout } from "@shared/kit";
 import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 import type { SubscriptionPriceInfo } from "@ipc/backendApi";

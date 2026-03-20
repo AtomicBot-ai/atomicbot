@@ -265,7 +265,7 @@ async function gatewayRpcOnce<T = unknown>(
 ): Promise<T> {
   return page.evaluate(
     async ({ method, params }) => {
-      const api = (window as unknown as Record<string, unknown>).openclawDesktop as
+      const api = (globalThis as Record<string, unknown>).openclawDesktop as
         | {
             getGatewayInfo: () => Promise<{
               state: { kind: string; url: string; token: string } | null;

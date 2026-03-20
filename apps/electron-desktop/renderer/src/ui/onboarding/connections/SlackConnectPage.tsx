@@ -47,7 +47,7 @@ export function SlackConnectPage(props: {
       return false;
     }
     return true;
-  }, [appToken, botToken, dmAllowFromRaw, dmPolicy]);
+  }, [dmAllowFromRaw, dmPolicy]);
 
   const handleSubmit = () => {
     const trimmedBotToken = botToken.trim();

@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
-import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, within, cleanup } from "@testing-library/react";
-
 import { SetupReviewPage } from "./SetupReviewPage";
 
 const defaultProps = {

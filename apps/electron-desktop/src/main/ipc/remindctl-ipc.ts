@@ -4,7 +4,6 @@
 import { ipcMain } from "electron";
 import fs from "node:fs";
 
-import type { ExecResult } from "../../shared/types";
 import type { RemindctlHandlerParams } from "./types";
 import { createBinaryNotFoundResult, runCommand } from "./exec";
 

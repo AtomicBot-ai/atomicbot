@@ -82,12 +82,15 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
 
   const nav = usePaidNavigation({ navigate });
   const config = usePaidConfig({ gw });
+  const { refreshProviderFlags, loadConfig, savePlaceholderOpenRouterKey, loadModels } = config;
+  const { models, saveDefaultModel } = config;
+  const { goPaidModelSelect, goPaidSkills, goSetupReview, goSuccess } = nav;
 
   // Complex navigation (calls refreshProviderFlags before navigating)
   const goPaidMediaUnderstanding = React.useCallback(() => {
-    void config.refreshProviderFlags();
+    void refreshProviderFlags();
     void navigate(`${routes.welcome}/media-understanding`);
-  }, [navigate, config.refreshProviderFlags]);
+  }, [navigate, refreshProviderFlags]);
 
   // ── Skills & Connections state ──
 
@@ -96,7 +99,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
 
   const commonDeps = {
     gw,
-    loadConfig: config.loadConfig,
+    loadConfig,
     setError: setSkillError,
     setStatus: setSkillStatus,
   } as const;
@@ -202,7 +205,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
         order.openai = ["openai:default"];
       }
       if (Object.keys(profiles).length > 0) {
-        const snap = await config.loadConfig();
+        const snap = await loadConfig();
         const baseHash =
           typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
         if (!baseHash) {
@@ -221,7 +224,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
       void dispatch(fetchDesktopStatus());
       void navigate(routes.chat, { replace: true });
     },
-    [dispatch, gw, config.loadConfig, navigate]
+    [dispatch, gw, loadConfig, navigate]
   );
 
   const onGoogleAuthSuccess = React.useCallback(
@@ -238,24 +241,17 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
           // Status check failed — continue with normal onboarding flow
         }
 
-        await config.savePlaceholderOpenRouterKey();
+        await savePlaceholderOpenRouterKey();
         void loadSubscriptionPrice();
-        await config.loadModels();
-        nav.goPaidModelSelect();
+        await loadModels();
+        goPaidModelSelect();
       } catch (err) {
         setAuthError(String(err));
       } finally {
         setAuthBusy(false);
       }
     },
-    [
-      dispatch,
-      config.savePlaceholderOpenRouterKey,
-      loadSubscriptionPrice,
-      config.loadModels,
-      nav.goPaidModelSelect,
-      onStartChat,
-    ]
+    [dispatch, savePlaceholderOpenRouterKey, loadSubscriptionPrice, loadModels, goPaidModelSelect]
   );
 
   const startGoogleAuth = React.useCallback(async () => {
@@ -274,12 +270,12 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
     async (modelId: string) => {
       setSelectedModel(modelId);
       const actualId = modelId.includes("/") ? modelId.slice(modelId.indexOf("/") + 1) : modelId;
-      const entry = config.models.find((m) => m.id === modelId || m.id === actualId);
+      const entry = models.find((m) => m.id === modelId || m.id === actualId);
       setSelectedModelName(entry?.name ?? null);
-      await config.saveDefaultModel(modelId);
-      nav.goPaidSkills();
+      await saveDefaultModel(modelId);
+      goPaidSkills();
     },
-    [config.models, config.saveDefaultModel, nav.goPaidSkills]
+    [goPaidSkills, models, saveDefaultModel]
   );
 
   const onPaidConnectionsContinue = React.useCallback(async () => {
@@ -292,8 +288,8 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
       }
       return;
     }
-    nav.goSetupReview();
-  }, [alreadySubscribed, jwt, onStartChat, nav.goSetupReview]);
+    goSetupReview();
+  }, [alreadySubscribed, goSetupReview, jwt, onStartChat]);
 
   const onPay = React.useCallback(async () => {
     if (!jwt) {
@@ -315,7 +311,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
     } finally {
       setPayBusy(false);
     }
-  }, [jwt, selectedModel]);
+  }, [jwt]);
 
   React.useEffect(() => {
     if (!jwt || autoTopUpLoaded || autoTopUpLoading) {
@@ -347,7 +343,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
     onStripeSuccess: () => {
       void dispatch(fetchDesktopStatus()).finally(() => {
         dispatch(upgradePaywallActions.close());
-        nav.goSuccess();
+        goSuccess();
       });
     },
   });

@@ -22,8 +22,10 @@ export type UpdateErrorPayload = {
   message: string;
 };
 
+export type DesktopPlatform = "darwin" | "win32" | "linux";
+
 export interface OpenclawDesktopApi {
-  platform: NodeJS.Platform;
+  platform: DesktopPlatform;
   version: string;
   openLogs: () => Promise<void>;
   openWorkspaceFolder: () => Promise<void>;

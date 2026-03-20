@@ -1,5 +1,3 @@
-import React from "react";
-
 /**
  * Shared status type used by both skill and connector cards.
  * Matches the `SkillStatus` / `ConnectorStatus` union.

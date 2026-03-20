@@ -19,12 +19,18 @@ export function SlackModalContent(props: {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<string | null>(null);
+  const run = React.useCallback(async <T,>(fn: () => Promise<T>) => fn(), []);
+  const markSkillConnected = React.useCallback(() => {}, []);
+  const goSlackReturn = React.useCallback(() => {}, []);
 
   const { saveSlackConfig } = useWelcomeSlack({
     gw: props.gw,
     loadConfig: props.loadConfig,
     setError,
     setStatus,
+    run,
+    markSkillConnected,
+    goSlackReturn,
   });
 
   const handleConnect = React.useCallback(async () => {

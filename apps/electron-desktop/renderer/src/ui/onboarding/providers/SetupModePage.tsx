@@ -19,7 +19,7 @@ export function SetupModePage(props: {
   onBack?: () => void;
 }) {
   useOnboardingStepEvent("setup_mode", null);
-  const [selected, setSelected] = React.useState<SetupModeChoice>("paid");
+  const [_, setSelected] = React.useState<SetupModeChoice>("paid");
 
   return (
     <HeroPageLayout

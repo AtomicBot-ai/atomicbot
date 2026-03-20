@@ -37,7 +37,10 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const dispatch = useAppDispatch();
   const rawMessages = useAppSelector((s) => s.chat.messages);
   const activeSessionKey = useAppSelector((s) => s.chat.activeSessionKey);
-  const messages = activeSessionKey === sessionKey ? rawMessages : [];
+  const messages = React.useMemo(
+    () => (activeSessionKey === sessionKey ? rawMessages : []),
+    [activeSessionKey, rawMessages, sessionKey]
+  );
   const rawStreamByRun = useAppSelector((s) => s.chat.streamByRun);
   const streamByRun = activeSessionKey === sessionKey ? rawStreamByRun : {};
   const rawLiveToolCalls = useAppSelector((s) => s.chat.liveToolCalls);

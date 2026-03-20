@@ -1,8 +1,6 @@
-import React from "react";
-
-import sm from "@ui/settings/skills/modals/SkillModal.module.css";
 import { TelegramTokenStep } from "./TelegramTokenStep";
 import { TelegramAllowlistStep } from "./TelegramAllowlistStep";
+import sm from "@ui/settings/skills/modals/SkillModal.module.css";
 
 /** Full edit view shown when there is an existing config (setupStep === null). */
 export function TelegramEditView(props: {

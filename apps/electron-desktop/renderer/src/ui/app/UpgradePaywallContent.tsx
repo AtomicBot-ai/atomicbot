@@ -18,18 +18,19 @@ export function UpgradePaywallContent(props: { contentClassName?: string }) {
   const paid = usePaidOnboarding({ navigate });
   const subscriptionPrice = paid.pay.subscriptionPrice;
   const priceLabel = formatPrice(subscriptionPrice);
+  const onAutoTopUpPatch = paid.billing.onAutoTopUpPatch;
 
   const handleToggle = React.useCallback(
     async (enabled: boolean) => {
       try {
-        await paid.billing.onAutoTopUpPatch({
+        await onAutoTopUpPatch({
           enabled,
         });
       } catch (patchError) {
         addToastError(patchError);
       }
     },
-    [paid.billing.onAutoTopUpPatch, addToastError]
+    [onAutoTopUpPatch]
   );
 
   return (

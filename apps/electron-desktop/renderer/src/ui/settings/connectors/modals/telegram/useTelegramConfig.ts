@@ -20,6 +20,7 @@ export function useTelegramConfig(props: {
   onConnected: () => void;
   onTokenSaved?: () => void;
 }) {
+  const { gw, loadConfig, isConnected, onConnected, onTokenSaved } = props;
   const [botToken, setBotToken] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -39,7 +40,7 @@ export function useTelegramConfig(props: {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await props.loadConfig();
+        const snap = await loadConfig();
         if (cancelled) {
           return;
         }
@@ -63,17 +64,17 @@ export function useTelegramConfig(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.loadConfig]);
+  }, [loadConfig]);
 
   /** Persist a config.patch for the Telegram channel. */
   const patchTelegram = React.useCallback(
     async (patch: Record<string, unknown>, note: string) => {
-      const snap = await props.loadConfig();
+      const snap = await loadConfig();
       const baseHash = typeof snap.hash === "string" && snap.hash.trim() ? snap.hash.trim() : null;
       if (!baseHash) {
         throw new Error("Config base hash missing. Reload and try again.");
       }
-      await props.gw.request("config.patch", {
+      await gw.request("config.patch", {
         baseHash,
         raw: JSON.stringify(
           {
@@ -86,14 +87,14 @@ export function useTelegramConfig(props: {
         note,
       });
     },
-    [props.gw, props.loadConfig]
+    [gw, loadConfig]
   );
 
   // ── Bot token save ──────────────────────────────────────────
 
   const handleSaveToken = React.useCallback(async () => {
     const token = botToken.trim();
-    if (!token && !props.isConnected) {
+    if (!token && !isConnected) {
       setError("Bot token is required.");
       return;
     }
@@ -115,10 +116,10 @@ export function useTelegramConfig(props: {
         setSetupStep("allowlist");
         setError(null);
         setStatus(null);
-        props.onTokenSaved?.();
+        onTokenSaved?.();
       } else {
         // Editing existing token: close as before.
-        props.onConnected();
+        onConnected();
       }
     } catch (err) {
       setError(errorToMessage(err));
@@ -126,7 +127,7 @@ export function useTelegramConfig(props: {
     } finally {
       setBusy(false);
     }
-  }, [botToken, patchTelegram, props, setupStep]);
+  }, [botToken, isConnected, onConnected, onTokenSaved, patchTelegram, setupStep]);
 
   // ── Allowlist add ───────────────────────────────────────────
 
@@ -223,13 +224,13 @@ export function useTelegramConfig(props: {
           // Best-effort: close anyway.
         } finally {
           setBusy(false);
-          props.onConnected();
+          onConnected();
         }
       })();
     } else {
-      props.onConnected();
+      onConnected();
     }
-  }, [allowList, newId, patchTelegram, props]);
+  }, [allowList, newId, onConnected, patchTelegram]);
 
   return {
     botToken,

@@ -79,7 +79,7 @@ export function RestoreOptionPage(props: { totalSteps: number; activeStep: numbe
       setError(errorToMessage(err));
       setPageState("error");
     }
-  }, [selected, navigate]);
+  }, [selected, navigate, dispatch]);
 
   return (
     <HeroPageLayout

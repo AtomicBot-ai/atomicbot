@@ -1,6 +1,4 @@
-import React from "react";
 import sit from "./SkillsIntegrationsTab.module.css";
-
 import { FeatureCta } from "@shared/kit";
 import type { SkillId, SkillStatus } from "./useSkillsStatus";
 import { CustomSkillMenu } from "./CustomSkillMenu";
@@ -8,6 +6,7 @@ import type { CustomSkillMeta } from "./useCustomSkills";
 import { SKILLS } from "./skillDefinitions";
 import { filterSkillsForPlatform } from "./platformSkills";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
+import type { DesktopPlatform } from "./platformSkills";
 
 export function SkillsGrid(props: {
   searchQuery: string;
@@ -18,7 +17,7 @@ export function SkillsGrid(props: {
 }) {
   const { searchQuery, customSkills, statuses, onOpenModal, onRemoveCustomSkill } = props;
 
-  const platform = getDesktopApiOrNull()?.platform ?? process.platform;
+  const platform: DesktopPlatform = getDesktopApiOrNull()?.platform ?? "darwin";
   const availableSkills = filterSkillsForPlatform(SKILLS, platform);
 
   const q = searchQuery.trim().toLowerCase();

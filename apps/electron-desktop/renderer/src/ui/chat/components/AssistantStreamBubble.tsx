@@ -1,12 +1,10 @@
-import React from "react";
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-
+import { LoadingPhrase } from "./LoadingPhrase";
 import am from "./AssistantMessage.module.css";
 import ct from "../ChatTranscript.module.css";
-import { LoadingPhrase } from "./LoadingPhrase";
 
 /** Typing indicator with rotating phrases and shimmer (used while waiting for the first response). */
 export function TypingIndicator(props: { classNameRoot?: string } = {}) {

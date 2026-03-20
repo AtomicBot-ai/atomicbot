@@ -1,7 +1,5 @@
-import React from "react";
-
-import gw from "../GoogleWorkspace.module.css";
 import { openExternal } from "@shared/utils/openExternal";
+import gw from "../GoogleWorkspace.module.css";
 
 /** Collapsible step-by-step instructions for Slack onboarding. */
 export function SlackSetupInstructions() {
