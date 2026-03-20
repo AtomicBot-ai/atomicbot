@@ -6,7 +6,7 @@ import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
 export type OllamaMode = "local" | "cloud";
 
 const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
-const OLLAMA_SETUP_STEPS_HEIGHT = 96;
+const OLLAMA_SETUP_STEPS_HEIGHT = 84;
 const OLLAMA_SETUP_STEPS: Record<OllamaMode, string[]> = {
   local: [
     "Download Ollama from ollama.com",
@@ -78,14 +78,21 @@ export function OllamaSetupPage(props: {
       <GlassCard className="UiApiKeyCard UiGlassCardOnboarding">
         <OnboardingDots totalSteps={props.totalSteps} activeStep={props.activeStep} />
 
-        <div className="UiApiKeyTitle">Use your local or cloud AI models with Ollama</div>
-        <div className="UiApiKeySubtitle">
+        <div className="UiApiKeyTitle" style={{ marginBottom: 2 }}>
+          Use your local or cloud AI models with Ollama
+        </div>
+        <div className="UiApiKeySubtitle" style={{ marginBottom: 10 }}>
           {mode === "local"
             ? "Connect to a local Ollama instance running on your machine."
             : "Use Ollama Cloud models with your API key, plus local models."}
         </div>
 
-        <div className="UiAuthModeToggle" role="radiogroup" aria-label="Ollama mode">
+        <div
+          className="UiAuthModeToggle"
+          role="radiogroup"
+          aria-label="Ollama mode"
+          style={{ marginBottom: 10 }}
+        >
           <button
             type="button"
             className={`UiAuthModeBtn ${mode === "local" ? "UiAuthModeBtn--active" : ""}`}
@@ -107,11 +114,13 @@ export function OllamaSetupPage(props: {
         <ol
           className="UiApiKeySubtitle"
           style={{
-            margin: "0 0 12px",
+            margin: "0 0 6px",
             paddingLeft: 20,
             display: "grid",
-            gap: 6,
+            gap: 2,
             height: OLLAMA_SETUP_STEPS_HEIGHT,
+            fontSize: 13,
+            lineHeight: "16px",
           }}
         >
           {OLLAMA_SETUP_STEPS[mode].map((step) => (

@@ -13,6 +13,12 @@ import layoutStyles from "../OnboardingStepLayout.module.css";
 import s from "./ModelSelectPage.module.css";
 import { RichSelect, type RichOption } from "@ui/settings/account-models/RichSelect";
 
+const OLLAMA_EMPTY_STATE_REASONS = [
+  "Ollama is not running on your machine",
+  "Your API key is invalid or expired",
+  "The provider is temporarily unavailable",
+];
+
 export function ModelSelectPage(props: {
   totalSteps: number;
   activeStep: number;
@@ -141,6 +147,7 @@ export function ModelSelectPage(props: {
   }
 
   if (filteredModels.length === 0) {
+    const isOllama = props.filterProvider === "ollama";
     return (
       <HeroPageLayout
         variant="compact"
@@ -160,11 +167,25 @@ export function ModelSelectPage(props: {
           <div className={layoutStyles.UiSetupHeaderRight} />
         </div>
         <GlassCard className="UiModelCard UiGlassCardOnboarding">
-          <div className="UiSectionTitle">Select AI Model</div>
-          <div className="UiSectionSubtitle">
-            No models were found for your configured API key. The key may be invalid or the provider
-            may be temporarily unavailable.
+          <div className="UiSectionTitle">
+            {isOllama ? "Something went wrong" : "Select AI Model"}
           </div>
+          {isOllama ? (
+            <div className="UiSectionSubtitle" style={{ marginTop: 12 }}>
+              <div>We couldn&apos;t find any available models. This usually means:</div>
+              <ul style={{ margin: "8px 0", paddingLeft: 18 }}>
+                {OLLAMA_EMPTY_STATE_REASONS.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              <div>Check your setup and try again.</div>
+            </div>
+          ) : (
+            <div className="UiSectionSubtitle">
+              No models were found for your configured API key. The key may be invalid or the
+              provider may be temporarily unavailable.
+            </div>
+          )}
           <div className="UiModelBottomRow">
             <div />
             <PrimaryButton onClick={props.onRetry}>Retry</PrimaryButton>

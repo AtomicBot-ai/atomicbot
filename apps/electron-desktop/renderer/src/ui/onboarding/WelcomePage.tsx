@@ -20,6 +20,7 @@ import { useWelcomeState } from "./hooks/useWelcomeState";
 import { usePaidOnboarding } from "./hooks/usePaidOnboarding";
 import { SELF_FLOW, PAID_FLOW, RESTORE_FLOW } from "./hooks/onboardingSteps";
 import { OnboardingFlowContext, type OnboardingFlow } from "./hooks/onboarding-flow-context";
+import { resolveModelSelectBackTarget } from "./hooks/resolve-model-select-back-target";
 import { renderSharedFlowRoutes } from "./SharedFlowRoutes";
 
 function WelcomeAutoStart(props: {
@@ -96,6 +97,10 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   const goSlackFromConnections =
     flow === "paid" ? paid.nav.goPaidSlackFromConnections : welcome.goSlackFromConnections;
   const goSlackBack = flow === "paid" ? paid.nav.goPaidSlackBack : welcome.goSlackBack;
+  const selfManagedModelSelectBack =
+    resolveModelSelectBackTarget(welcome.selectedProvider) === "ollama-setup"
+      ? welcome.goOllamaSetup
+      : welcome.goApiKey;
 
   return (
     <OnboardingFlowContext.Provider value={flow}>
@@ -277,7 +282,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
               loading={welcome.modelsLoading}
               error={welcome.modelsError}
               onSelect={(modelId) => void welcome.onModelSelect(modelId)}
-              onBack={welcome.goApiKey}
+              onBack={selfManagedModelSelectBack}
               onRetry={() => void welcome.loadModels()}
               onSkip={welcome.goSkills}
             />
