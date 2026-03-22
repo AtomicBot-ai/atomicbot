@@ -1056,6 +1056,7 @@
                 "group": "Automation",
                 "pages": [
                   "automation/hooks",
+                  "automation/personal-swe-agent",
                   "automation/cron-jobs",
                   "automation/cron-vs-heartbeat",
                   "automation/troubleshooting",

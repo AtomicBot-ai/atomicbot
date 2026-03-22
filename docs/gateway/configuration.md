@@ -324,6 +324,19 @@ When validation fails:
 
   </Accordion>
 
+  <Accordion title="Use a personal SWE agent preset">
+    Start from a documented autonomous engineering preset with:
+
+    - `agents.defaults.workspace`
+    - restricted shell, git, and network policy examples
+    - maintenance cron loops
+    - explicit branch, commit, and PR conventions
+    - failure handling and Telegram status reporting
+
+    See [Personal SWE agent preset](/automation/personal-swe-agent).
+
+  </Accordion>
+
   <Accordion title="Set up webhooks (hooks)">
     Enable HTTP webhook endpoints on the Gateway:
 
