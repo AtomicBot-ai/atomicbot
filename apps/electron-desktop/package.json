@@ -1,7 +1,7 @@
 {
   "name": "sigma-eclipse-desktop",
   "private": true,
-  "version": "1.0.67",
+  "version": "1.0.68",
   "description": "Sigma Eclipse makes things for you",
   "type": "commonjs",
   "main": "dist/main.js",
