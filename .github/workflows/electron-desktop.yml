@@ -166,6 +166,7 @@ jobs:
           NOTARIZE: ${{ secrets.APPLE_PASSWORD != '' && secrets.APPLE_CERTIFICATE != '' && '1' || '' }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       # Generate latest-mac.yml for electron-updater (normally created by --publish always).
