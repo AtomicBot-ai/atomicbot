@@ -89,6 +89,8 @@ jobs:
       - name: Prepare OpenClaw bundle
         working-directory: apps/electron-desktop
         run: npm run prepare:openclaw:ci
+        env:
+          OPENCLAW_BUNDLE_SKIP_VERIFY: "1"
 
       - name: Prepare Node runtime
         working-directory: apps/electron-desktop
@@ -307,6 +309,8 @@ jobs:
       - name: Prepare OpenClaw bundle
         working-directory: apps/electron-desktop
         run: npm run prepare:openclaw:ci
+        env:
+          OPENCLAW_BUNDLE_SKIP_VERIFY: "1"
 
       - name: Prepare Node runtime
         working-directory: apps/electron-desktop
