@@ -38,7 +38,11 @@ function hasNotaryAuthEnv() {
   const key = process.env.NOTARYTOOL_KEY && String(process.env.NOTARYTOOL_KEY).trim();
   const keyId = process.env.NOTARYTOOL_KEY_ID && String(process.env.NOTARYTOOL_KEY_ID).trim();
   const issuer = process.env.NOTARYTOOL_ISSUER && String(process.env.NOTARYTOOL_ISSUER).trim();
-  return Boolean(key && keyId && issuer);
+  if (key && keyId && issuer) return true;
+  const appleId = process.env.APPLE_ID && String(process.env.APPLE_ID).trim();
+  const applePassword = process.env.APPLE_PASSWORD && String(process.env.APPLE_PASSWORD).trim();
+  const appleTeamId = process.env.APPLE_TEAM_ID && String(process.env.APPLE_TEAM_ID).trim();
+  return Boolean(appleId && applePassword && appleTeamId);
 }
 
 function repoRootFromHere() {
@@ -71,7 +75,7 @@ module.exports = async function afterSign(context) {
     throw new Error(
       [
         "[electron-desktop] afterSign: notary auth missing.",
-        "Set NOTARYTOOL_PROFILE (keychain profile) OR NOTARYTOOL_KEY/NOTARYTOOL_KEY_ID/NOTARYTOOL_ISSUER (API key).",
+        "Set NOTARYTOOL_PROFILE, NOTARYTOOL_KEY/KEY_ID/ISSUER, or APPLE_ID/APPLE_PASSWORD/APPLE_TEAM_ID.",
       ].join("\n")
     );
   }

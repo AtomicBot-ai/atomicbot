@@ -4,6 +4,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -14,6 +15,7 @@
     opacity: 0;
     transform: translateY(6px) scale(0.985);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);

@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import JSON5 from "json5";
@@ -57,7 +58,16 @@ export function ensureGatewayConfigFile(params: { configPath: string; token: str
       // sigma: SigmaBrowser path as fallback when "openclaw" profile is used directly
       ...(process.platform === "darwin"
         ? { executablePath: "/Applications/Sigma.app/Contents/MacOS/Sigma" }
-        : {}),
+        : process.platform === "win32"
+          ? {
+              executablePath: path.win32.join(
+                process.env.LOCALAPPDATA || path.win32.join(os.homedir(), "AppData", "Local"),
+                "Chromium",
+                "Application",
+                "sigma.exe"
+              ),
+            }
+          : {}),
     },
     logging: {
       level: "debug",

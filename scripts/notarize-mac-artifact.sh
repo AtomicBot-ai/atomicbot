@@ -11,6 +11,9 @@ set -euo pipefail
 #   NOTARYTOOL_KEY       path to App Store Connect API key (.p8)
 #   NOTARYTOOL_KEY_ID    API key ID
 #   NOTARYTOOL_ISSUER    API issuer ID
+#   APPLE_ID             Apple ID email
+#   APPLE_PASSWORD       App-specific password
+#   APPLE_TEAM_ID        Developer Team ID
 
 ARTIFACT="${1:-}"
 STAPLE_APP_PATH="${STAPLE_APP_PATH:-}"
@@ -34,8 +37,10 @@ if [[ -n "${NOTARYTOOL_PROFILE:-}" ]]; then
   auth_args+=(--keychain-profile "$NOTARYTOOL_PROFILE")
 elif [[ -n "${NOTARYTOOL_KEY:-}" && -n "${NOTARYTOOL_KEY_ID:-}" && -n "${NOTARYTOOL_ISSUER:-}" ]]; then
   auth_args+=(--key "$NOTARYTOOL_KEY" --key-id "$NOTARYTOOL_KEY_ID" --issuer "$NOTARYTOOL_ISSUER")
+elif [[ -n "${APPLE_ID:-}" && -n "${APPLE_PASSWORD:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+  auth_args+=(--apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID")
 else
-  echo "Error: Notary auth missing. Set NOTARYTOOL_PROFILE or NOTARYTOOL_KEY/NOTARYTOOL_KEY_ID/NOTARYTOOL_ISSUER." >&2
+  echo "Error: Notary auth missing. Set NOTARYTOOL_PROFILE, NOTARYTOOL_KEY/KEY_ID/ISSUER, or APPLE_ID/APPLE_PASSWORD/APPLE_TEAM_ID." >&2
   exit 1
 fi
 
