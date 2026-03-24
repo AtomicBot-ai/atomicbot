@@ -43,6 +43,8 @@ export interface OpenclawDesktopApi {
   getGatewayInfo: () => Promise<{ state: GatewayState | null }>;
   getConsentInfo: () => Promise<{ accepted: boolean }>;
   acceptConsent: () => Promise<{ ok: true }>;
+  getOnboarded: () => Promise<{ onboarded: boolean }>;
+  setOnboarded: (onboarded: boolean) => Promise<{ ok: true }>;
   startGateway: () => Promise<{ ok: true }>;
   openExternal: (url: string) => Promise<void>;
   setApiKey: (provider: string, apiKey: string) => Promise<{ ok: true }>;
@@ -213,6 +215,8 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "getGatewayInfo",
   "getConsentInfo",
   "acceptConsent",
+  "getOnboarded",
+  "setOnboarded",
   "startGateway",
   "openExternal",
   "setApiKey",

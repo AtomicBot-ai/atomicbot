@@ -12,6 +12,8 @@ export type RegisterParams = BinaryPaths & {
   getLogsDir: () => string | null;
   getConsentAccepted: () => boolean;
   acceptConsent: () => Promise<void>;
+  getOnboarded: () => boolean;
+  setOnboarded: (onboarded: boolean) => void;
   startGateway: (opts?: { silent?: boolean }) => Promise<void>;
   userData: string;
   stateDir: string;
@@ -32,7 +34,13 @@ export type ObsidianHandlerParams = Pick<RegisterParams, "obsidianCliBin" | "ope
 export type GhHandlerParams = Pick<RegisterParams, "ghBin" | "stateDir" | "openclawDir">;
 export type ConfigHandlerParams = Pick<
   RegisterParams,
-  "getGatewayState" | "getConsentAccepted" | "acceptConsent" | "startGateway" | "stateDir"
+  | "getGatewayState"
+  | "getConsentAccepted"
+  | "acceptConsent"
+  | "startGateway"
+  | "stateDir"
+  | "getOnboarded"
+  | "setOnboarded"
 >;
 export type OAuthHandlerParams = Pick<RegisterParams, "getMainWindow" | "stateDir">;
 export type SkillHandlerParams = Pick<RegisterParams, "stateDir">;

@@ -20,6 +20,7 @@ export interface AppState {
   logsDirForUi: string | null;
   gatewayState: GatewayState | null;
   consentAccepted: boolean;
+  onboarded: boolean;
   isQuitting: boolean;
   // sigma: Local LLM process state
   sigmaServerProcess: { current: ChildProcess | null };
@@ -38,6 +39,7 @@ export function createAppState(): AppState {
     logsDirForUi: null,
     gatewayState: null,
     consentAccepted: false,
+    onboarded: false,
     isQuitting: false,
     // sigma: Local LLM defaults
     sigmaServerProcess: { current: null },

@@ -11,12 +11,22 @@ const initialState: OnboardingSliceState = {
   onboarded: false,
 };
 
+const desktopApi = (
+  window as unknown as {
+    openclawDesktop?: {
+      setOnboarded?: (v: boolean) => Promise<unknown>;
+      getOnboarded?: () => Promise<{ onboarded: boolean }>;
+    };
+  }
+).openclawDesktop;
+
 export const loadOnboardingFromStorage = createAsyncThunk(
   "onboarding/loadFromStorage",
   async (_: void, thunkApi) => {
     const onboarded =
       typeof localStorage !== "undefined" && localStorage.getItem(ONBOARDED_KEY) === "1";
     thunkApi.dispatch(onboardingActions.setOnboardedState(onboarded));
+    desktopApi?.setOnboarded?.(onboarded).catch(() => {});
   }
 );
 
@@ -30,6 +40,7 @@ export const setOnboarded = createAsyncThunk(
         localStorage.removeItem(ONBOARDED_KEY);
       }
     }
+    desktopApi?.setOnboarded?.(onboarded).catch(() => {});
     thunkApi.dispatch(onboardingActions.setOnboardedState(onboarded));
   }
 );

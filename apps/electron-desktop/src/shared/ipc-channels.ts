@@ -16,6 +16,8 @@ export const IPC = {
   gatewayGetInfo: "gateway-get-info",
   consentGet: "consent-get",
   consentAccept: "consent-accept",
+  onboardedGet: "onboarded-get",
+  onboardedSet: "onboarded-set",
   gatewayStart: "gateway-start",
   gatewayRetry: "gateway-retry",
 

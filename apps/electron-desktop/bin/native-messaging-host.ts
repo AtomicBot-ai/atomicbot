@@ -54,6 +54,20 @@ interface GatewayInfoOnDisk {
   ready: boolean;
 }
 
+const ONBOARDED_FILENAME = "onboarded.json";
+
+function readOnboardedFromDisk(): boolean {
+  try {
+    const filePath = path.join(getSharedDataDir(), ONBOARDED_FILENAME);
+    if (!fs.existsSync(filePath)) return false;
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as { onboarded?: unknown };
+    return parsed?.onboarded === true;
+  } catch {
+    return false;
+  }
+}
+
 function readGatewayInfoFromDisk(): GatewayInfoOnDisk {
   const infoPath = path.join(getSharedDataDir(), "gateway-info.json");
   try {
@@ -97,6 +111,10 @@ function probeGateway(url: string): Promise<boolean> {
 async function readGatewayInfo(): Promise<GatewayInfoOnDisk> {
   const info = readGatewayInfoFromDisk();
   if (!info.ready || !info.url) return info;
+
+  if (!readOnboardedFromDisk()) {
+    return { ...info, ready: false };
+  }
 
   const alive = await probeGateway(info.url);
   if (!alive) {

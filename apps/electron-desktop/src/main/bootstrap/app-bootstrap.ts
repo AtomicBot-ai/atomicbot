@@ -7,6 +7,7 @@ import type { Platform } from "../platform";
 import type { BinaryPaths } from "../types";
 import { DEFAULT_PORT } from "../constants";
 import { readConsentAccepted, writeConsentAccepted } from "../consent";
+import { readOnboardedFromDisk, writeOnboardedToDisk } from "../onboarded";
 import { runConfigMigrations } from "../gateway/config-migrations";
 import { ensureGatewayConfigFile, readGatewayTokenFromConfig } from "../gateway/config";
 import { createGatewayStarter } from "../gateway/lifecycle";
@@ -113,6 +114,7 @@ export async function bootstrapApp(params: {
 
   const consentPath = path.join(stateDir, "consent.json");
   params.state.consentAccepted = readConsentAccepted(consentPath);
+  params.state.onboarded = readOnboardedFromDisk();
 
   const stderrTail = createTailBuffer(24_000);
   const startGateway = createGatewayStarter({
@@ -141,6 +143,11 @@ export async function bootstrapApp(params: {
     acceptConsent: async () => {
       params.state.consentAccepted = true;
       writeConsentAccepted(consentPath);
+    },
+    getOnboarded: () => params.state.onboarded,
+    setOnboarded: (onboarded: boolean) => {
+      params.state.onboarded = onboarded;
+      writeOnboardedToDisk(onboarded);
     },
     startGateway,
     userData,

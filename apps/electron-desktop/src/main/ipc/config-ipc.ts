@@ -18,6 +18,14 @@ export function registerConfigHandlers(params: ConfigHandlerParams) {
     return { ok: true } as const;
   });
 
+  ipcMain.handle("onboarded-get", () => ({ onboarded: params.getOnboarded() }));
+
+  ipcMain.handle("onboarded-set", (_evt, p: { onboarded?: unknown }) => {
+    const value = typeof p?.onboarded === "boolean" ? p.onboarded : false;
+    params.setOnboarded(value);
+    return { ok: true } as const;
+  });
+
   ipcMain.handle("gateway-start", async () => {
     await params.startGateway();
     return { ok: true } as const;
