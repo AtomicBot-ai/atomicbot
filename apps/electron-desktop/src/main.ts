@@ -54,7 +54,7 @@ const gotTheLock = registerAppLifecycle({
   state: st,
   platform,
   showWindow: showWin,
-  handleDeepLink,
+  handleDeepLink: (url, win) => handleDeepLink(url, win, st.gatewayStateDir ?? undefined),
   disposeAutoUpdater,
   stopGatewayChild: () => stopGatewayChild(st, platform),
   removeGatewayPid,

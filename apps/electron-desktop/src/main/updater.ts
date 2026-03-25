@@ -23,8 +23,7 @@ export function initAutoUpdater(getMainWindow: () => BrowserWindow | null): void
   }
   initialized = true;
 
-  // Don't auto-download; let the user decide when to download.
-  autoUpdater.autoDownload = false;
+  autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("checking-for-update", () => {

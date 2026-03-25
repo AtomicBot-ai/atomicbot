@@ -19,6 +19,8 @@ type UpdateCheckState =
   | { kind: "idle" }
   | { kind: "checking" }
   | { kind: "available"; version: string }
+  | { kind: "downloading"; version: string; percent: number }
+  | { kind: "ready"; version: string }
   | { kind: "up-to-date" }
   | { kind: "error"; message: string };
 
@@ -65,10 +67,26 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
       })
     );
     unsubs.push(
+      api.onUpdateDownloadProgress((payload) => {
+        setUpdateCheck((prev) => {
+          const ver = prev.kind === "available" || prev.kind === "downloading" ? prev.version : "";
+          return { kind: "downloading", version: ver, percent: Math.round(payload.percent) };
+        });
+      })
+    );
+    unsubs.push(
+      api.onUpdateDownloaded((payload) => {
+        setUpdateCheck({ kind: "ready", version: payload.version });
+      })
+    );
+    unsubs.push(
       api.onUpdateError((payload) => {
-        setUpdateCheck((prev) =>
-          prev.kind === "checking" ? { kind: "error", message: payload.message } : prev
-        );
+        setUpdateCheck((prev) => {
+          if (prev.kind === "checking" || prev.kind === "downloading") {
+            return { kind: "error", message: payload.message };
+          }
+          return prev;
+        });
       })
     );
     return () => {
@@ -89,6 +107,22 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
       setUpdateCheck({ kind: "error", message: errorToMessage(err) });
     }
   }, [onError]);
+
+  const handleDownloadUpdate = React.useCallback(async () => {
+    const api = getDesktopApiOrNull();
+    if (!api?.downloadUpdate) return;
+    try {
+      await api.downloadUpdate();
+    } catch (err) {
+      setUpdateCheck({ kind: "error", message: errorToMessage(err) });
+    }
+  }, []);
+
+  const handleInstallUpdate = React.useCallback(() => {
+    const api = getDesktopApiOrNull();
+    if (!api?.installUpdate) return;
+    void api.installUpdate();
+  }, []);
 
   const toggleLaunchAtStartup = React.useCallback(
     async (enabled: boolean) => {
@@ -223,7 +257,27 @@ export function OtherTab({ onError }: { onError: (msg: string | null) => void })
                 <span className={s.UiSettingsOtherRowValue}>You're up to date</span>
               )}
               {updateCheck.kind === "available" && (
-                <span className={s.UiSettingsOtherRowValue}>v{updateCheck.version} available</span>
+                <button
+                  type="button"
+                  className={s.UiSettingsOtherLink}
+                  onClick={() => void handleDownloadUpdate()}
+                >
+                  Download v{updateCheck.version}
+                </button>
+              )}
+              {updateCheck.kind === "downloading" && (
+                <span className={s.UiSettingsOtherRowValue}>
+                  Downloading… {updateCheck.percent}%
+                </span>
+              )}
+              {updateCheck.kind === "ready" && (
+                <button
+                  type="button"
+                  className={s.UiSettingsOtherLink}
+                  onClick={handleInstallUpdate}
+                >
+                  Restart &amp; Update
+                </button>
               )}
               {updateCheck.kind === "error" && (
                 <button

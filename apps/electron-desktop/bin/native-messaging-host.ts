@@ -493,9 +493,59 @@ async function handleGetGatewayInfo(): Promise<GatewayInfoOnDisk> {
   return readGatewayInfo();
 }
 
+function getElectronUserDataDir(): string {
+  switch (process.platform) {
+    case "darwin":
+      return path.join(os.homedir(), "Library", "Application Support", "sigma-eclipse-desktop");
+    case "win32": {
+      const appData = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
+      return path.join(appData, "sigma-eclipse-desktop");
+    }
+    default:
+      return path.join(
+        process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"),
+        "sigma-eclipse-desktop"
+      );
+  }
+}
+
+function handleOpenWorkspaceFile(params: unknown): {
+  opened: boolean;
+  filePath: string;
+  message: string;
+} {
+  const fileName = (params as { fileName?: string })?.fileName;
+  if (!fileName || typeof fileName !== "string") {
+    throw new Error("Missing fileName parameter");
+  }
+  const safeName = path.basename(fileName);
+  const workspaceDir = path.join(getElectronUserDataDir(), "openclaw", "workspace");
+  const filePath = path.join(workspaceDir, safeName);
+
+  if (!fs.existsSync(filePath)) {
+    if (fs.existsSync(workspaceDir)) {
+      execSync(`open "${workspaceDir}"`, { timeout: 3000 });
+      return { opened: false, filePath, message: "File not found, opened workspace folder" };
+    }
+    throw new Error(`Workspace file not found: ${safeName}`);
+  }
+
+  if (process.platform === "darwin") {
+    execSync(`open -R "${filePath}"`, { timeout: 3000 });
+  } else if (process.platform === "win32") {
+    execSync(`explorer /select,"${filePath}"`, { timeout: 3000 });
+  } else {
+    execSync(`xdg-open "${path.dirname(filePath)}"`, { timeout: 3000 });
+  }
+
+  log(`Opened workspace file: ${filePath}`);
+  return { opened: true, filePath, message: `Opened ${safeName}` };
+}
+
 async function processCommand(
   id: string,
-  command: string
+  command: string,
+  params?: unknown
 ): Promise<{ id: string; success: boolean; data?: unknown; error?: string }> {
   try {
     let data: unknown;
@@ -520,6 +570,9 @@ async function processCommand(
         break;
       case "launch_app":
         data = handleLaunchApp();
+        break;
+      case "open_workspace_file":
+        data = handleOpenWorkspaceFile(params);
         break;
       default:
         throw new Error(`Unknown command: ${command}`);
@@ -546,7 +599,7 @@ async function main(): Promise<void> {
   while (!shouldExit) {
     try {
       const msg = await readMessage();
-      const response = await processCommand(msg.id, msg.command);
+      const response = await processCommand(msg.id, msg.command, msg.params);
       await sendMessage(response);
     } catch {
       break;
