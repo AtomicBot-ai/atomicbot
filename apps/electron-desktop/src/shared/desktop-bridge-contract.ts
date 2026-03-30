@@ -250,6 +250,7 @@ export interface OpenclawDesktopApi {
   }>;
   removeCustomSkill: (dirName: string) => Promise<{ ok: boolean; error?: string }>;
   clawhubListSkills: (params?: {
+    q?: string;
     limit?: number;
     page?: number;
     sort?: string;
@@ -261,11 +262,6 @@ export interface OpenclawDesktopApi {
     total: number;
     page: number;
     totalPages: number;
-    error?: string;
-  }>;
-  clawhubSearchSkills: (params: { query: string; limit?: number }) => Promise<{
-    ok: boolean;
-    results: ClawHubSkillListEntry[];
     error?: string;
   }>;
   clawhubGetSkillPackage: (params: { slug: string }) => Promise<{
@@ -394,7 +390,6 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "listCustomSkills",
   "removeCustomSkill",
   "clawhubListSkills",
-  "clawhubSearchSkills",
   "clawhubGetSkillPackage",
   "clawhubGetSkillFile",
   "clawhubGetComments",

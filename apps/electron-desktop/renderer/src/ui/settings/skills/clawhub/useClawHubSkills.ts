@@ -196,38 +196,26 @@ export function useClawHubSkills(initial?: {
         const api = getDesktopApi();
         const query = searchQuery.trim();
 
-        if (query) {
-          const result = await api.clawhubSearchSkills({ query, limit: 50 });
-          if (cancelled) return;
-          if (!result.ok) {
-            setError(result.error ?? "Search failed");
-            setSkills([]);
-            setTotalPages(0);
-            return;
-          }
-          setSkills(result.results as ClawHubSkillItem[]);
-          setTotalPages(1);
+        const result = await api.clawhubListSkills({
+          q: query || undefined,
+          page,
+          limit: PAGE_SIZE,
+          sort: sortField,
+          dir: sortDir,
+          nonSuspicious: hideSuspicious,
+        });
+        if (cancelled) return;
+        if (!result.ok) {
+          setError(result.error ?? "Failed to load skills");
+          if (isFirstPage) setSkills([]);
+          setTotalPages(0);
+          return;
+        }
+        setTotalPages(result.totalPages);
+        if (isFirstPage) {
+          setSkills(result.items as ClawHubSkillItem[]);
         } else {
-          const result = await api.clawhubListSkills({
-            page,
-            limit: PAGE_SIZE,
-            sort: sortField,
-            dir: sortDir,
-            nonSuspicious: hideSuspicious,
-          });
-          if (cancelled) return;
-          if (!result.ok) {
-            setError(result.error ?? "Failed to load skills");
-            if (isFirstPage) setSkills([]);
-            setTotalPages(0);
-            return;
-          }
-          setTotalPages(result.totalPages);
-          if (isFirstPage) {
-            setSkills(result.items as ClawHubSkillItem[]);
-          } else {
-            setSkills((prev) => [...prev, ...(result.items as ClawHubSkillItem[])]);
-          }
+          setSkills((prev) => [...prev, ...(result.items as ClawHubSkillItem[])]);
         }
       } catch (err) {
         if (cancelled) return;

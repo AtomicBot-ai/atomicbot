@@ -106,14 +106,13 @@ const api: OpenclawDesktopApi = {
   removeCustomSkill: async (dirName: string) =>
     ipcRenderer.invoke(IPC.removeCustomSkill, { dirName }),
   clawhubListSkills: async (params?: {
+    q?: string;
     limit?: number;
     page?: number;
     sort?: string;
     dir?: string;
     nonSuspicious?: boolean;
   }) => ipcRenderer.invoke(IPC.clawhubListSkills, params),
-  clawhubSearchSkills: async (params: { query: string; limit?: number }) =>
-    ipcRenderer.invoke(IPC.clawhubSearchSkills, params),
   clawhubGetSkillPackage: async (params: { slug: string }) =>
     ipcRenderer.invoke(IPC.clawhubGetSkillPackage, params),
   clawhubGetSkillFile: async (params: { slug: string; path: string }) =>

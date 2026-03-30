@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 
 import { IPC } from "../../shared/ipc-channels";
 
-const CLAWHUB_API_URL = process.env.CLAWHUB_API_URL || "https://clawhub.atomicbot.ai";
+const CLAWHUB_API_URL = process.env.CLAWHUB_API_URL || "http://localhost:3000";
 const FETCH_TIMEOUT_MS = 30_000;
 
 async function clawhubFetch<T>(
@@ -69,6 +69,7 @@ export function registerClawHubHandlers() {
     async (
       _evt,
       params?: {
+        q?: string;
         limit?: number;
         page?: number;
         sort?: string;
@@ -84,6 +85,7 @@ export function registerClawHubHandlers() {
           limit: number;
           totalPages: number;
         }>("/api/skills", {
+          q: params?.q?.trim() || undefined,
           page: params?.page ? String(params.page) : undefined,
           limit: params?.limit ? String(params.limit) : "25",
           sort: params?.sort,
@@ -104,29 +106,6 @@ export function registerClawHubHandlers() {
           total: 0,
           page: 1,
           totalPages: 0,
-          error: String(err instanceof Error ? err.message : err),
-        };
-      }
-    }
-  );
-
-  ipcMain.handle(
-    IPC.clawhubSearchSkills,
-    async (_evt, params: { query?: string; limit?: number }) => {
-      const query = typeof params?.query === "string" ? params.query.trim() : "";
-      if (!query) {
-        return { ok: false, results: [], error: "Search query is required" };
-      }
-      try {
-        const results = await clawhubFetch<unknown[]>("/api/skills/search", {
-          q: query,
-          limit: params?.limit ? String(params.limit) : "30",
-        });
-        return { ok: true, results };
-      } catch (err) {
-        return {
-          ok: false,
-          results: [],
           error: String(err instanceof Error ? err.message : err),
         };
       }
