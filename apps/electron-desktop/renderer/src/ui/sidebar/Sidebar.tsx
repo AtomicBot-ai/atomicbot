@@ -192,7 +192,7 @@ export function Sidebar() {
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <IconSkills />
           </span>
-          Skills
+          ClawHub skills
         </NavLink>
         <NavLink to={routes.models} className={css.UiChatSidebarNavLink}>
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">

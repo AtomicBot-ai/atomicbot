@@ -185,6 +185,7 @@ describe("Smoke render tests", () => {
     );
     // The sidebar should render its wrapper element.
     expect(container.firstChild).toBeTruthy();
+    expect(screen.getByText("ClawHub skills")).toBeTruthy();
   });
 
   it("SettingsPage renders tabs", () => {
