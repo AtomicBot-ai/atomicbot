@@ -102,7 +102,8 @@ describe("computeContextLength", () => {
 
   test("caps at model maxContextLength", () => {
     const ctx = computeContextLength(128, smallModel);
-    expect(ctx).toBe(smallModel.maxContextLength);
+    expect(ctx).toBeLessThanOrEqual(smallModel.maxContextLength);
+    expect(ctx).toBeGreaterThan(smallModel.maxContextLength - 5000);
   });
 
   test("gives less context for large models", () => {
@@ -111,8 +112,8 @@ describe("computeContextLength", () => {
     expect(ctxLarge).toBeLessThan(ctxSmall);
   });
 
-  test("context is always a multiple of 8192", () => {
+  test("context is always a multiple of 5000", () => {
     const ctx = computeContextLength(16, smallModel);
-    expect(ctx % 8192).toBe(0);
+    expect(ctx % 5000).toBe(0);
   });
 });

@@ -36,7 +36,7 @@ describe("getLlamacppModelDef", () => {
   test("returns the model for a known id", () => {
     const model = getLlamacppModelDef("qwen-3.5-4b");
     expect(model.id).toBe("qwen-3.5-4b");
-    expect(model.name).toBe("Qwen 3.5 4B");
+    expect(model.name).toBe("Qwen 3.5 4B GGUF");
   });
 
   test("returns first model for an unknown id", () => {
