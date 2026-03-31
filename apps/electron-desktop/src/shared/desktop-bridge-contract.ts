@@ -332,8 +332,13 @@ export interface OpenclawDesktopApi {
       size: number;
       compatibility: string;
       icon: string;
+      tag?: string;
     }>
   >;
+  llamacppModelDelete: (params: { model: string }) => Promise<{
+    ok: boolean;
+    error?: string;
+  }>;
   llamacppServerStart: (params?: { model?: string }) => Promise<{
     ok: boolean;
     port?: number;
@@ -359,6 +364,11 @@ export interface OpenclawDesktopApi {
     contextLength?: number;
     error?: string;
   }>;
+  llamacppWarmupGet: () => Promise<{ state: "idle" | "warming" | "done"; modelId: string | null }>;
+  llamacppWarmupSet: (params: {
+    state: "idle" | "warming" | "done";
+    modelId: string | null;
+  }) => Promise<{ ok: boolean }>;
   whisperModelStatus: (params?: { model?: string }) => Promise<{
     modelReady: boolean;
     binReady: boolean;
@@ -492,6 +502,7 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "llamacppModelStatus",
   "llamacppModelDownload",
   "llamacppModelDownloadCancel",
+  "llamacppModelDelete",
   "onLlamacppBackendDownloadProgress",
   "onLlamacppModelDownloadProgress",
   "llamacppModelsList",
@@ -500,6 +511,8 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "llamacppClearActiveModel",
   "llamacppServerStatus",
   "llamacppSetActiveModel",
+  "llamacppWarmupGet",
+  "llamacppWarmupSet",
   "whisperModelStatus",
   "whisperModelDownload",
   "whisperModelDownloadCancel",

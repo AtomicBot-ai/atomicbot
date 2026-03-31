@@ -13,7 +13,14 @@ import {
   resolveChatTemplatePath,
   type LlamacppModelId,
 } from "./models";
-import { clearActiveModelId, readActiveModelId, writeActiveModelId } from "./model-state";
+import {
+  clearActiveModelId,
+  readActiveModelId,
+  writeActiveModelId,
+  getWarmupState,
+  setWarmupState,
+  resetWarmupState,
+} from "./model-state";
 import {
   downloadBackend,
   isBackendDownloaded,
@@ -168,6 +175,39 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
     return { ok: true };
   });
 
+  ipcMain.handle(IPC.llamacppModelDelete, async (_evt, p: { model: string }) => {
+    const modelId = p.model as LlamacppModelId;
+    const model = getLlamacppModelDef(modelId);
+    const modelPath = resolveLlamacppModelPath(llamacppDataDir, model);
+
+    const activeId = readActiveModelId(stateDir);
+    if (activeId === modelId) {
+      try {
+        await stopLlamacppServer();
+        clearActiveModelId(stateDir);
+        resetWarmupState();
+      } catch {
+        // best effort
+      }
+    }
+
+    try {
+      if (fs.existsSync(modelPath)) {
+        fs.unlinkSync(modelPath);
+      }
+      const dir = path.dirname(modelPath);
+      try {
+        const remaining = fs.readdirSync(dir);
+        if (remaining.length === 0) fs.rmdirSync(dir);
+      } catch {
+        // best effort
+      }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: String(err) };
+    }
+  });
+
   ipcMain.handle(IPC.llamacppModelsList, () => {
     const sysInfo = getSystemInfo();
     return LLAMACPP_MODELS.map((m) => {
@@ -191,6 +231,7 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
         size,
         compatibility: getModelCompatibility(m, sysInfo),
         icon: m.icon,
+        tag: m.tag,
       };
     });
   });
@@ -237,6 +278,7 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
   ipcMain.handle(IPC.llamacppServerStop, async () => {
     try {
       await stopLlamacppServer();
+      resetWarmupState();
       return { ok: true };
     } catch (err) {
       return { ok: false, error: String(err) };
@@ -273,6 +315,7 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
     }
 
     try {
+      resetWarmupState();
       writeActiveModelId(stateDir, modelId);
       const sysInfo = getSystemInfo();
       const ctxLen = computeContextLength(sysInfo.totalRamGb, model);
@@ -293,4 +336,16 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
       return { ok: false, error: String(err) };
     }
   });
+
+  ipcMain.handle(IPC.llamacppWarmupGet, () => {
+    return getWarmupState();
+  });
+
+  ipcMain.handle(
+    IPC.llamacppWarmupSet,
+    (_evt, p: { state: "idle" | "warming" | "done"; modelId: string | null }) => {
+      setWarmupState(p.state, p.modelId);
+      return { ok: true };
+    }
+  );
 }

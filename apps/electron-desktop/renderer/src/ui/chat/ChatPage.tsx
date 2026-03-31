@@ -153,6 +153,24 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
     }
   }, [error, dispatch]);
 
+  const handleStop = React.useCallback(async () => {
+    try {
+      const res = await gw.request<{ aborted: boolean; runIds: string[] }>("chat.abort", {
+        sessionKey,
+      });
+      if (res.aborted) {
+        for (const runId of res.runIds) {
+          dispatch(chatActions.streamAborted({ runId }));
+          dispatch(chatActions.liveToolCallsClearedForRun({ runId }));
+        }
+        dispatch(chatActions.setAwaitingContinuation(false));
+        refresh();
+      }
+    } catch (err) {
+      addToastError(err);
+    }
+  }, [gw, sessionKey, dispatch, refresh]);
+
   const send = React.useCallback(() => {
     if (sending || hasActiveStream) {
       return;
@@ -218,6 +236,8 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
           onAttachmentsChange={setAttachments}
           onSend={send}
           disabled={sending}
+          streaming={hasActiveStream}
+          onStop={handleStop}
           onAttachmentsLimitError={(msg) => addToastError(msg)}
           isVoiceRecording={voiceConfig.voice.isRecording}
           isVoiceProcessing={voiceConfig.voice.isProcessing}

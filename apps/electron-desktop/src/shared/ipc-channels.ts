@@ -116,12 +116,15 @@ export const IPC = {
   llamacppModelStatus: "llamacpp-model-status",
   llamacppModelDownload: "llamacpp-model-download",
   llamacppModelDownloadCancel: "llamacpp-model-download-cancel",
+  llamacppModelDelete: "llamacpp-model-delete",
   llamacppModelsList: "llamacpp-models-list",
   llamacppServerStart: "llamacpp-server-start",
   llamacppServerStop: "llamacpp-server-stop",
   llamacppClearActiveModel: "llamacpp-clear-active-model",
   llamacppServerStatus: "llamacpp-server-status",
   llamacppSetActiveModel: "llamacpp-set-active-model",
+  llamacppWarmupGet: "llamacpp-warmup-get",
+  llamacppWarmupSet: "llamacpp-warmup-set",
 
   // Reset
   resetAndClose: "reset-and-close",

@@ -79,6 +79,11 @@
   color: var(--error);
 }
 
+.badgeHighPerformance {
+  background: color-mix(in srgb, #a78bfa 15%, transparent);
+  color: #a78bfa;
+}
+
 .progressBar {
   margin-top: 12px;
   display: flex;

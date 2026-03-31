@@ -55,10 +55,9 @@ export function LlamacppDownloadBanner() {
 
   return (
     <div
-      className={`${s.UpdateBanner} ${s["UpdateBanner--right"]}`}
+      className={`${s.UpdateBanner} ${s["UpdateBanner--right"]} ${s["UpdateBanner--inStack"]}`}
       role="status"
       aria-live="polite"
-      style={{ top: 20 }}
     >
       <div className={s["UpdateBanner-icon"]}>
         <DownloadIcon />

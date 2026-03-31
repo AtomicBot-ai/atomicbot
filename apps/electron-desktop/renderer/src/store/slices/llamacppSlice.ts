@@ -2,6 +2,9 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { errorToMessage } from "../../ui/shared/toast";
+import type { GatewayRequest } from "./chat/chatSlice";
+
+export const WARMUP_SESSION_KEY = "__warmup__";
 
 export type LlamacppModelInfo = {
   id: string;
@@ -13,6 +16,7 @@ export type LlamacppModelInfo = {
   size: number;
   compatibility: string;
   icon: string;
+  tag?: string;
 };
 
 export type LlamacppSystemInfo = {
@@ -34,6 +38,7 @@ export type LlamacppModelDownloadStatus =
   | { kind: "error"; message: string };
 
 export type LlamacppServerStatus = "stopped" | "starting" | "running" | "error";
+export type LlamacppWarmupStatus = "idle" | "warming" | "ready" | "error";
 
 export type LlamacppSliceState = {
   backendDownloaded: boolean;
@@ -44,6 +49,8 @@ export type LlamacppSliceState = {
   activeModelId: string | null;
   systemInfo: LlamacppSystemInfo | null;
   models: LlamacppModelInfo[];
+  warmupStatus: LlamacppWarmupStatus;
+  warmupSessionKey: string | null;
 };
 
 const initialState: LlamacppSliceState = {
@@ -55,6 +62,8 @@ const initialState: LlamacppSliceState = {
   activeModelId: null,
   systemInfo: null,
   models: [],
+  warmupStatus: "idle",
+  warmupSessionKey: null,
 };
 
 export const fetchLlamacppSystemInfo = createAsyncThunk("llamacpp/fetchSystemInfo", async () => {
@@ -188,6 +197,23 @@ export const cancelLlamacppModelDownload = createAsyncThunk(
   }
 );
 
+export const deleteLlamacppModel = createAsyncThunk(
+  "llamacpp/deleteModel",
+  async (modelId: string, thunkApi) => {
+    const api = getDesktopApiOrNull();
+    if (!api?.llamacppModelDelete) {
+      return thunkApi.rejectWithValue("Desktop API not available");
+    }
+    const result = await api.llamacppModelDelete({ model: modelId });
+    if (!result.ok) {
+      return thunkApi.rejectWithValue(result.error ?? "Delete failed");
+    }
+    thunkApi.dispatch(fetchLlamacppModels());
+    thunkApi.dispatch(fetchLlamacppServerStatus());
+    return modelId;
+  }
+);
+
 export const startLlamacppServer = createAsyncThunk(
   "llamacpp/startServer",
   async (modelId: string | undefined, thunkApi) => {
@@ -262,6 +288,32 @@ export const setLlamacppActiveModel = createAsyncThunk(
   }
 );
 
+export const warmupLocalModel = createAsyncThunk(
+  "llamacpp/warmup",
+  async (request: GatewayRequest, thunkApi) => {
+    console.log("[llamacpp/warmup] starting KV cache warmup");
+    thunkApi.dispatch(llamacppActions.setWarmupStatus("warming"));
+
+    try {
+      // sessions.create with message triggers the full agent pipeline
+      // (fire-and-forget); completion is tracked via gateway event listener
+      // in useLocalModelWarmup hook which waits for first token.
+      const res = await request<{ key: string }>("sessions.create", {
+        key: WARMUP_SESSION_KEY,
+        message: "warmup",
+      });
+      // Gateway canonicalizes the key (e.g. "agent:default:__warmup__").
+      // Return it so the event listener can match on the correct sessionKey.
+      const canonicalKey = res?.key ?? WARMUP_SESSION_KEY;
+      console.log("[llamacpp/warmup] session created, canonical key:", canonicalKey);
+      return canonicalKey;
+    } catch (err) {
+      console.warn("[llamacpp/warmup] failed to create session:", err);
+      return thunkApi.rejectWithValue(errorToMessage(err));
+    }
+  }
+);
+
 const llamacppSlice = createSlice({
   name: "llamacpp",
   initialState,
@@ -277,6 +329,9 @@ const llamacppSlice = createSlice({
     },
     setActiveModelId(state, action: PayloadAction<string | null>) {
       state.activeModelId = action.payload;
+    },
+    setWarmupStatus(state, action: PayloadAction<LlamacppWarmupStatus>) {
+      state.warmupStatus = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -347,13 +402,26 @@ const llamacppSlice = createSlice({
 
     builder.addCase(stopLlamacppServer.fulfilled, (state) => {
       state.serverStatus = "stopped";
+      state.warmupStatus = "idle";
+      state.warmupSessionKey = null;
     });
 
     builder.addCase(setLlamacppActiveModel.fulfilled, (state, action) => {
       state.serverStatus = "running";
+      state.warmupStatus = "idle";
+      state.warmupSessionKey = null;
       if (action.payload?.modelId) {
         state.activeModelId = action.payload.modelId;
       }
+    });
+
+    builder.addCase(warmupLocalModel.fulfilled, (state, action) => {
+      // Store the canonical session key so the event listener can match it
+      state.warmupSessionKey = action.payload ?? null;
+    });
+    builder.addCase(warmupLocalModel.rejected, (state) => {
+      state.warmupStatus = "error";
+      state.warmupSessionKey = null;
     });
   },
 });

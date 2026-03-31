@@ -37,6 +37,14 @@
   animation-name: updateBannerSlideInRight;
 }
 
+.UpdateBanner--inStack {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+}
+
 @keyframes updateBannerSlideIn {
   from {
     opacity: 0;

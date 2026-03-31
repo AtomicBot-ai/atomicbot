@@ -1,0 +1,98 @@
+.Banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0.18) 100%
+      )
+      border-box;
+  border: 1px solid transparent;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  color: var(--text);
+  min-width: 340px;
+  max-width: 440px;
+  animation: warmupBannerSlideIn 300ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.BannerReady {
+  min-width: auto;
+}
+
+@keyframes warmupBannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.IconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-10);
+  background: rgba(174, 255, 0, 0.1);
+  color: var(--lime);
+}
+
+.Body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.Text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ReadyText {
+  color: var(--lime);
+  font-weight: 600;
+}
+
+.Spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(174, 255, 0, 0.2);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  animation: warmupSpinnerRotate 0.7s linear infinite;
+}
+
+@keyframes warmupSpinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Banner {
+    animation: none;
+  }
+  .Spinner {
+    animation: none;
+  }
+}

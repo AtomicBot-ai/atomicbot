@@ -133,6 +133,8 @@ const api: OpenclawDesktopApi = {
   llamacppModelDownload: async (params?: { model?: string }) =>
     ipcRenderer.invoke(IPC.llamacppModelDownload, params),
   llamacppModelDownloadCancel: async () => ipcRenderer.invoke(IPC.llamacppModelDownloadCancel),
+  llamacppModelDelete: async (params: { model: string }) =>
+    ipcRenderer.invoke(IPC.llamacppModelDelete, params),
   onLlamacppBackendDownloadProgress: (
     cb: (payload: { percent: number; transferred: number; total: number }) => void
   ) => onIpc(IPC_EVENTS.llamacppBackendDownloadProgress, cb),
@@ -147,6 +149,11 @@ const api: OpenclawDesktopApi = {
   llamacppServerStatus: async () => ipcRenderer.invoke(IPC.llamacppServerStatus),
   llamacppSetActiveModel: async (params: { model: string }) =>
     ipcRenderer.invoke(IPC.llamacppSetActiveModel, params),
+  llamacppWarmupGet: async () => ipcRenderer.invoke(IPC.llamacppWarmupGet),
+  llamacppWarmupSet: async (params: {
+    state: "idle" | "warming" | "done";
+    modelId: string | null;
+  }) => ipcRenderer.invoke(IPC.llamacppWarmupSet, params),
   whisperModelStatus: async (params?: { model?: string }) =>
     ipcRenderer.invoke(IPC.whisperModelStatus, params),
   whisperModelDownload: async (params?: { model?: string }) =>

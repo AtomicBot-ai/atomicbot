@@ -7,11 +7,12 @@ import {
   downloadLlamacppModel,
   cancelLlamacppModelDownload,
 } from "@store/slices/llamacppSlice";
-import { GlassCard, HeroPageLayout, PrimaryButton, SecondaryButton } from "@shared/kit";
+import { GlassCard, HeroPageLayout, PrimaryButton, SecondaryButton, Modal } from "@shared/kit";
 import { addToastError } from "@shared/toast";
 import { OnboardingHeader } from "../OnboardingHeader";
 import qwenIcon from "@assets/ai-models/qwen.svg";
 import glmIcon from "@assets/ai-models/glm.svg";
+import nvidiaIcon from "@assets/ai-models/nvidia.svg";
 import s from "./LocalModelSelectPage.module.css";
 
 export function LocalModelSelectPage(props: {
@@ -26,6 +27,7 @@ export function LocalModelSelectPage(props: {
   const systemInfo = useAppSelector((st) => st.llamacpp.systemInfo);
   const modelDownload = useAppSelector((st) => st.llamacpp.modelDownload);
   const [selectingModelId, setSelectingModelId] = React.useState<string | null>(null);
+  const [unsupportedModalOpen, setUnsupportedModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     void dispatch(fetchLlamacppModels());
@@ -88,14 +90,12 @@ export function LocalModelSelectPage(props: {
               const isDownloading = downloadingModelId === model.id;
               const isSelecting = selectingModelId === model.id;
               const actionsDisabled = selectingModelId !== null && !isSelecting;
-              const compatClass =
-                model.compatibility === "recommended"
-                  ? s.badgeRecommended
-                  : model.compatibility === "possible"
-                    ? s.badgePossible
-                    : s.badgeNotRecommended;
 
-              const iconMap: Record<string, string> = { qwen: qwenIcon, glm: glmIcon };
+              const iconMap: Record<string, string> = {
+                qwen: qwenIcon,
+                glm: glmIcon,
+                nvidia: nvidiaIcon,
+              };
               const iconSrc = iconMap[model.icon];
 
               return (
@@ -108,10 +108,15 @@ export function LocalModelSelectPage(props: {
                   <div className={s.modelInfo}>
                     <div className={s.modelName}>
                       {model.name}
-                      {model.compatibility !== "recommended" && (
-                        <span className={`${s.badge} ${compatClass}`}>
-                          {model.compatibility === "possible" ? "May be slow" : "Not recommended"}
+                      {model.tag && (
+                        <span
+                          className={`${s.badge} ${model.tag === "Recommended" ? s.badgeRecommended : s.badgeHighPerformance}`}
+                        >
+                          {model.tag}
                         </span>
+                      )}
+                      {model.compatibility === "possible" && (
+                        <span className={`${s.badge} ${s.badgePossible}`}>May be slow</span>
                       )}
                     </div>
                     <div className={s.modelMeta}>
@@ -138,7 +143,13 @@ export function LocalModelSelectPage(props: {
                       <SecondaryButton
                         size="sm"
                         disabled={actionsDisabled}
-                        onClick={() => handleDownload(model.id)}
+                        onClick={() => {
+                          if (model.compatibility === "not-recommended") {
+                            setUnsupportedModalOpen(true);
+                            return;
+                          }
+                          handleDownload(model.id);
+                        }}
                       >
                         Download
                       </SecondaryButton>
@@ -176,6 +187,17 @@ export function LocalModelSelectPage(props: {
           )}
         </div>
       </GlassCard>
+
+      <Modal
+        open={unsupportedModalOpen}
+        onClose={() => setUnsupportedModalOpen(false)}
+        header="Unsupported Hardware"
+      >
+        <p style={{ color: "var(--muted3)", fontSize: 14 }}>
+          Model is not supported on your hardware. Your system does not have enough RAM to run this
+          model.
+        </p>
+      </Modal>
     </HeroPageLayout>
   );
 }

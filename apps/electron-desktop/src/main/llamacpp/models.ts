@@ -1,6 +1,12 @@
 import * as path from "node:path";
 
-export type LlamacppModelId = "qwen-3.5-4b" | "qwen-3.5-9b" | "qwen-3.5-35b" | "glm-4.7-flash-30b";
+export type LlamacppModelId =
+  | "qwen-3.5-4b"
+  | "qwen-3.5-9b"
+  | "qwen-3.5-35b"
+  | "glm-4.7-flash-30b"
+  | "nemotron-3-nano-4b"
+  | "nemotron-3-nano-30b";
 
 export interface LlamacppModelDef {
   id: LlamacppModelId;
@@ -19,12 +25,14 @@ export interface LlamacppModelDef {
   icon: string;
   /** Bundled chat-template asset filename (relative to assets/ai-models/) for --chat-template-file */
   chatTemplateAsset?: string;
+  /** Static display tag shown in the UI (e.g. "Recommended", "High Performance") */
+  tag?: string;
 }
 
 export const LLAMACPP_MODELS: LlamacppModelDef[] = [
   {
     id: "qwen-3.5-4b",
-    name: "Qwen 3.5 4B",
+    name: "Qwen 3.5 4B GGUF",
     filename: "Qwen3.5-4B-Q4_K_M.gguf",
     huggingFaceUrl:
       "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
@@ -40,7 +48,7 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
   },
   {
     id: "qwen-3.5-9b",
-    name: "Qwen 3.5 9B",
+    name: "Qwen 3.5 9B GGUF",
     filename: "Qwen3.5-9B-Q4_K_M.gguf",
     huggingFaceUrl:
       "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf",
@@ -53,10 +61,11 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
     recommendedRamGb: 16,
     icon: "qwen",
     chatTemplateAsset: "qwen3.5-chat-template.jinja",
+    tag: "Recommended",
   },
   {
     id: "qwen-3.5-35b",
-    name: "Qwen 3.5 35B-A3B",
+    name: "Qwen 3.5 35B-A3B GGUF",
     filename: "Qwen3.5-35B-A3B-Q4_K_M.gguf",
     huggingFaceUrl:
       "https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF/resolve/main/Qwen3.5-35B-A3B-Q4_K_M.gguf",
@@ -69,10 +78,11 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
     recommendedRamGb: 36,
     icon: "qwen",
     chatTemplateAsset: "qwen3.5-chat-template.jinja",
+    tag: "High Performance",
   },
   {
     id: "glm-4.7-flash-30b",
-    name: "GLM 4.7 flash 30B",
+    name: "GLM 4.7 flash 30B GGUF",
     filename: "glm-4-9b-chat-Q4_K_M.gguf",
     huggingFaceUrl:
       "https://huggingface.co/bartowski/glm-4-9b-chat-GGUF/resolve/main/glm-4-9b-chat-Q4_K_M.gguf",
@@ -84,6 +94,38 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
     minRamGb: 24,
     recommendedRamGb: 32,
     icon: "glm",
+  },
+  {
+    id: "nemotron-3-nano-4b",
+    name: "Nemotron 3 Nano 4B GGUF",
+    filename: "NVIDIA-Nemotron-3-Nano-4B-Q8_0.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/NVIDIA-Nemotron-3-Nano-4B-GGUF/resolve/main/NVIDIA-Nemotron-3-Nano-4B-Q8_0.gguf",
+    fileSizeGb: 4.23,
+    sizeLabel: "4.2 GB",
+    description: "Edge-optimized hybrid reasoning",
+    maxContextLength: 262_144,
+    contextLabel: "256K",
+    minRamGb: 8,
+    recommendedRamGb: 10,
+    icon: "nvidia",
+    chatTemplateAsset: "nemotron3-chat-template.jinja",
+  },
+  {
+    id: "nemotron-3-nano-30b",
+    name: "Nemotron 3 Nano 30B-A3B GGUF",
+    filename: "Nemotron-3-Nano-30B-A3B-Q4_K_M.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/Nemotron-3-Nano-30B-A3B-GGUF/resolve/main/Nemotron-3-Nano-30B-A3B-Q4_K_M.gguf",
+    fileSizeGb: 24.6,
+    sizeLabel: "24.6 GB",
+    description: "High-quality MoE reasoning",
+    maxContextLength: 1_048_576,
+    contextLabel: "1M",
+    minRamGb: 28,
+    recommendedRamGb: 36,
+    icon: "nvidia",
+    chatTemplateAsset: "nemotron3-chat-template.jinja",
   },
 ];
 

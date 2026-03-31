@@ -10,14 +10,17 @@ import {
   downloadLlamacppModel,
   cancelLlamacppModelDownload,
   setLlamacppActiveModel,
+  deleteLlamacppModel,
+  warmupLocalModel,
   llamacppActions,
 } from "@store/slices/llamacppSlice";
 import { applyLocalModelConfig } from "@store/slices/llamacpp-config";
 import { resetSessionModelSelection } from "@store/slices/session-model-reset";
 import { reloadConfig } from "@store/slices/configSlice";
-import { SecondaryButton } from "@shared/kit";
+import { SecondaryButton, Modal, ConfirmDialog } from "@shared/kit";
 import qwenIcon from "@assets/ai-models/qwen.svg";
 import glmIcon from "@assets/ai-models/glm.svg";
+import nvidiaIcon from "@assets/ai-models/nvidia.svg";
 import s from "./LocalModelsTab.module.css";
 
 type GatewayRequest = <T = unknown>(method: string, params?: unknown) => Promise<T>;
@@ -32,6 +35,9 @@ export function LocalModelsTab(props: {
 
   const autoStartedRef = React.useRef(false);
   const [selectingModelId, setSelectingModelId] = React.useState<string | null>(null);
+  const [unsupportedModalOpen, setUnsupportedModalOpen] = React.useState(false);
+  const [deleteConfirmModelId, setDeleteConfirmModelId] = React.useState<string | null>(null);
+  const [deletingModelId, setDeletingModelId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     void dispatch(fetchLlamacppModels());
@@ -78,6 +84,7 @@ export function LocalModelsTab(props: {
           });
           await resetSessionModelSelection(props.gatewayRequest);
           console.log(`[LocalModelsTab] config.apply OK: llamacpp/${cfgModelId} set as default`);
+          void dispatch(warmupLocalModel(props.gatewayRequest));
 
           if (props.onReload) {
             await props.onReload().catch(() => {});
@@ -95,6 +102,21 @@ export function LocalModelsTab(props: {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when specific prop methods change
     [dispatch, props.gatewayRequest, props.onReload]
+  );
+
+  const handleDelete = React.useCallback(
+    async (modelId: string) => {
+      setDeletingModelId(modelId);
+      setDeleteConfirmModelId(null);
+      try {
+        await dispatch(deleteLlamacppModel(modelId)).unwrap();
+      } catch (err) {
+        console.error("[LocalModelsTab] delete failed:", err);
+      } finally {
+        setDeletingModelId(null);
+      }
+    },
+    [dispatch]
   );
 
   return (
@@ -116,6 +138,7 @@ export function LocalModelsTab(props: {
           const isActive = activeModelId === model.id;
           const isDownloading = downloadingModelId === model.id;
           const isSelecting = selectingModelId === model.id;
+          const isDeleting = deletingModelId === model.id;
 
           return (
             <div key={model.id} className={`${s.modelRow} ${isActive ? s.modelRowActive : ""}`}>
@@ -125,24 +148,21 @@ export function LocalModelsTab(props: {
               <div className={s.modelInfo}>
                 <div className={s.modelName}>
                   {model.name}
-                  {isActive && <span className={s.activeBadge}>Active</span>}
-                  {model.compatibility !== "recommended" && (
+                  {model.tag && (
                     <span
-                      className={`${s.activeBadge} ${
-                        model.compatibility === "possible"
-                          ? s.compatPossible
-                          : s.compatNotRecommended
-                      }`}
+                      className={`${s.tagBadge} ${model.tag === "Recommended" ? s.tagRecommended : s.tagHighPerformance}`}
                     >
-                      {model.compatibility === "possible" ? "May be slow" : "Not recommended"}
+                      {model.tag}
                     </span>
+                  )}
+                  {model.compatibility === "possible" && (
+                    <span className={`${s.activeBadge} ${s.compatPossible}`}>May be slow</span>
                   )}
                 </div>
                 <div className={s.modelMeta}>
                   {model.description} &middot; {model.sizeLabel} &middot; {model.contextLabel}
                 </div>
 
-                {/* Whisper-style download progress inline */}
                 {isDownloading && modelDownload.kind === "downloading" && (
                   <div className={s.downloadProgress}>
                     <div className={s.downloadRow}>
@@ -168,20 +188,38 @@ export function LocalModelsTab(props: {
               <div className={s.modelAction}>
                 {model.downloaded ? (
                   isActive ? (
-                    <div className={s.runningIndicator} />
+                    <span className={s.activeLabel}>Active</span>
                   ) : (
-                    <SecondaryButton
-                      size="sm"
-                      disabled={isSelecting || selectingModelId !== null}
-                      onClick={() => void handleSelect(model.id)}
-                    >
-                      {isSelecting ? "Starting…" : "Select"}
-                    </SecondaryButton>
+                    <div className={s.actionGroup}>
+                      <button
+                        type="button"
+                        className={s.deleteBtn}
+                        disabled={isDeleting}
+                        onClick={() => setDeleteConfirmModelId(model.id)}
+                        aria-label="Delete model"
+                        title="Delete model"
+                      >
+                        <TrashIcon />
+                      </button>
+                      <SecondaryButton
+                        size="sm"
+                        disabled={isSelecting || selectingModelId !== null || isDeleting}
+                        onClick={() => void handleSelect(model.id)}
+                      >
+                        {isSelecting ? "Starting…" : "Select"}
+                      </SecondaryButton>
+                    </div>
                   )
                 ) : isDownloading ? null : (
                   <SecondaryButton
                     size="sm"
-                    onClick={() => void dispatch(downloadLlamacppModel(model.id))}
+                    onClick={() => {
+                      if (model.compatibility === "not-recommended") {
+                        setUnsupportedModalOpen(true);
+                        return;
+                      }
+                      void dispatch(downloadLlamacppModel(model.id));
+                    }}
                     disabled={!backendDownloaded || downloadingModelId !== null}
                   >
                     Download
@@ -207,6 +245,30 @@ export function LocalModelsTab(props: {
           </button>
         </div>
       )}
+
+      <Modal
+        open={unsupportedModalOpen}
+        onClose={() => setUnsupportedModalOpen(false)}
+        header="Unsupported Hardware"
+      >
+        <p style={{ color: "var(--muted3)", fontSize: 14 }}>
+          Model is not supported on your hardware. Your system does not have enough RAM to run this
+          model.
+        </p>
+      </Modal>
+
+      <ConfirmDialog
+        open={deleteConfirmModelId !== null}
+        title="Delete this model?"
+        subtitle="The model file will be removed from disk. You can re-download it later."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={() => {
+          if (deleteConfirmModelId) void handleDelete(deleteConfirmModelId);
+        }}
+        onCancel={() => setDeleteConfirmModelId(null)}
+      />
     </div>
   );
 }
@@ -214,6 +276,7 @@ export function LocalModelsTab(props: {
 const MODEL_ICON_MAP: Record<string, string> = {
   qwen: qwenIcon,
   glm: glmIcon,
+  nvidia: nvidiaIcon,
 };
 
 function ModelIcon({ icon }: { icon: string }) {
@@ -227,5 +290,23 @@ function ModelIcon({ icon }: { icon: string }) {
     <div className={s.modelIconBox}>
       <img src={src} alt="" width={20} height={20} />
     </div>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
   );
 }

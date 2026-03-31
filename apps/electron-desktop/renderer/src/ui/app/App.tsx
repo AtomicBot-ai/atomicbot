@@ -41,6 +41,8 @@ import { SkillsPage } from "@ui/skills/SkillsPage";
 import { ClawHubDetailPage } from "@ui/settings/skills/clawhub";
 import { ModelsPage } from "@ui/models/ModelsPage";
 import { useAppOpenedEvent } from "@analytics/use-app-opened-event";
+import { useLocalModelWarmup } from "../chat/hooks/useLocalModelWarmup";
+import { WarmupBanner } from "../chat/components/WarmupBanner";
 import a from "./App.module.css";
 
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
@@ -52,7 +54,6 @@ function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> 
   return (
     <>
       <UpdateBanner />
-      <LlamacppDownloadBanner />
       <DefenderBanner />
       <AppBanners />
       {session?.trim() ? <ChatPage state={state} /> : <StartChatPage state={state} />}
@@ -61,11 +62,17 @@ function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> 
 }
 
 function SidebarLayout() {
+  useLocalModelWarmup();
+
   return (
     <OptimisticSessionProvider>
       <OptimisticSessionSync />
       <ExecApprovalOverlay />
       <SubscriptionPromoBannerSource />
+      <div className={a.TopRightBannerStack}>
+        <WarmupBanner />
+        <LlamacppDownloadBanner />
+      </div>
       <div className={a.UiAppShell}>
         <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
           <Sidebar />

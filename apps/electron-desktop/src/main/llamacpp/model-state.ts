@@ -28,3 +28,23 @@ export function clearActiveModelId(stateDir: string): void {
     // Best effort: file may already be absent.
   }
 }
+
+// In-memory warmup state: survives renderer reloads (Cmd+R)
+// but resets on app restart or model change.
+type WarmupState = "idle" | "warming" | "done";
+let warmupModelId: string | null = null;
+let warmupState: WarmupState = "idle";
+
+export function getWarmupState(): { state: WarmupState; modelId: string | null } {
+  return { state: warmupState, modelId: warmupModelId };
+}
+
+export function setWarmupState(state: WarmupState, modelId: string | null): void {
+  warmupState = state;
+  warmupModelId = modelId;
+}
+
+export function resetWarmupState(): void {
+  warmupState = "idle";
+  warmupModelId = null;
+}

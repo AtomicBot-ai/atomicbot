@@ -10,6 +10,7 @@ import { gatewayReducer } from "./slices/gatewaySlice";
 import { onboardingReducer } from "./slices/onboardingSlice";
 import { upgradePaywallReducer } from "./slices/upgradePaywallSlice";
 import { llamacppReducer } from "./slices/llamacppSlice";
+import { skillsReducer } from "./slices/skillsSlice";
 import { whisperReducer } from "./slices/whisperSlice";
 
 setupAuthRefreshListeners();
@@ -22,6 +23,7 @@ export const store = configureStore({
     gateway: gatewayReducer,
     llamacpp: llamacppReducer,
     onboarding: onboardingReducer,
+    skills: skillsReducer,
     upgradePaywall: upgradePaywallReducer,
     whisper: whisperReducer,
   },

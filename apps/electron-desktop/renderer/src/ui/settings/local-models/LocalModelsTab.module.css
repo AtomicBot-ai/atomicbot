@@ -125,6 +125,18 @@
 
 .modelAction {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.activeLabel {
+  color: var(--lime);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 36px;
+  min-width: 84px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .compatPossible {
@@ -132,17 +144,54 @@
   color: var(--warning);
 }
 
-.compatNotRecommended {
-  background: color-mix(in srgb, var(--error) 15%, transparent);
-  color: var(--error);
+.tagBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
 }
 
-.runningIndicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--lime);
-  box-shadow: 0 0 6px var(--lime);
+.tagRecommended {
+  background: color-mix(in srgb, var(--lime) 15%, transparent);
+  color: var(--lime);
+}
+
+.tagHighPerformance {
+  background: color-mix(in srgb, #a78bfa 15%, transparent);
+  color: #a78bfa;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: var(--muted3);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.deleteBtn:hover {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Whisper-style inline download progress */

@@ -9,7 +9,12 @@ import {
   saveLocalModelBackup,
   clearLocalModelBackup,
 } from "./auth-persistence";
-import { llamacppActions, stopLlamacppServer, startLlamacppServer } from "../llamacppSlice";
+import {
+  llamacppActions,
+  stopLlamacppServer,
+  startLlamacppServer,
+  warmupLocalModel,
+} from "../llamacppSlice";
 import { applyLocalModelConfig } from "../llamacpp-config";
 
 export const localModelHandler: ModeHandler = {
@@ -113,6 +118,9 @@ export const localModelHandler: ModeHandler = {
     } catch (err) {
       console.warn("[localModelHandler] Failed to patch config:", err);
     }
+
+    // Fire-and-forget warmup to pre-fill the KV cache with the system prompt
+    void ctx.dispatch(warmupLocalModel(ctx.request));
 
     clearLocalModelBackup();
     console.log("[localModelHandler] setup done, restoredModel:", `llamacpp/${cfgModelId}`);

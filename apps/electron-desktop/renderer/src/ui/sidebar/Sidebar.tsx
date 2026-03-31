@@ -10,6 +10,7 @@ import { SessionSidebarItem } from "./SessionSidebarItem";
 import { cleanDerivedTitle } from "../chat/hooks/messageParser";
 import { useTerminalSidebarVisible } from "@shared/hooks/useTerminalSidebarVisible";
 import { useAppSelector } from "@store/hooks";
+import { WARMUP_SESSION_KEY } from "@store/slices/llamacppSlice";
 import { useUpgradePaywall } from "../app/hooks/useUpgradePaywall";
 import css from "./Sidebar.module.css";
 
@@ -103,7 +104,9 @@ export function Sidebar() {
           includeDerivedTitles: true,
           includeLastMessage: true,
         });
-        const rows = (res?.sessions ?? []).filter((row) => !isHeartbeatSession(row));
+        const rows = (res?.sessions ?? []).filter(
+          (row) => !isHeartbeatSession(row) && !row.key.includes(WARMUP_SESSION_KEY)
+        );
         const withTitles: SessionWithTitle[] = rows.map((row) => ({
           key: row.key,
           title: titleFromRow(row),

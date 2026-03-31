@@ -1,5 +1,7 @@
 import React from "react";
 import { getDesktopApi } from "@ipc/desktopApi";
+import { useAppDispatch, useAppSelector } from "@store/hooks";
+import { skillsActions } from "@store/slices/skillsSlice";
 
 export type ClawHubBadges = {
   highlighted: boolean;
@@ -151,21 +153,37 @@ export type UseClawHubSkillsResult = {
 const DEBOUNCE_MS = 350;
 const PAGE_SIZE = 25;
 
+function buildFetchKey(q: string, sort: ClawHubSortField, dir: ClawHubSortDir, safe: boolean) {
+  return `${q.trim()}|${sort}|${dir}|${safe}`;
+}
+
 export function useClawHubSkills(initial?: {
   query?: string;
   sort?: ClawHubSortField;
   hideSuspicious?: boolean;
 }): UseClawHubSkillsResult {
-  const [skills, setSkills] = React.useState<ClawHubSkillItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const dispatch = useAppDispatch();
+  const cachedClawhub = useAppSelector((s) => s.skills.clawhub);
+
+  const initialQuery = initial?.query ?? "";
+  const initialSort = initial?.sort ?? "downloads";
+  const initialSafe = initial?.hideSuspicious ?? true;
+  const initialFetchKey = buildFetchKey(initialQuery, initialSort, "desc", initialSafe);
+  const hasCachedData =
+    cachedClawhub.items.length > 0 && cachedClawhub.lastFetchKey === initialFetchKey;
+
+  const [skills, setSkills] = React.useState<ClawHubSkillItem[]>(
+    hasCachedData ? cachedClawhub.items : []
+  );
+  const [loading, setLoading] = React.useState(!hasCachedData);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = React.useState(initial?.query ?? "");
-  const [hideSuspicious, setHideSuspicious] = React.useState(initial?.hideSuspicious ?? true);
-  const [sortField, setSortField] = React.useState<ClawHubSortField>(initial?.sort ?? "downloads");
+  const [searchQuery, setSearchQuery] = React.useState(initialQuery);
+  const [hideSuspicious, setHideSuspicious] = React.useState(initialSafe);
+  const [sortField, setSortField] = React.useState<ClawHubSortField>(initialSort);
   const [sortDir, setSortDir] = React.useState<ClawHubSortDir>("desc");
   const [page, setPage] = React.useState(1);
-  const [totalPages, setTotalPages] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(hasCachedData ? cachedClawhub.totalPages : 0);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -185,9 +203,9 @@ export function useClawHubSkills(initial?: {
 
     const load = async () => {
       const isFirstPage = page === 1;
-      if (isFirstPage) {
+      if (isFirstPage && skills.length === 0) {
         setLoading(true);
-      } else {
+      } else if (!isFirstPage) {
         setLoadingMore(true);
       }
       setError(null);
@@ -211,11 +229,29 @@ export function useClawHubSkills(initial?: {
           setTotalPages(0);
           return;
         }
+        const fetchedItems = result.items as ClawHubSkillItem[];
         setTotalPages(result.totalPages);
         if (isFirstPage) {
-          setSkills(result.items as ClawHubSkillItem[]);
+          setSkills(fetchedItems);
+          const fetchKey = buildFetchKey(query, sortField, sortDir, hideSuspicious);
+          dispatch(
+            skillsActions.setClawHubSkills({
+              items: fetchedItems,
+              totalPages: result.totalPages,
+              fetchKey,
+            })
+          );
         } else {
-          setSkills((prev) => [...prev, ...(result.items as ClawHubSkillItem[])]);
+          setSkills((prev) => {
+            const merged = [...prev, ...fetchedItems];
+            dispatch(
+              skillsActions.appendClawHubSkills({
+                items: fetchedItems,
+                totalPages: result.totalPages,
+              })
+            );
+            return merged;
+          });
         }
       } catch (err) {
         if (cancelled) return;
@@ -245,7 +281,7 @@ export function useClawHubSkills(initial?: {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [hideSuspicious, searchQuery, sortField, sortDir, page, refreshKey]);
+  }, [dispatch, hideSuspicious, searchQuery, sortField, sortDir, page, refreshKey]);
 
   const loadMore = React.useCallback(() => {
     if (hasMore && !loading && !loadingMore) {
