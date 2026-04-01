@@ -237,7 +237,14 @@ export function LocalModelsTab(props: {
                         setUnsupportedModalOpen(true);
                         return;
                       }
-                      void dispatch(downloadLlamacppModel(model.id));
+                      void (async () => {
+                        try {
+                          await dispatch(downloadLlamacppModel(model.id)).unwrap();
+                          await handleSelect(model.id);
+                        } catch {
+                          // Download/activation errors are rendered inline
+                        }
+                      })();
                     }}
                     disabled={!backendDownloaded || downloadingModelId !== null}
                   >
