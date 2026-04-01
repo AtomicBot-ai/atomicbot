@@ -7,6 +7,8 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .modelRow {
