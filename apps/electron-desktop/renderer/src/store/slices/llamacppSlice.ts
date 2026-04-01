@@ -271,6 +271,9 @@ export const setLlamacppActiveModel = createAsyncThunk(
     thunkApi.dispatch(llamacppActions.setServerStatus("starting"));
     thunkApi.dispatch(llamacppActions.setActiveModelId(modelId));
 
+    // Reset main-process warmup state so the new model gets a fresh warmup
+    void api.llamacppWarmupSet?.({ state: "idle", modelId: null });
+
     try {
       const result = await api.llamacppSetActiveModel({ model: modelId });
       if (!result.ok) {

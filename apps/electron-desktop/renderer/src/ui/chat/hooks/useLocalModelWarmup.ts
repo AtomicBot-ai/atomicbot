@@ -51,6 +51,15 @@ export function useLocalModelWarmup(): void {
     });
   }, [authMode, dispatch]);
 
+  // Reset ref when mode changes or warmup is back to idle (model switched).
+  // Must run BEFORE the polling effect so the ref is cleared before
+  // Phase 2 re-evaluates on the same render cycle.
+  React.useEffect(() => {
+    if (authMode !== "local-model" || warmupStatus === "idle") {
+      triggeredRef.current = false;
+    }
+  }, [authMode, warmupStatus]);
+
   // Phase 2: poll llama-server health via IPC, then trigger warmup
   React.useEffect(() => {
     if (authMode !== "local-model" || triggeredRef.current || warmupStatus !== "idle") return;
@@ -157,11 +166,4 @@ export function useLocalModelWarmup(): void {
       void gw.request("sessions.delete", { key: WARMUP_SESSION_KEY }).catch(() => {});
     };
   }, [warmupStatus, warmupSessionKey, gw, dispatch]);
-
-  // Reset when mode changes or warmup is back to idle (model switched)
-  React.useEffect(() => {
-    if (authMode !== "local-model" || warmupStatus === "idle") {
-      triggeredRef.current = false;
-    }
-  }, [authMode, warmupStatus]);
 }
