@@ -294,8 +294,8 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
     }
   });
 
-  ipcMain.handle(IPC.llamacppServerStatus, () => {
-    const status = getLlamacppServerStatus();
+  ipcMain.handle(IPC.llamacppServerStatus, async () => {
+    const status = await getLlamacppServerStatus();
     const activeModelId = readActiveModelId(stateDir);
     return { ...status, activeModelId };
   });

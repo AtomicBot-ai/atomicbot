@@ -16,16 +16,25 @@ const state: ServerState = {
   healthy: false,
 };
 
+async function checkHealth(port: number): Promise<"ok" | "loading" | "down"> {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/health`, {
+      signal: AbortSignal.timeout(2000),
+    });
+    const body = (await res.json().catch(() => null)) as { status?: string } | null;
+    if (res.ok && body?.status === "ok") return "ok";
+    if (body?.status === "loading model") return "loading";
+    return res.ok ? "ok" : "down";
+  } catch {
+    return "down";
+  }
+}
+
 async function waitForHealth(port: number, timeoutMs = 30_000): Promise<void> {
   const start = Date.now();
-  const url = `http://127.0.0.1:${port}/health`;
   while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
-      if (res.ok) return;
-    } catch {
-      // server not ready yet
-    }
+    const result = await checkHealth(port);
+    if (result === "ok") return;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`llama-server did not become healthy within ${timeoutMs}ms`);
@@ -157,16 +166,26 @@ export async function stopLlamacppServer(): Promise<void> {
   });
 }
 
-export function getLlamacppServerStatus(): {
+export async function getLlamacppServerStatus(): Promise<{
   running: boolean;
   modelPath: string | null;
   port: number;
   healthy: boolean;
-} {
+  loading: boolean;
+}> {
+  const running = state.process !== null;
+  if (!running) {
+    return { running: false, modelPath: null, port: state.port, healthy: false, loading: false };
+  }
+
+  const liveStatus = await checkHealth(state.port);
+  state.healthy = liveStatus === "ok";
+
   return {
-    running: state.process !== null,
+    running: true,
     modelPath: state.modelPath,
     port: state.port,
-    healthy: state.healthy,
+    healthy: liveStatus === "ok",
+    loading: liveStatus === "loading",
   };
 }

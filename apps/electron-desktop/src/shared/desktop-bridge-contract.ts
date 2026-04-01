@@ -354,6 +354,7 @@ export interface OpenclawDesktopApi {
     modelPath: string | null;
     port: number;
     healthy: boolean;
+    loading: boolean;
     activeModelId: string | null;
   }>;
   llamacppSetActiveModel: (params: { model: string }) => Promise<{

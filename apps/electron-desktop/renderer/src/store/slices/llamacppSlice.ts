@@ -37,7 +37,7 @@ export type LlamacppModelDownloadStatus =
   | { kind: "downloading"; modelId: string; percent: number }
   | { kind: "error"; message: string };
 
-export type LlamacppServerStatus = "stopped" | "starting" | "running" | "error";
+export type LlamacppServerStatus = "stopped" | "starting" | "loading" | "running" | "error";
 export type LlamacppWarmupStatus = "idle" | "warming" | "ready" | "error";
 
 export type LlamacppSliceState = {
@@ -359,11 +359,15 @@ const llamacppSlice = createSlice({
 
     builder.addCase(fetchLlamacppServerStatus.fulfilled, (state, action) => {
       if (action.payload) {
-        state.serverStatus = action.payload.healthy
-          ? "running"
-          : action.payload.running
-            ? "starting"
-            : "stopped";
+        if (action.payload.healthy) {
+          state.serverStatus = "running";
+        } else if (action.payload.loading) {
+          state.serverStatus = "loading";
+        } else if (action.payload.running) {
+          state.serverStatus = "starting";
+        } else {
+          state.serverStatus = "stopped";
+        }
         state.activeModelId = action.payload.activeModelId;
       }
     });

@@ -4,6 +4,86 @@
   margin-top: 12px;
 }
 
+/* ── Active status bar ───────────────────────────────── */
+
+.statusBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 42px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+}
+
+.statusLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.statusValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.serverDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.serverDot--running {
+  background: #34c759;
+}
+
+.serverDot--starting {
+  background: #ff9f0a;
+  animation: server-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.serverDot--loading {
+  background: #5ac8fa;
+  animation: server-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.serverDot--error {
+  background: #ff453a;
+}
+
+.serverDot--stopped {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes server-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
 /* ── Connection mode toggle ──────────────────────────── */
 
 .connectionSection {

@@ -30,6 +30,7 @@ import { InlineApiKey } from "./InlineApiKey";
 import { useAccountState } from "@ui/settings/account/useAccountState";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { LocalModelsTab } from "../local-models/LocalModelsTab";
+import { fetchLlamacppServerStatus } from "@store/slices/llamacppSlice";
 
 import s from "./AccountModelsTab.module.css";
 
@@ -103,6 +104,14 @@ const MODE_LABELS: Record<SetupMode, string> = {
   "local-model": "Local Models",
 };
 
+const SERVER_STATUS_LABELS: Record<string, string> = {
+  stopped: "Stopped",
+  starting: "Starting…",
+  loading: "Loading model…",
+  running: "Running",
+  error: "Error",
+};
+
 export function AccountModelsTab(props: {
   gw: GatewayRpc;
   configSnap: ConfigSnapshotLike | null;
@@ -131,6 +140,7 @@ export function AccountModelsTab(props: {
     sortedModels,
     saveDefaultModel,
     activeModelId,
+    activeModelEntry,
     isProviderConfigured,
     modelsLoading,
     modelBusy,
@@ -141,6 +151,14 @@ export function AccountModelsTab(props: {
     loadModels,
     pasteFromClipboard,
   } = state;
+
+  const llamacpp = useAppSelector((st) => st.llamacpp);
+
+  React.useEffect(() => {
+    if (authMode === "local-model") {
+      void dispatch(fetchLlamacppServerStatus());
+    }
+  }, [authMode, dispatch]);
 
   // Auto-select provider from current active model on first load (self-managed only)
   const autoSelectedRef = React.useRef(false);
@@ -255,6 +273,9 @@ export function AccountModelsTab(props: {
 
       if (mode === authMode) return;
 
+      // Defer mode switch for local-model — happens on explicit Select
+      if (mode === "local-model") return;
+
       setModeSwitchBusy(true);
       try {
         const result = await dispatch(switchMode({ request: gw.request, target: mode })).unwrap();
@@ -280,6 +301,16 @@ export function AccountModelsTab(props: {
     [authMode, dispatch, gw.request, onError, setProviderFilter]
   );
 
+  const switchToLocalMode = React.useCallback(async () => {
+    if (authMode === "local-model") return;
+    try {
+      await dispatch(switchMode({ request: gw.request, target: "local-model" })).unwrap();
+    } catch (err) {
+      addToastError(err);
+      throw err;
+    }
+  }, [authMode, dispatch, gw.request]);
+
   const isLoading = modeSwitchBusy || accountState.loading;
 
   const canShowModels =
@@ -291,9 +322,42 @@ export function AccountModelsTab(props: {
     !accountState.provisioning &&
     !isLoading;
 
+  const currentModelName = React.useMemo(() => {
+    if (authMode === "local-model") {
+      const localModel = llamacpp.models.find((m) => m.id === llamacpp.activeModelId);
+      return localModel?.name ?? null;
+    }
+    return activeModelEntry?.name ?? null;
+  }, [authMode, llamacpp.activeModelId, llamacpp.models, activeModelEntry]);
+
   return (
     <div className={s.root}>
       {!noTitle && <div className={s.title}>AI Models</div>}
+
+      {authMode && (
+        <div className={s.statusBar}>
+          <div className={s.statusRow}>
+            <span className={s.statusLabel}>Mode</span>
+            <span className={s.statusValue}>{MODE_LABELS[authMode]}</span>
+          </div>
+          <div className={s.statusRow}>
+            <span className={s.statusLabel}>Model</span>
+            <span className={s.statusValue}>{currentModelName ?? "Not selected"}</span>
+          </div>
+          <div
+            className={s.statusRow}
+            style={authMode !== "local-model" ? { visibility: "hidden" } : undefined}
+          >
+            <span className={s.statusLabel}>Server</span>
+            <span className={s.statusValue}>
+              <span
+                className={`${s.serverDot} ${s[`serverDot--${llamacpp.serverStatus}`] ?? ""}`}
+              />
+              {SERVER_STATUS_LABELS[llamacpp.serverStatus]}
+            </span>
+          </div>
+        </div>
+      )}
 
       <ConnectionToggle
         activeMode={tabMode}
@@ -311,7 +375,11 @@ export function AccountModelsTab(props: {
 
       {tabMode === "local-model" && !isLoading && (
         <div className="fade-in">
-          <LocalModelsTab gatewayRequest={gw.request} onReload={reload} />
+          <LocalModelsTab
+            gatewayRequest={gw.request}
+            onReload={reload}
+            onSwitchToLocalMode={authMode !== "local-model" ? switchToLocalMode : undefined}
+          />
         </div>
       )}
 

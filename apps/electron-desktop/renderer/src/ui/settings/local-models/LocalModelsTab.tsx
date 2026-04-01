@@ -28,10 +28,12 @@ type GatewayRequest = <T = unknown>(method: string, params?: unknown) => Promise
 export function LocalModelsTab(props: {
   gatewayRequest?: GatewayRequest;
   onReload?: () => Promise<void>;
+  onSwitchToLocalMode?: () => Promise<void>;
 }) {
   const dispatch = useAppDispatch();
-  const { backendDownloaded, models, modelDownload, serverStatus, activeModelId, systemInfo } =
-    useAppSelector((st) => st.llamacpp);
+  const { backendDownloaded, models, modelDownload, activeModelId, systemInfo } = useAppSelector(
+    (st) => st.llamacpp
+  );
 
   const autoStartedRef = React.useRef(false);
   const [selectingModelId, setSelectingModelId] = React.useState<string | null>(null);
@@ -68,6 +70,10 @@ export function LocalModelsTab(props: {
       setSelectingModelId(modelId);
 
       try {
+        if (props.onSwitchToLocalMode) {
+          await props.onSwitchToLocalMode();
+        }
+
         const serverResult = await dispatch(setLlamacppActiveModel(modelId)).unwrap();
         console.log("[LocalModelsTab] setActiveModel result:", serverResult);
         void dispatch(fetchLlamacppServerStatus());
@@ -101,7 +107,7 @@ export function LocalModelsTab(props: {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when specific prop methods change
-    [dispatch, props.gatewayRequest, props.onReload]
+    [dispatch, props.gatewayRequest, props.onReload, props.onSwitchToLocalMode]
   );
 
   const handleDelete = React.useCallback(
@@ -126,9 +132,6 @@ export function LocalModelsTab(props: {
         <div className={s.systemInfo}>
           {systemInfo.totalRamGb} GB RAM &middot;{" "}
           {systemInfo.isAppleSilicon ? "Apple Silicon" : systemInfo.arch}
-          {serverStatus === "running" && (
-            <span className={s.serverRunning}> &middot; Server running</span>
-          )}
         </div>
       )}
 
@@ -206,7 +209,7 @@ export function LocalModelsTab(props: {
                         disabled={isSelecting || selectingModelId !== null || isDeleting}
                         onClick={() => void handleSelect(model.id)}
                       >
-                        {isSelecting ? "Starting…" : "Select"}
+                        {isSelecting ? "Starting…" : "Activate"}
                       </SecondaryButton>
                     </div>
                   )
