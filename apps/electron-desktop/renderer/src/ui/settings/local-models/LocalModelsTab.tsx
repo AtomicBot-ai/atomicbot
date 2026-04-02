@@ -30,7 +30,7 @@ export function LocalModelsTab(props: {
   onSwitchToLocalMode?: () => Promise<void>;
 }) {
   const dispatch = useAppDispatch();
-  const { backendDownloaded, models, modelDownload, activeModelId, systemInfo } = useAppSelector(
+  const { backendDownloaded, models, modelDownload, activeModelId } = useAppSelector(
     (st) => st.llamacpp
   );
 
@@ -143,15 +143,6 @@ export function LocalModelsTab(props: {
 
   return (
     <div className={s.root}>
-      {/* System info */}
-      {systemInfo && (
-        <div className={s.systemInfo}>
-          {systemInfo.totalRamGb} GB RAM &middot;{" "}
-          {systemInfo.isAppleSilicon ? "Apple Silicon" : systemInfo.arch}
-        </div>
-      )}
-
-      {/* Model list */}
       <div className={s.modelList}>
         {models.map((model) => {
           const isActive = activeModelId === model.id;

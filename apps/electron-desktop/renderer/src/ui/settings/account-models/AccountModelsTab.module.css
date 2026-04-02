@@ -8,8 +8,6 @@
 
 .statusBar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 12px 14px;
   margin-bottom: 16px;
   border-radius: 12px;
@@ -18,15 +16,62 @@
   min-height: 42px;
 }
 
-.statusRow {
+/* Subscription / API keys: stacked rows */
+.statusBarVertical {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.statusBarVertical .statusSegment {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
-  height: 20px;
+  min-height: 20px;
+}
+
+/* Local models: row + wrap; blocks span full width with even spacing */
+.statusBarHorizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 6px;
+  row-gap: 4px;
+}
+
+/* Local models: each label/value pair stacks vertically (2px gap between them) */
+.statusBarHorizontal .statusSegment {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.statusBarHorizontal .statusLabel {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.statusBarHorizontal .statusValue {
+  flex: 0 1 auto;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.statusSegment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
 }
 
 .statusLabel {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.4);
   min-width: 48px;
@@ -40,6 +85,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+
+.statusValueText {
+  min-width: 0;
+}
+
+.statusBarHorizontal .statusValueText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .serverDot {
@@ -52,7 +108,7 @@
 }
 
 .serverDot--running {
-  background: #34c759;
+  background: #22c55e;
 }
 
 .serverDot--starting {

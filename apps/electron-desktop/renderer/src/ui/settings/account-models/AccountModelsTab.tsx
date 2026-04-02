@@ -23,6 +23,7 @@ import {
   getProviderIconUrl,
 } from "@shared/models/providers";
 import { getModelTier, formatModelMeta, TIER_INFO } from "@shared/models/modelPresentation";
+import { getDefaultModelPrimary } from "../providers/configParsing";
 import { useModelProvidersState } from "../providers/useModelProvidersState";
 import { AccountTab } from "../account/AccountTab";
 import { RichSelect, type RichOption } from "./RichSelect";
@@ -30,7 +31,7 @@ import { InlineApiKey } from "./InlineApiKey";
 import { useAccountState } from "@ui/settings/account/useAccountState";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import { LocalModelsTab } from "../local-models/LocalModelsTab";
-import { fetchLlamacppServerStatus } from "@store/slices/llamacppSlice";
+import { fetchLlamacppServerStatus, fetchLlamacppSystemInfo } from "@store/slices/llamacppSlice";
 
 import s from "./AccountModelsTab.module.css";
 
@@ -112,6 +113,18 @@ const SERVER_STATUS_LABELS: Record<string, string> = {
   error: "Error",
 };
 
+const LLAMACPP_PRIMARY_PREFIX = "llamacpp/";
+
+/** Readable label when the catalog entry is not loaded yet (`provider/modelId`). */
+function formatModelIdForStatusBar(rawId: string): string {
+  const t = rawId.trim();
+  const i = t.indexOf("/");
+  if (i >= 0 && i < t.length - 1) {
+    return t.slice(i + 1);
+  }
+  return t;
+}
+
 export function AccountModelsTab(props: {
   gw: GatewayRpc;
   configSnap: ConfigSnapshotLike | null;
@@ -154,11 +167,20 @@ export function AccountModelsTab(props: {
 
   const llamacpp = useAppSelector((st) => st.llamacpp);
 
+  const configPrimaryModelId = React.useMemo(
+    () => getDefaultModelPrimary(configSnap?.config),
+    [configSnap?.config]
+  );
+
   React.useEffect(() => {
-    if (authMode === "local-model") {
+    void dispatch(fetchLlamacppSystemInfo());
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    if (authMode === "local-model" || tabMode === "local-model") {
       void dispatch(fetchLlamacppServerStatus());
     }
-  }, [authMode, dispatch]);
+  }, [authMode, tabMode, dispatch]);
 
   // Auto-select provider from current active model on first load (self-managed only)
   const autoSelectedRef = React.useRef(false);
@@ -296,13 +318,14 @@ export function AccountModelsTab(props: {
 
         setProviderFilter(restoredProvider);
         autoSelectedRef.current = !!restoredProvider;
+        void loadModels();
       } catch (err) {
         addToastError(err);
       } finally {
         setModeSwitchBusy(false);
       }
     },
-    [authMode, dispatch, gw.request, onError, setProviderFilter]
+    [authMode, dispatch, gw.request, loadModels, onError, setProviderFilter]
   );
 
   const switchToLocalMode = React.useCallback(async () => {
@@ -326,40 +349,89 @@ export function AccountModelsTab(props: {
     !accountState.provisioning &&
     !isLoading;
 
+  /**
+   * Status bar Mode + Model must follow **effective** auth while a paid↔self-managed
+   * switch runs: `tabMode` updates immediately on click, but config/`isPaidMode` lag
+   * until `switchMode` + `reloadConfig` finish. Local-models tab still uses `tabMode`
+   * when the user only selects the segment (switch deferred until Select).
+   */
+  const statusDisplayMode = modeSwitchBusy && authMode != null ? authMode : (tabMode ?? authMode);
+  const statusModeLabel = statusDisplayMode != null ? MODE_LABELS[statusDisplayMode] : "";
+
   const currentModelName = React.useMemo(() => {
-    if (authMode === "local-model") {
+    if (statusDisplayMode === "local-model") {
       const localModel = llamacpp.models.find((m) => m.id === llamacpp.activeModelId);
-      return localModel?.name ?? null;
+      if (localModel?.name) return localModel.name;
+      const idFromState = llamacpp.activeModelId?.trim();
+      if (idFromState) return formatModelIdForStatusBar(idFromState);
+      const primary = configPrimaryModelId;
+      if (primary?.startsWith(LLAMACPP_PRIMARY_PREFIX)) {
+        return formatModelIdForStatusBar(primary.slice(LLAMACPP_PRIMARY_PREFIX.length));
+      }
+      return null;
     }
-    return activeModelEntry?.name ?? null;
-  }, [authMode, llamacpp.activeModelId, llamacpp.models, activeModelEntry]);
+    if (activeModelEntry?.name) return activeModelEntry.name;
+    const cloudId = activeModelId?.trim();
+    if (cloudId) return formatModelIdForStatusBar(cloudId);
+    return null;
+  }, [
+    statusDisplayMode,
+    llamacpp.activeModelId,
+    llamacpp.models,
+    activeModelEntry,
+    activeModelId,
+    configPrimaryModelId,
+  ]);
+
+  const isLocalModelsStatusLayout = statusDisplayMode === "local-model";
+  const systemSummary =
+    llamacpp.systemInfo != null
+      ? `${llamacpp.systemInfo.totalRamGb} GB RAM · ${
+          llamacpp.systemInfo.isAppleSilicon ? "Apple Silicon" : llamacpp.systemInfo.arch
+        }`
+      : null;
 
   return (
     <div className={s.root}>
       {!noTitle && <div className={s.title}>AI Models</div>}
 
       {authMode && (
-        <div className={s.statusBar}>
-          <div className={s.statusRow}>
+        <div
+          className={`${s.statusBar} ${isLocalModelsStatusLayout ? s.statusBarHorizontal : s.statusBarVertical}`}
+        >
+          <div className={s.statusSegment}>
             <span className={s.statusLabel}>Mode</span>
-            <span className={s.statusValue}>{MODE_LABELS[authMode]}</span>
-          </div>
-          <div className={s.statusRow}>
-            <span className={s.statusLabel}>Model</span>
-            <span className={s.statusValue}>{currentModelName ?? "Not selected"}</span>
-          </div>
-          <div
-            className={s.statusRow}
-            style={authMode !== "local-model" ? { visibility: "hidden" } : undefined}
-          >
-            <span className={s.statusLabel}>Server</span>
             <span className={s.statusValue}>
-              <span
-                className={`${s.serverDot} ${s[`serverDot--${llamacpp.serverStatus}`] ?? ""}`}
-              />
-              {SERVER_STATUS_LABELS[llamacpp.serverStatus]}
+              <span className={s.statusValueText}>{statusModeLabel}</span>
             </span>
           </div>
+          <div className={s.statusSegment}>
+            <span className={s.statusLabel}>Model</span>
+            <span className={s.statusValue}>
+              <span className={s.statusValueText}>{currentModelName ?? "Not selected"}</span>
+            </span>
+          </div>
+          {isLocalModelsStatusLayout ? (
+            <div className={s.statusSegment}>
+              <span className={s.statusLabel}>Server</span>
+              <span className={s.statusValue}>
+                <span
+                  className={`${s.serverDot} ${s[`serverDot--${llamacpp.serverStatus}`] ?? ""}`}
+                />
+                <span className={s.statusValueText}>
+                  {SERVER_STATUS_LABELS[llamacpp.serverStatus] ?? llamacpp.serverStatus}
+                </span>
+              </span>
+            </div>
+          ) : null}
+          {isLocalModelsStatusLayout && systemSummary ? (
+            <div className={s.statusSegment}>
+              <span className={s.statusLabel}>System</span>
+              <span className={s.statusValue}>
+                <span className={s.statusValueText}>{systemSummary}</span>
+              </span>
+            </div>
+          ) : null}
         </div>
       )}
 
