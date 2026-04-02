@@ -74,6 +74,7 @@ export function LocalModelsTab(props: {
         }
 
         const serverResult = await dispatch(setLlamacppActiveModel(modelId)).unwrap();
+
         void dispatch(fetchLlamacppServerStatus());
 
         // Phase 3: apply model config with real data (gateway RPC)
@@ -91,8 +92,10 @@ export function LocalModelsTab(props: {
                 modelName: cfgModelName,
                 contextLength: serverResult?.contextLength,
               });
+
               await props.gatewayRequest("secrets.reload", {}).catch(() => {});
               await resetSessionModelSelection(props.gatewayRequest);
+
               break;
             } catch (retryErr) {
               const msg = String(retryErr);

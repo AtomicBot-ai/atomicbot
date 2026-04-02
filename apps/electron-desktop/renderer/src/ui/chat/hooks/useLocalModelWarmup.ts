@@ -88,10 +88,12 @@ export function useLocalModelWarmup(): void {
           const model = defaults?.model as Record<string, unknown> | undefined;
           const primary = typeof model?.primary === "string" ? model.primary : "";
 
-          if (!primary.startsWith("llamacpp/")) {
+          const expectedPrimary = `llamacpp/${status.activeModelId}`;
+          if (primary !== expectedPrimary) {
             console.log(
-              "[warmup] server healthy but config not ready (primary=%s), waiting…",
-              primary
+              "[warmup] server healthy but config not ready (primary=%s, expected=%s), waiting…",
+              primary,
+              expectedPrimary
             );
             return;
           }
