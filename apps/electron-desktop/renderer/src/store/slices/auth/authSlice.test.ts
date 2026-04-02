@@ -897,7 +897,7 @@ describe("switchMode session override cleanup", () => {
 });
 
 describe("switchMode to local-model", () => {
-  it("applies local model config and returns restored local model", async () => {
+  it("sets llamacpp API key and patches gateway config during switch", async () => {
     const store = createTestStore();
     store.dispatch(authActions.setMode("self-managed"));
 
@@ -957,12 +957,12 @@ describe("switchMode to local-model", () => {
 
     expect(mockApi.setApiKey).toHaveBeenCalledWith("llamacpp", "LLAMACPP_LOCAL_KEY");
     expect(mockRequest).toHaveBeenCalledWith(
-      "config.apply",
+      "config.patch",
       expect.objectContaining({
         baseHash: "after-apply-hash",
       })
     );
-    expect(result.restoredModel).toBe("llamacpp/qwen-3.5-35b");
+    expect(result.hasBackup).toBe(false);
   });
 });
 

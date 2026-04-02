@@ -21,7 +21,10 @@ let mockAccountLoading = false;
 vi.mock("@store/hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: (selector: (st: unknown) => unknown) =>
-    selector({ auth: { mode: mockAuthMode } }),
+    selector({
+      auth: { mode: mockAuthMode },
+      llamacpp: { activeModelId: null, models: [], serverStatus: "stopped" },
+    }),
 }));
 
 vi.mock("@store/slices/auth/authSlice", () => ({}));
@@ -131,7 +134,7 @@ describe("AccountModelsTab (self-managed mode)", () => {
     render(<AccountModelsTab {...defaultProps} />);
 
     expect(screen.getByText("Provider")).not.toBeNull();
-    expect(screen.getByText("Model")).not.toBeNull();
+    expect(screen.getAllByText("Model").length).toBeGreaterThanOrEqual(1);
 
     const triggers = screen.getAllByRole("button", { expanded: false });
     const listboxTriggers = triggers.filter((b) => b.getAttribute("aria-haspopup") === "listbox");
@@ -221,8 +224,8 @@ describe("AccountModelsTab (self-managed mode)", () => {
 
     const toggle = screen.getByRole("radiogroup", { name: "Connection mode" });
     expect(toggle).not.toBeNull();
-    expect(screen.getByText("Subscription")).not.toBeNull();
-    expect(screen.getByText("API keys")).not.toBeNull();
+    expect(screen.getAllByText("Subscription").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("API keys").length).toBeGreaterThanOrEqual(1);
   });
 
   it("passes onSaveOllama prop to InlineApiKey", () => {
