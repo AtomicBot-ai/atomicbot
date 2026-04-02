@@ -15,6 +15,7 @@ import type {
 import { logVerbose, shouldLogVerbose } from "../globals.js";
 import { resolveProxyFetchFromEnv } from "../infra/net/proxy-fetch.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-openclaw-dir.js";
+import { runFfmpeg } from "../media/ffmpeg-exec.js";
 import { runExec } from "../process/exec.js";
 import { MediaAttachmentCache } from "./attachments.js";
 import {
@@ -25,7 +26,7 @@ import {
 } from "./defaults.js";
 import { MediaUnderstandingSkipError } from "./errors.js";
 import { fileExists } from "./fs.js";
-import { describeImageWithModel } from "./image.js";
+import { describeImageWithModel } from "./image-runtime.js";
 import { extractGeminiResponse } from "./output-extract.js";
 import { getMediaUnderstandingProvider, normalizeMediaProviderId } from "./provider-registry.js";
 import { resolveMaxBytes, resolveMaxChars, resolvePrompt, resolveTimeoutMs } from "./resolve.js";
@@ -208,6 +209,38 @@ async function resolveCliOutput(params: {
   }
 
   return params.stdout.trim();
+}
+
+async function resolveCliMediaPath(params: {
+  capability: MediaUnderstandingCapability;
+  command: string;
+  mediaPath: string;
+  outputDir: string;
+}): Promise<string> {
+  const commandId = commandBase(params.command);
+  if (params.capability !== "audio" || commandId !== "whisper-cli") {
+    return params.mediaPath;
+  }
+
+  const ext = path.extname(params.mediaPath).toLowerCase();
+  if (ext === ".wav") {
+    return params.mediaPath;
+  }
+
+  const wavPath = path.join(params.outputDir, `${path.parse(params.mediaPath).name}.wav`);
+  await runFfmpeg([
+    "-y",
+    "-i",
+    params.mediaPath,
+    "-ac",
+    "1",
+    "-ar",
+    "16000",
+    "-c:a",
+    "pcm_s16le",
+    wavPath,
+  ]);
+  return wavPath;
 }
 
 type ProviderQuery = Record<string, string | number | boolean>;
@@ -586,38 +619,6 @@ export async function runProviderEntry(params: {
   };
 }
 
-const WAV_EXTENSIONS = new Set([".wav"]);
-
-/**
- * whisper-cli only accepts WAV input. When the media file is in another format
- * (e.g. OGG from Telegram voice messages), convert it to 16 kHz mono WAV via
- * ffmpeg. Returns the path to the converted file, or the original path if no
- * conversion was needed. The caller must clean up `outputDir` which may contain
- * the converted file.
- */
-async function ensureWavForWhisper(
-  mediaPath: string,
-  outputDir: string,
-): Promise<{ path: string; converted: boolean }> {
-  if (WAV_EXTENSIONS.has(path.extname(mediaPath).toLowerCase())) {
-    return { path: mediaPath, converted: false };
-  }
-  const wavPath = path.join(outputDir, `${path.parse(mediaPath).name}.wav`);
-  try {
-    await runExec(
-      "ffmpeg",
-      ["-y", "-i", mediaPath, "-ar", "16000", "-ac", "1", "-f", "wav", wavPath],
-      {
-        timeoutMs: 30_000,
-      },
-    );
-    logVerbose(`[media] Converted ${path.basename(mediaPath)} → WAV for whisper-cli`);
-    return { path: wavPath, converted: true };
-  } catch {
-    return { path: mediaPath, converted: false };
-  }
-}
-
 export async function runCliEntry(params: {
   capability: MediaUnderstandingCapability;
   entry: MediaUnderstandingModelConfig;
@@ -651,13 +652,12 @@ export async function runCliEntry(params: {
   const outputDir = await fs.mkdtemp(
     path.join(resolvePreferredOpenClawTmpDir(), "openclaw-media-cli-"),
   );
-  let mediaPath = pathResult.path;
-
-  // whisper-cli and sherpa-onnx-offline only read WAV; pre-convert other formats via ffmpeg.
-  if (capability === "audio" && command && /^(whisper-cli|sherpa-onnx-offline)$/.test(command)) {
-    const wav = await ensureWavForWhisper(mediaPath, outputDir);
-    mediaPath = wav.path;
-  }
+  const mediaPath = await resolveCliMediaPath({
+    capability,
+    command,
+    mediaPath: pathResult.path,
+    outputDir,
+  });
   const outputBase = path.join(outputDir, path.parse(mediaPath).name);
 
   const templCtx: MsgContext = {
