@@ -45,6 +45,16 @@
   transform: none;
 }
 
+/* Llama download snackbar: bottom center, clear of window edges */
+.UpdateBanner--bottomCenter {
+  top: auto;
+  bottom: 20px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  animation-name: updateBannerSlideInBottom;
+}
+
 @keyframes updateBannerSlideIn {
   from {
     opacity: 0;
@@ -64,6 +74,17 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes updateBannerSlideInBottom {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
   }
 }
 

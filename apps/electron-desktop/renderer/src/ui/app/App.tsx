@@ -71,8 +71,8 @@ function SidebarLayout() {
       <SubscriptionPromoBannerSource />
       <div className={a.TopRightBannerStack}>
         <WarmupBanner />
-        <LlamacppDownloadBanner />
       </div>
+      <LlamacppDownloadBanner />
       <div className={a.UiAppShell}>
         <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
           <Sidebar />

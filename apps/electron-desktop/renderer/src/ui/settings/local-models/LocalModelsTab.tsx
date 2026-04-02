@@ -8,7 +8,6 @@ import {
   downloadLlamacppBackend,
   checkLlamacppBackendUpdate,
   downloadLlamacppModel,
-  cancelLlamacppModelDownload,
   setLlamacppActiveModel,
   deleteLlamacppModel,
   llamacppActions,
@@ -172,28 +171,6 @@ export function LocalModelsTab(props: {
                 <div className={s.modelMeta}>
                   {model.description} &middot; {model.sizeLabel} &middot; {model.contextLabel}
                 </div>
-
-                {isDownloading && modelDownload.kind === "downloading" && (
-                  <div className={s.downloadProgress}>
-                    <div className={s.downloadRow}>
-                      <div className={s.downloadLabel}>Downloading… {modelDownload.percent}%</div>
-                      <button
-                        type="button"
-                        className={s.cancelBtn}
-                        onClick={() => void dispatch(cancelLlamacppModelDownload())}
-                        aria-label="Cancel download"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className={s.downloadTrack}>
-                      <div
-                        className={s.downloadFill}
-                        style={{ width: `${modelDownload.percent}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
               <div className={s.modelAction}>
                 {model.downloaded ? (
@@ -220,7 +197,11 @@ export function LocalModelsTab(props: {
                       </SecondaryButton>
                     </div>
                   )
-                ) : isDownloading ? null : (
+                ) : isDownloading ? (
+                  <span className={s.activeLabel} aria-live="polite">
+                    Active
+                  </span>
+                ) : (
                   <SecondaryButton
                     size="sm"
                     onClick={() => {

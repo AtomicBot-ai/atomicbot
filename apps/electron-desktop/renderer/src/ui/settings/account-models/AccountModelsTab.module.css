@@ -49,11 +49,16 @@
   width: 100%;
 }
 
-/* API Endpoint uses the same column layout as .statusSegment; extra dashed rule below link */
+/* API Endpoint uses the same column layout as .statusSegment; dashed rule sits 1px below the link */
 .statusBarHorizontal .statusBarApiEndpoint {
-  padding-bottom: 6px;
+  padding-bottom: 1px;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.28);
   max-width: 100%;
+  transition: border-bottom-color 0.15s ease;
+}
+
+.statusBarHorizontal .statusBarApiEndpoint:has(.apiEndpointLink:hover) {
+  border-bottom-color: rgba(255, 255, 255, 0.55);
 }
 
 .statusBarHorizontal .statusBarApiEndpoint .statusLabel {
@@ -64,15 +69,14 @@
   font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.5);
-  text-decoration: underline;
-  text-decoration-color: rgba(255, 255, 255, 0.35);
-  text-underline-offset: 2px;
+  text-decoration: none;
   word-break: break-all;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 
 .apiEndpointLink:hover {
   color: rgba(255, 255, 255, 0.72);
-  text-decoration-color: rgba(255, 255, 255, 0.45);
 }
 
 /* Local models: each label/value pair stacks vertically (2px gap between them) */
