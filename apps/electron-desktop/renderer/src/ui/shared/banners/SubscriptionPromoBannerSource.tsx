@@ -26,6 +26,9 @@ function SparkleIcon() {
 }
 
 export function SubscriptionPromoBannerSource() {
+  // temporarily disabled
+  return null;
+
   const authMode = useAppSelector((s) => s.auth.mode);
   const dispatch = useAppDispatch();
   const gw = useGatewayRpc();

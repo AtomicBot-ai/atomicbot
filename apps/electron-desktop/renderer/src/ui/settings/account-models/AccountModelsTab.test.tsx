@@ -12,11 +12,13 @@ const mockSwitchMode = vi.fn();
 let mockAuthMode = "self-managed";
 let mockProviderFilter: string | null = null;
 let mockActiveModelId: string | null = null;
+let mockActiveModelEntry: { name: string } | null = null;
 let mockActiveProviderKey: string | null = null;
 let mockSortedModels: Array<{ id: string; name: string; provider: string }> = [];
 let mockModelsLoading = false;
 let mockModelBusy = false;
 let mockAccountLoading = false;
+const mockLoadModels = vi.fn();
 
 vi.mock("@store/hooks", () => ({
   useAppDispatch: () => mockDispatch,
@@ -34,6 +36,7 @@ vi.mock("@store/slices/auth/mode-switch", () => ({
 }));
 
 vi.mock("@shared/toast", () => ({
+  addToast: vi.fn(),
   addToastError: vi.fn(),
 }));
 
@@ -70,6 +73,7 @@ vi.mock("../providers/useModelProvidersState", () => ({
     providerFilter: mockProviderFilter,
     setProviderFilter: mockSetProviderFilter,
     activeModelId: mockActiveModelId,
+    activeModelEntry: mockActiveModelEntry,
     activeProviderKey: mockActiveProviderKey,
     sortedModels: mockSortedModels,
     modelsLoading: mockModelsLoading,
@@ -80,6 +84,7 @@ vi.mock("../providers/useModelProvidersState", () => ({
     saveProviderApiKey: vi.fn(),
     saveProviderSetupToken: vi.fn(),
     saveOllamaProvider: mockSaveOllamaProvider,
+    loadModels: mockLoadModels,
     pasteFromClipboard: vi.fn(),
   }),
 }));
@@ -120,12 +125,14 @@ describe("AccountModelsTab (self-managed mode)", () => {
     mockAuthMode = "self-managed";
     mockProviderFilter = null;
     mockActiveModelId = null;
+    mockActiveModelEntry = null;
     mockActiveProviderKey = null;
     mockSortedModels = [];
     mockModelsLoading = false;
     mockModelBusy = false;
     mockAccountLoading = false;
     capturedInlineApiKeyProps = {};
+    mockLoadModels.mockClear();
   });
 
   afterEach(cleanup);
@@ -219,6 +226,17 @@ describe("AccountModelsTab (self-managed mode)", () => {
     expect(screen.getByText("openai")).not.toBeNull();
   });
 
+  it("status bar Model shows id-derived label before catalog entry loads", () => {
+    mockActiveModelId = "anthropic/claude-3-opus";
+    mockActiveModelEntry = null;
+    mockSortedModels = [];
+
+    render(<AccountModelsTab {...defaultProps} />);
+
+    expect(screen.getByText("claude-3-opus")).not.toBeNull();
+    expect(screen.queryByText("Not selected")).toBeNull();
+  });
+
   it("renders connection toggle with both options", () => {
     render(<AccountModelsTab {...defaultProps} />);
 
@@ -249,5 +267,24 @@ describe("AccountModelsTab (self-managed mode)", () => {
     expect(mockSwitchMode).toHaveBeenCalled();
     expect(screen.getByText("Switching to API keys...")).not.toBeNull();
     expect(screen.getByRole("status")).not.toBeNull();
+  });
+
+  it("refetches the model catalog after a successful paid↔self-managed switch", async () => {
+    mockAuthMode = "paid";
+    mockDispatch.mockReturnValue({
+      unwrap: () =>
+        Promise.resolve({
+          hasBackup: true,
+          restoredModel: "anthropic/claude-sonnet-4.6",
+        }),
+    });
+
+    render(<AccountModelsTab {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("API keys"));
+
+    await waitFor(() => {
+      expect(mockLoadModels).toHaveBeenCalled();
+    });
   });
 });

@@ -6,7 +6,10 @@ export type LlamacppModelId =
   | "qwen-3.5-35b"
   | "glm-4.7-flash-30b"
   | "nemotron-3-nano-4b"
-  | "nemotron-3-nano-30b";
+  | "nemotron-3-nano-30b"
+  | "gemma-4-e4b"
+  | "gemma-4-26b-a4b"
+  | "gemma-4-31b";
 
 export interface LlamacppModelDef {
   id: LlamacppModelId;
@@ -30,6 +33,53 @@ export interface LlamacppModelDef {
 }
 
 export const LLAMACPP_MODELS: LlamacppModelDef[] = [
+  {
+    id: "gemma-4-e4b",
+    name: "Gemma 4 E4B GGUF",
+    filename: "gemma-4-E4B-it-Q4_K_M.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf",
+    fileSizeGb: 4.98,
+    sizeLabel: "5 GB",
+    description: "Compact multimodal reasoning",
+    maxContextLength: 131_072,
+    contextLabel: "128K",
+    minRamGb: 8,
+    recommendedRamGb: 10,
+    icon: "google",
+  },
+  {
+    id: "gemma-4-26b-a4b",
+    name: "Gemma 4 26B-A4B GGUF",
+    filename: "gemma-4-26B-A4B-it-UD-Q4_K_M.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf",
+    fileSizeGb: 16.9,
+    sizeLabel: "16.9 GB",
+    description: "Fast MoE with 256K context",
+    maxContextLength: 262_144,
+    contextLabel: "256K",
+    minRamGb: 20,
+    recommendedRamGb: 24,
+    icon: "google",
+    tag: "High Performance",
+  },
+  {
+    id: "gemma-4-31b",
+    name: "Gemma 4 31B GGUF",
+    filename: "gemma-4-31B-it-Q4_K_M.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/gemma-4-31B-it-GGUF/resolve/main/gemma-4-31B-it-Q4_K_M.gguf",
+    fileSizeGb: 19.0,
+    sizeLabel: "19 GB",
+    description: "Top-tier dense reasoning",
+    maxContextLength: 262_144,
+    contextLabel: "256K",
+    minRamGb: 24,
+    recommendedRamGb: 32,
+    icon: "google",
+    tag: "High Performance",
+  },
   {
     id: "qwen-3.5-4b",
     name: "Qwen 3.5 4B GGUF",

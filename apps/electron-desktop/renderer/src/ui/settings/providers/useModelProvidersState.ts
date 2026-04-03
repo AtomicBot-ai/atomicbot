@@ -228,6 +228,16 @@ export function useModelProvidersState(props: {
     }
   }, [props.gw.connected, loadModels, refreshKeyConfiguredProviders]);
 
+  const prevPaidModeRef = React.useRef(props.isPaidMode);
+  React.useEffect(() => {
+    if (prevPaidModeRef.current === props.isPaidMode) return;
+    prevPaidModeRef.current = props.isPaidMode;
+    if (initialLoadDoneRef.current) {
+      void loadModels();
+      void refreshKeyConfiguredProviders();
+    }
+  }, [props.isPaidMode, loadModels, refreshKeyConfiguredProviders]);
+
   // The gateway's model catalog may still be initializing when the first
   // few loadModels() calls land (all triggered nearly simultaneously on
   // mount). Retry with backoff so the UI picks up models once the catalog

@@ -8,7 +8,7 @@ import type { ConfigData } from "@store/slices/configSlice";
 
 const SESSION_KEY = "oa_app_opened";
 
-type ProviderType = "subscription" | "own_keys" | "none";
+type ProviderType = "subscription" | "own_keys" | "local" | "none";
 
 function deriveProviderInfo(
   mode: SetupMode | null,
@@ -16,6 +16,9 @@ function deriveProviderInfo(
 ): { provider_type: ProviderType; provider: string } {
   if (mode === "paid") {
     return { provider_type: "subscription", provider: "none" };
+  }
+  if (mode === "local-model") {
+    return { provider_type: "local", provider: "llamacpp" };
   }
   if (mode === "self-managed") {
     // Pick first provider from auth.order that has configured profiles.

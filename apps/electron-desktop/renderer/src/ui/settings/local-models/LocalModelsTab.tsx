@@ -20,6 +20,7 @@ import { SecondaryButton, Modal, ConfirmDialog } from "@shared/kit";
 import qwenIcon from "@assets/ai-models/qwen.svg";
 import glmIcon from "@assets/ai-models/glm.svg";
 import nvidiaIcon from "@assets/ai-models/nvidia.svg";
+import googleIcon from "@assets/ai-models/google.svg";
 import s from "./LocalModelsTab.module.css";
 
 type GatewayRequest = <T = unknown>(method: string, params?: unknown) => Promise<T>;
@@ -30,7 +31,7 @@ export function LocalModelsTab(props: {
   onSwitchToLocalMode?: () => Promise<void>;
 }) {
   const dispatch = useAppDispatch();
-  const { backendDownloaded, models, modelDownload, activeModelId, systemInfo } = useAppSelector(
+  const { backendDownloaded, models, modelDownload, activeModelId } = useAppSelector(
     (st) => st.llamacpp
   );
 
@@ -73,6 +74,7 @@ export function LocalModelsTab(props: {
         }
 
         const serverResult = await dispatch(setLlamacppActiveModel(modelId)).unwrap();
+
         void dispatch(fetchLlamacppServerStatus());
 
         // Phase 3: apply model config with real data (gateway RPC)
@@ -90,8 +92,10 @@ export function LocalModelsTab(props: {
                 modelName: cfgModelName,
                 contextLength: serverResult?.contextLength,
               });
+
               await props.gatewayRequest("secrets.reload", {}).catch(() => {});
               await resetSessionModelSelection(props.gatewayRequest);
+
               break;
             } catch (retryErr) {
               const msg = String(retryErr);
@@ -143,15 +147,6 @@ export function LocalModelsTab(props: {
 
   return (
     <div className={s.root}>
-      {/* System info */}
-      {systemInfo && (
-        <div className={s.systemInfo}>
-          {systemInfo.totalRamGb} GB RAM &middot;{" "}
-          {systemInfo.isAppleSilicon ? "Apple Silicon" : systemInfo.arch}
-        </div>
-      )}
-
-      {/* Model list */}
       <div className={s.modelList}>
         {models.map((model) => {
           const isActive = activeModelId === model.id;
@@ -181,28 +176,6 @@ export function LocalModelsTab(props: {
                 <div className={s.modelMeta}>
                   {model.description} &middot; {model.sizeLabel} &middot; {model.contextLabel}
                 </div>
-
-                {isDownloading && modelDownload.kind === "downloading" && (
-                  <div className={s.downloadProgress}>
-                    <div className={s.downloadRow}>
-                      <div className={s.downloadLabel}>Downloading… {modelDownload.percent}%</div>
-                      <button
-                        type="button"
-                        className={s.cancelBtn}
-                        onClick={() => void dispatch(cancelLlamacppModelDownload())}
-                        aria-label="Cancel download"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className={s.downloadTrack}>
-                      <div
-                        className={s.downloadFill}
-                        style={{ width: `${modelDownload.percent}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
               <div className={s.modelAction}>
                 {model.downloaded ? (
@@ -229,7 +202,22 @@ export function LocalModelsTab(props: {
                       </SecondaryButton>
                     </div>
                   )
-                ) : isDownloading ? null : (
+                ) : isDownloading ? (
+                  <div className={s.downloadingRow} aria-live="polite">
+                    <span className={s.downloadingText}>
+                      Downloading...{" "}
+                      {modelDownload.kind === "downloading" ? `${modelDownload.percent}%` : ""}
+                    </span>
+                    <button
+                      type="button"
+                      className={s.cancelIcon}
+                      onClick={() => void dispatch(cancelLlamacppModelDownload())}
+                      aria-label="Cancel download"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
                   <SecondaryButton
                     size="sm"
                     onClick={() => {
@@ -303,6 +291,7 @@ const MODEL_ICON_MAP: Record<string, string> = {
   qwen: qwenIcon,
   glm: glmIcon,
   nvidia: nvidiaIcon,
+  google: googleIcon,
 };
 
 function ModelIcon({ icon }: { icon: string }) {

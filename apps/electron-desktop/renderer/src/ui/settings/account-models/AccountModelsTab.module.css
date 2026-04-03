@@ -8,8 +8,6 @@
 
 .statusBar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 12px 14px;
   margin-bottom: 16px;
   border-radius: 12px;
@@ -18,15 +16,178 @@
   min-height: 42px;
 }
 
-.statusRow {
+/* Subscription / API keys: same label/value column blocks as Local Models; row with 16px gap, no space-between */
+.statusBarVertical {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.statusBarVerticalMain {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 40px;
+  row-gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.statusBarVerticalMain .statusSegment {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.statusBarVerticalMain .statusLabel {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.statusBarVerticalMain .statusValue {
+  flex: 0 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 24px;
+}
+
+.statusBarVerticalMain .statusValueText {
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Local models: one flex row — all status blocks + API endpoint share space-between + gap */
+.statusBarHorizontal {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.statusBarHorizontalMain {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  column-gap: 4px;
+  row-gap: 4px;
+  width: 100%;
+}
+
+/* API Endpoint uses the same column layout as .statusSegment */
+.statusBarHorizontal .statusBarApiEndpoint {
+  max-width: 100%;
+}
+
+.statusBarHorizontal .statusBarApiEndpoint .statusLabel {
+  min-width: 0;
+}
+
+.apiEndpointRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.apiEndpointLink {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 2px;
+  word-break: break-all;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease;
+}
+
+.apiEndpointLink:hover {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration-color: rgba(255, 255, 255, 0.55);
+}
+
+.apiEndpointCopyBtn {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.apiEndpointCopyBtn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Local models: each label/value pair stacks vertically (2px gap between them) */
+.statusBarHorizontal .statusSegment {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.statusBarHorizontal .statusLabel {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.statusBarHorizontal .statusValue {
+  flex: 0 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  /* Same vertical rhythm as API row with 24px copy control */
+  min-height: 24px;
+}
+
+.statusBarHorizontal .statusBarApiEndpoint .statusValue {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.statusSegment {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 20px;
+  min-height: 20px;
 }
 
 .statusLabel {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.4);
   min-width: 48px;
@@ -40,6 +201,18 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+
+.statusValueText {
+  min-width: 0;
+}
+
+.statusBarHorizontal .statusValueText {
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .serverDot {
@@ -52,7 +225,7 @@
 }
 
 .serverDot--running {
-  background: #34c759;
+  background: #22c55e;
 }
 
 .serverDot--starting {

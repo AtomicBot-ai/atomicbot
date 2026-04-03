@@ -16,12 +16,20 @@
   min-height: 488px;
 }
 
+/* Tighter gap under page subtitle; ~⅓ less than global 24px + previous 16px top on grid */
+.UiSetupModeCard :global(.UiSectionSubtitle) {
+  margin-bottom: 16px;
+}
+
 .UiSetupModeOptions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 11px;
   height: 100%;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 .UiSetupModeCardTwoColumns {
@@ -30,6 +38,41 @@
 
 .UiSetupModeOptionsTwoColumns {
   grid-template-columns: repeat(2, 1fr);
+}
+
+/* Equal-height cards; pin actions to the same baseline across columns */
+.UiSetupModeOptions .UiSetupModeOptionCard {
+  justify-content: flex-start;
+  height: 100%;
+  box-sizing: border-box;
+  /* Taller than global UiSectionCard (300/332); no max-height so row can grow with layout */
+  min-height: 318px;
+  max-height: none;
+}
+
+.UiSetupModeCardBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.UiSetupModeCardFooter {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.UiSetupModeCardFooter :global(.UiPrimaryButton),
+.UiSetupModeCardFooter :global(.UiSecondaryButton) {
+  width: 100%;
+}
+
+.UiSetupModeCardBody .UiSetupModeFeatures {
+  margin-bottom: 0;
 }
 
 .UiSetupModeOption {
@@ -100,7 +143,7 @@
   font-weight: 700;
   font-size: 17px;
   line-height: 22px;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .UiSetupModeDesc {
@@ -135,10 +178,25 @@
   flex-shrink: 0;
 }
 
-.UiSetupModeOption :global(.UiPrimaryButton),
-.UiSetupModeOption :global(.UiSecondaryButton) {
+/* Must beat `.UiSetupModeFeatures li::before` (two classes + li). */
+.UiSetupModeFeatures li.UiSetupModeFeatureNote::before {
+  content: none;
+  display: none;
+}
+
+.UiSetupModeFeatureNoteIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.UiSetupModeFeatureNoteIcon svg {
   width: 100%;
-  margin-top: auto;
+  height: 100%;
 }
 
 :global(.UiPrimaryButton).UiGoogleButton {

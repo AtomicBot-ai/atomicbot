@@ -6,9 +6,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
-  max-height: 420px;
-  overflow-y: auto;
 }
 
 .modelRow {
@@ -86,48 +83,31 @@
   color: #a78bfa;
 }
 
-.progressBar {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.progressHeader {
+.downloadingRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 6px;
 }
 
-.progressText {
+.downloadingText {
   font-size: 12px;
   color: var(--muted3);
-  min-width: 0;
+  white-space: nowrap;
 }
 
-.progressActions {
-  flex-shrink: 0;
-  margin-right: 18px;
+.cancelIcon {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  border-radius: var(--radius-xs);
+  transition: color var(--transition-base);
 }
 
-.progressContinueButton {
-  min-width: 72px;
-  padding: 4px 14px;
-  margin-top: -2px;
-}
-
-.progressTrack {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--surface-overlay);
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  border-radius: 3px;
-  background: var(--lime);
-  transition: width 0.3s ease;
+.cancelIcon:hover {
+  color: var(--error);
 }

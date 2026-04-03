@@ -22,14 +22,14 @@ function DownloadIcon() {
 }
 
 /**
- * Floating banner (reuses UpdateBanner visuals) that appears when
- * llamacpp backend or model download is in progress.
- * Positioned below the UpdateBanner to avoid overlap.
+ * Floating banner (reuses UpdateBanner visuals) when llamacpp backend
+ * or model download is in progress. Stacked top-right with WarmupBanner.
  */
 export function LlamacppDownloadBanner() {
   const dispatch = useAppDispatch();
   const backendDownload = useAppSelector((st) => st.llamacpp.backendDownload);
   const modelDownload = useAppSelector((st) => st.llamacpp.modelDownload);
+  const models = useAppSelector((st) => st.llamacpp.models);
 
   const isBackendDownloading = backendDownload.kind === "downloading";
   const isModelDownloading = modelDownload.kind === "downloading";
@@ -46,7 +46,15 @@ export function LlamacppDownloadBanner() {
     return null;
   }
 
-  const label = isModelDownloading ? "Downloading model…" : "Downloading AI engine…";
+  const modelName =
+    modelDownload.kind === "downloading"
+      ? (models.find((m) => m.id === modelDownload.modelId)?.name ?? modelDownload.modelId)
+      : null;
+
+  const headline = isModelDownloading
+    ? (modelName ?? "Downloading model…")
+    : "Downloading AI engine…";
+
   const percent = isModelDownloading
     ? modelDownload.percent
     : isBackendDownloading
@@ -64,7 +72,7 @@ export function LlamacppDownloadBanner() {
       </div>
 
       <div className={s["UpdateBanner-body"]}>
-        <span className={s["UpdateBanner-text"]}>{label}</span>
+        <span className={s["UpdateBanner-text"]}>{headline}</span>
         <div className={s["UpdateBanner-progress"]}>
           <div className={s["UpdateBanner-progressBar"]} style={{ width: `${percent}%` }} />
         </div>
