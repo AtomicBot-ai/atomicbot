@@ -68,8 +68,6 @@ import {
   resolveBootstrapMaxChars,
   resolveBootstrapPromptTruncationWarningMode,
   resolveBootstrapTotalMaxChars,
-  validateAnthropicTurns,
-  validateGeminiTurns,
 } from "../../pi-embedded-helpers.js";
 import { subscribeEmbeddedPiSession } from "../../pi-embedded-subscribe.js";
 import { createPreparedEmbeddedPiSettingsManager } from "../../pi-project-settings.js";
@@ -107,6 +105,7 @@ import {
   logToolSchemasForGoogle,
   sanitizeSessionHistory,
   sanitizeToolsForGoogle,
+  validateReplayTurns,
 } from "../google.js";
 import { getDmHistoryLimitFromSessionKey, limitHistoryTurns } from "../history.js";
 import { log } from "../logger.js";
@@ -126,7 +125,11 @@ import {
   buildEmbeddedSystemPrompt,
   createSystemPromptOverride,
 } from "../system-prompt.js";
-import { dropThinkingBlocks } from "../thinking.js";
+import {
+  dropThinkingBlocks,
+  sanitizeThinkingForRecovery,
+  wrapAnthropicStreamWithRecovery,
+} from "../thinking.js";
 import { collectAllowedToolNames } from "../tool-name-allowlist.js";
 import { installToolResultContextGuard } from "../tool-result-context-guard.js";
 import { splitSdkTools } from "../tool-split.js";
@@ -215,6 +218,10 @@ export {
 } from "./attempt.tool-call-normalization.js";
 
 const MAX_BTW_SNAPSHOT_MESSAGES = 100;
+
+function shouldEnableAnthropicThinkingRecovery(api: string | null | undefined): boolean {
+  return api === "anthropic-messages" || api === "bedrock-converse-stream";
+}
 
 export function resolveEmbeddedAgentStreamFn(params: {
   currentStreamFn: StreamFn | undefined;
@@ -487,6 +494,12 @@ export async function runEmbeddedAttempt(
     const tools = sanitizeToolsForGoogle({
       tools: toolsEnabled ? toolsRaw : [],
       provider: params.provider,
+      config: params.config,
+      workspaceDir: effectiveWorkspace,
+      env: process.env,
+      modelId: params.modelId,
+      modelApi: params.model.api,
+      model: params.model,
     });
     const clientTools = toolsEnabled ? params.clientTools : undefined;
     const bundleMcpSessionRuntime = toolsEnabled
@@ -526,7 +539,16 @@ export async function runEmbeddedAttempt(
       tools: effectiveTools,
       clientTools,
     });
-    logToolSchemasForGoogle({ tools: effectiveTools, provider: params.provider });
+    logToolSchemasForGoogle({
+      tools: effectiveTools,
+      provider: params.provider,
+      config: params.config,
+      workspaceDir: effectiveWorkspace,
+      env: process.env,
+      modelId: params.modelId,
+      modelApi: params.model.api,
+      model: params.model,
+    });
 
     const machineName = await getMachineDisplayName();
     const runtimeChannel = normalizeMessageChannel(params.messageChannel ?? params.messageProvider);
@@ -568,7 +590,14 @@ export async function runEmbeddedAttempt(
           })
         : undefined;
     const sandboxInfo = buildEmbeddedSandboxInfo(sandbox, params.bashElevated);
-    const reasoningTagHint = isReasoningTagProvider(params.provider);
+    const reasoningTagHint = isReasoningTagProvider(params.provider, {
+      config: params.config,
+      workspaceDir: effectiveWorkspace,
+      env: process.env,
+      modelId: params.modelId,
+      modelApi: params.model.api,
+      model: params.model,
+    });
     // Resolve channel-specific message actions for system prompt
     const channelActions = runtimeChannel
       ? listChannelSupportedActions(
@@ -724,6 +753,10 @@ export async function runEmbeddedAttempt(
         modelApi: params.model?.api,
         provider: params.provider,
         modelId: params.modelId,
+        config: params.config,
+        workspaceDir: effectiveWorkspace,
+        env: process.env,
+        model: params.model,
       });
 
       await prewarmSessionFile(params.sessionFile);
@@ -1066,6 +1099,13 @@ export async function runEmbeddedAttempt(
         );
       }
 
+      if (shouldEnableAnthropicThinkingRecovery(params.model.api)) {
+        activeSession.agent.streamFn = wrapAnthropicStreamWithRecovery(
+          activeSession.agent.streamFn,
+          { id: activeSession.sessionId },
+        );
+      }
+
       if (anthropicPayloadLogger) {
         activeSession.agent.streamFn = anthropicPayloadLogger.wrapStreamFn(
           activeSession.agent.streamFn,
@@ -1091,6 +1131,28 @@ export async function runEmbeddedAttempt(
       }
 
       try {
+        if (shouldEnableAnthropicThinkingRecovery(params.model.api)) {
+          const originalMessageCount = activeSession.messages.length;
+          const { messages, prefill } = sanitizeThinkingForRecovery(activeSession.messages);
+          if (messages !== activeSession.messages) {
+            activeSession.agent.replaceMessages(messages);
+          }
+          if (messages.length !== originalMessageCount) {
+            log.warn(
+              `[session-recovery] dropped latest assistant message with incomplete thinking: sessionId=${params.sessionId}`,
+            );
+          }
+          if (prefill) {
+            // Keeping the signed-thinking turn intact is a forward-compatibility
+            // signal for future prefill-style recovery; the current fallback
+            // still comes from the one-shot stream wrapper if Anthropic rejects
+            // the replayed payload.
+            log.warn(
+              `[session-recovery] keeping latest assistant message with signed thinking and incomplete text: sessionId=${params.sessionId}`,
+            );
+          }
+        }
+
         const prior = await sanitizeSessionHistory({
           messages: activeSession.messages,
           modelApi: params.model.api,
@@ -1098,17 +1160,26 @@ export async function runEmbeddedAttempt(
           provider: params.provider,
           allowedToolNames,
           config: params.config,
+          workspaceDir: effectiveWorkspace,
+          env: process.env,
+          model: params.model,
           sessionManager,
           sessionId: params.sessionId,
           policy: transcriptPolicy,
         });
         cacheTrace?.recordStage("session:sanitized", { messages: prior });
-        const validatedGemini = transcriptPolicy.validateGeminiTurns
-          ? validateGeminiTurns(prior)
-          : prior;
-        const validated = transcriptPolicy.validateAnthropicTurns
-          ? validateAnthropicTurns(validatedGemini)
-          : validatedGemini;
+        const validated = await validateReplayTurns({
+          messages: prior,
+          modelApi: params.model.api,
+          modelId: params.modelId,
+          provider: params.provider,
+          config: params.config,
+          workspaceDir: effectiveWorkspace,
+          env: process.env,
+          model: params.model,
+          sessionId: params.sessionId,
+          policy: transcriptPolicy,
+        });
         const truncated = limitHistoryTurns(
           validated,
           getDmHistoryLimitFromSessionKey(params.sessionKey, params.config),
