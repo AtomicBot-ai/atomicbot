@@ -65,6 +65,8 @@ export const audioTranscribeHandlers: GatewayRequestHandlers = {
         apiKey: resolved.apiKey,
         language,
         timeoutMs: DEFAULT_TIMEOUT_MS,
+        defaultBaseUrl: "https://api.openai.com/v1",
+        defaultModel: "gpt-4o-mini-transcribe",
       });
 
       respond(true, { text: result.text, model: result.model });

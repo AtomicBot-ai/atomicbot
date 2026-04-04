@@ -63,7 +63,6 @@ function ConnectionToggle(props: {
   activeMode: SetupMode | null;
   disabled: boolean;
   onSelect: (mode: SetupMode) => void;
-  showLocalModels?: boolean;
 }) {
   const active = props.activeMode;
   return (
@@ -85,16 +84,14 @@ function ConnectionToggle(props: {
         >
           API keys
         </button>
-        {props.showLocalModels && (
-          <button
-            type="button"
-            className={`${s.connectionOption}${active === "local-model" ? ` ${s["connectionOption--active"]}` : ""}`}
-            onClick={() => void props.onSelect("local-model")}
-            disabled={props.disabled}
-          >
-            Local Models
-          </button>
-        )}
+        <button
+          type="button"
+          className={`${s.connectionOption}${active === "local-model" ? ` ${s["connectionOption--active"]}` : ""}`}
+          onClick={() => void props.onSelect("local-model")}
+          disabled={props.disabled}
+        >
+          Local Models
+        </button>
       </div>
     </div>
   );
@@ -478,7 +475,6 @@ export function AccountModelsTab(props: {
       <ConnectionToggle
         activeMode={tabMode}
         disabled={modeSwitchBusy}
-        showLocalModels={isMac}
         onSelect={handleConnectionSelect}
       />
 
@@ -491,11 +487,23 @@ export function AccountModelsTab(props: {
 
       {tabMode === "local-model" && !isLoading && (
         <div className="fade-in">
-          <LocalModelsTab
-            gatewayRequest={gw.request}
-            onReload={reload}
-            onSwitchToLocalMode={authMode !== "local-model" ? switchToLocalMode : undefined}
-          />
+          {isMac ? (
+            <LocalModelsTab
+              gatewayRequest={gw.request}
+              onReload={reload}
+              onSwitchToLocalMode={authMode !== "local-model" ? switchToLocalMode : undefined}
+            />
+          ) : (
+            <div className={s.comingSoonBanner}>
+              <span className={s.comingSoonIcon}>🖥</span>
+              <div className={s.comingSoonBody}>
+                <div className={s.comingSoonTitle}>Coming Soon</div>
+                <div className={s.comingSoonDesc}>
+                  Local models support for Windows is under development. Stay tuned!
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

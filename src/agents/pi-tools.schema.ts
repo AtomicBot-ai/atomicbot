@@ -67,6 +67,39 @@ function mergePropertySchemas(existing: unknown, incoming: unknown): unknown {
   return existing;
 }
 
+// ////////// llamacpp-array-type-fix //////////
+function flattenArrayTypeValues(schema: unknown): unknown {
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    return schema;
+  }
+  const obj = schema as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === "type" && Array.isArray(v) && v.every((e) => typeof e === "string")) {
+      const nonNull = v.filter((e) => e !== "null");
+      out[k] = nonNull.length <= 1 ? (nonNull[0] ?? "string") : nonNull[0];
+    } else if (k === "properties" && v && typeof v === "object" && !Array.isArray(v)) {
+      out[k] = Object.fromEntries(
+        Object.entries(v as Record<string, unknown>).map(([pk, pv]) => [
+          pk,
+          flattenArrayTypeValues(pv),
+        ]),
+      );
+    } else if (
+      (k === "items" || k === "anyOf" || k === "oneOf" || k === "allOf") &&
+      Array.isArray(v)
+    ) {
+      out[k] = v.map(flattenArrayTypeValues);
+    } else if (k === "items" && v && typeof v === "object") {
+      out[k] = flattenArrayTypeValues(v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+// ////////// /llamacpp-array-type-fix //////////
+
 export function normalizeToolParameterSchema(
   schema: unknown,
   options?: { modelProvider?: string; modelId?: string; modelCompat?: ModelCompatConfig },
@@ -95,10 +128,15 @@ export function normalizeToolParameterSchema(
     if (isGeminiProvider && !isAnthropicProvider) {
       return cleanSchemaForGemini(s);
     }
+    // ////////// llamacpp-array-type-fix //////////
+    // Local model servers (llama.cpp, vLLM) use Jinja templates that expect
+    // `type` as a plain string; array forms like ["string","null"] crash them.
+    const flat = flattenArrayTypeValues(s);
+    // ////////// /llamacpp-array-type-fix //////////
     if (unsupportedToolSchemaKeywords.size > 0) {
-      return stripUnsupportedSchemaKeywords(s, unsupportedToolSchemaKeywords);
+      return stripUnsupportedSchemaKeywords(flat, unsupportedToolSchemaKeywords);
     }
-    return s;
+    return flat;
   }
 
   if (

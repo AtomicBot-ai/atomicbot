@@ -17,7 +17,7 @@ export function SetupModePage(props: {
   authBusy?: boolean;
   authError?: string | null;
   onBack?: () => void;
-  showLocalModel?: boolean;
+  localModelComingSoon?: boolean;
 }) {
   useOnboardingStepEvent("setup_mode", null);
   const [_, setSelected] = React.useState<SetupModeChoice>("paid");
@@ -29,18 +29,14 @@ export function SetupModePage(props: {
       aria-label="Setup mode selection"
       context="onboarding"
     >
-      <div
-        className={`${s.UiSetupModeHeader} ${props.showLocalModel ? "" : s.UiSetupModeHeaderTwoColumns}`}
-      >
+      <div className={s.UiSetupModeHeader}>
         <OnboardingHeader
           totalSteps={props.totalSteps}
           activeStep={props.activeStep}
           onBack={props.onBack}
         />
       </div>
-      <GlassCard
-        className={`${s.UiSetupModeCard} ${props.showLocalModel ? "" : s.UiSetupModeCardTwoColumns}`}
-      >
+      <GlassCard className={s.UiSetupModeCard}>
         <div className="UiSectionContent">
           <div>
             <div className="UiSectionTitle">Choose how to run your AI agent</div>
@@ -49,9 +45,7 @@ export function SetupModePage(props: {
             </div>
           </div>
 
-          <div
-            className={`${s.UiSetupModeOptions} ${props.showLocalModel ? "" : s.UiSetupModeOptionsTwoColumns}`}
-          >
+          <div className={s.UiSetupModeOptions}>
             <div className={`UiSectionCard UiSectionCardGreen ${s.UiSetupModeOptionCard}`}>
               <div className={s.UiSetupModeCardBody}>
                 <div className={s.UiSetupModeIconRow}>
@@ -125,27 +119,33 @@ export function SetupModePage(props: {
               </div>
             </div>
 
-            {props.showLocalModel && (
-              <div className={`UiSectionCard ${s.UiSetupModeOptionCard}`}>
-                <div className={s.UiSetupModeCardBody}>
-                  <div className={s.UiSetupModeIcon}>
-                    <span style={{ fontSize: 24 }}>🖥</span>
-                  </div>
-                  <div className={s.UiSetupModeTitle}>Free local models</div>
-                  <div className={s.UiSetupModeDesc}>Fully private</div>
-                  <ul className={s.UiSetupModeFeatures}>
-                    <li>Works offline</li>
-                    <li>Your data never leaves your machine</li>
-                    <li className={s.UiSetupModeFeatureNote}>
-                      <span className={s.UiSetupModeFeatureNoteIcon} aria-hidden="true">
-                        <InfoIcon />
-                      </span>
-                      <span>macOS only</span>
-                    </li>
-                  </ul>
+            <div
+              className={`UiSectionCard ${s.UiSetupModeOptionCard} ${props.localModelComingSoon ? s.UiSetupModeOptionCardComingSoon : ""}`}
+            >
+              <div className={s.UiSetupModeCardBody}>
+                <div className={s.UiSetupModeIcon}>
+                  <span style={{ fontSize: 24 }}>🖥</span>
                 </div>
+                <div className={s.UiSetupModeTitle}>Free local models</div>
+                <div className={s.UiSetupModeDesc}>Fully private</div>
+                <ul className={s.UiSetupModeFeatures}>
+                  <li>Works offline</li>
+                  <li>Your data never leaves your machine</li>
+                  <li className={s.UiSetupModeFeatureNote}>
+                    <span className={s.UiSetupModeFeatureNoteIcon} aria-hidden="true">
+                      <InfoIcon />
+                    </span>
+                    <span>{props.localModelComingSoon ? "macOS only for now" : "macOS only"}</span>
+                  </li>
+                </ul>
+              </div>
 
-                <div className={s.UiSetupModeCardFooter}>
+              <div className={s.UiSetupModeCardFooter}>
+                {props.localModelComingSoon ? (
+                  <SecondaryButton size="sm" disabled onClick={() => {}}>
+                    Coming Soon
+                  </SecondaryButton>
+                ) : (
                   <SecondaryButton
                     size="sm"
                     onClick={() => {
@@ -155,9 +155,9 @@ export function SetupModePage(props: {
                   >
                     Set up local models
                   </SecondaryButton>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </GlassCard>

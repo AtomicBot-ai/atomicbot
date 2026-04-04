@@ -4,10 +4,6 @@
   margin-left: -112px;
 }
 
-.UiSetupModeHeaderTwoColumns :global(button.UiTextButton) {
-  margin-left: 0;
-}
-
 .UiSetupModeCard {
   display: flex;
   flex-direction: column;
@@ -30,14 +26,6 @@
   align-items: stretch;
   flex: 1;
   min-height: 0;
-}
-
-.UiSetupModeCardTwoColumns {
-  width: min(566px, 90vw);
-}
-
-.UiSetupModeOptionsTwoColumns {
-  grid-template-columns: repeat(2, 1fr);
 }
 
 /* Equal-height cards; pin actions to the same baseline across columns */
@@ -197,6 +185,11 @@
 .UiSetupModeFeatureNoteIcon svg {
   width: 100%;
   height: 100%;
+}
+
+.UiSetupModeOptionCardComingSoon {
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 :global(.UiPrimaryButton).UiGoogleButton {

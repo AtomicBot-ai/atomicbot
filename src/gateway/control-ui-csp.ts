@@ -40,7 +40,6 @@ export function buildControlUiCspHeader(opts?: { inlineScriptHashes?: string[] }
     "default-src 'self'",
     "base-uri 'none'",
     "object-src 'none'",
-    "frame-ancestors 'none'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: https:",

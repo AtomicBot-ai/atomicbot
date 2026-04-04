@@ -147,7 +147,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
             <SetupModePage
               totalSteps={PAID_FLOW.totalSteps}
               activeStep={PAID_FLOW.steps.auth}
-              showLocalModel={isMac}
+              localModelComingSoon={!isMac}
               onSelect={(mode) => {
                 if (mode === "paid") {
                   setFlow("paid");

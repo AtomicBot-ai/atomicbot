@@ -88,6 +88,7 @@ const BASE_RELOAD_RULES_TAIL: ReloadRule[] = [
   { prefix: "bindings", kind: "none" },
   { prefix: "audio", kind: "none" },
   { prefix: "agent", kind: "none" },
+  { prefix: "auth", kind: "none" },
   { prefix: "routing", kind: "none" },
   { prefix: "messages", kind: "none" },
   { prefix: "session", kind: "none" },

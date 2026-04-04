@@ -11,16 +11,16 @@ const TERMINAL_SIDEBAR_EVENT = "terminal-sidebar-changed";
 export function useTerminalSidebarVisible(): [boolean, (v: boolean) => void] {
   const [visible, setVisible] = React.useState(() => {
     try {
-      return localStorage.getItem(TERMINAL_SIDEBAR_KEY) === "1";
+      return localStorage.getItem(TERMINAL_SIDEBAR_KEY) !== "0";
     } catch {
-      return false;
+      return true;
     }
   });
 
   React.useEffect(() => {
     const handler = () => {
       try {
-        setVisible(localStorage.getItem(TERMINAL_SIDEBAR_KEY) === "1");
+        setVisible(localStorage.getItem(TERMINAL_SIDEBAR_KEY) !== "0");
       } catch {
         // ignore
       }
