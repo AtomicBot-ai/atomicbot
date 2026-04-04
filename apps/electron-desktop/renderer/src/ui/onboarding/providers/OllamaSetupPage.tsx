@@ -1,28 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 
 import { GlassCard, HeroPageLayout, PrimaryButton, SecondaryButton, TextInput } from "@shared/kit";
 import { OnboardingHeader } from "@ui/onboarding/OnboardingHeader";
 import { useOnboardingStepEvent } from "@analytics/use-onboarding-step-event";
+import {
+  useOllamaConnection,
+  OLLAMA_DEFAULT_BASE_URL,
+  OLLAMA_SETUP_STEPS,
+  type OllamaMode,
+} from "@shared/hooks/useOllamaConnection";
 
-export type OllamaMode = "local" | "cloud";
+export type { OllamaMode };
 
-const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
 const OLLAMA_SETUP_STEPS_HEIGHT = 84;
-const OLLAMA_SETUP_STEPS: Record<OllamaMode, string[]> = {
-  local: [
-    "Download Ollama from ollama.com",
-    "Launch it and download an AI model",
-    "Test the connection and start using it in Atomic Bot",
-  ],
-  cloud: [
-    "Download Ollama from ollama.com",
-    "Launch it and download an AI model",
-    "Create an API key in your Ollama Dashboard",
-    "Paste it below and start using it in Atomic Bot",
-  ],
-};
-
-type ConnectionStatus = "idle" | "testing" | "ok" | "error";
 
 export function OllamaSetupPage(props: {
   totalSteps: number;
@@ -33,46 +23,17 @@ export function OllamaSetupPage(props: {
   onBack: () => void;
 }) {
   useOnboardingStepEvent("api_key", "self-managed");
-  const [mode, setMode] = useState<OllamaMode>("local");
-  const [baseUrl, setBaseUrl] = useState(OLLAMA_DEFAULT_BASE_URL);
-  const [apiKey, setApiKey] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
-  const [connectionError, setConnectionError] = useState("");
 
-  const testConnection = React.useCallback(async () => {
-    setConnectionStatus("testing");
-    setConnectionError("");
-    const normalizedUrl = baseUrl.trim().replace(/\/+$/, "");
-    try {
-      const headers: Record<string, string> = {};
-      if (mode === "cloud" && apiKey.trim()) {
-        headers.Authorization = `Bearer ${apiKey.trim()}`;
-      }
-      const res = await fetch(`${normalizedUrl}/api/tags`, {
-        headers,
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) {
-        setConnectionStatus("ok");
-      } else {
-        setConnectionStatus("error");
-        setConnectionError(`HTTP ${res.status}`);
-      }
-    } catch (err) {
-      setConnectionStatus("error");
-      const msg = err instanceof Error ? err.message : String(err);
-      setConnectionError(msg.includes("abort") ? "Connection timed out" : msg);
-    }
-  }, [baseUrl, apiKey, mode]);
+  const conn = useOllamaConnection();
 
   const handleSubmit = React.useCallback(() => {
-    const normalizedUrl = baseUrl.trim().replace(/\/+$/, "") || OLLAMA_DEFAULT_BASE_URL;
-    const key = mode === "cloud" ? apiKey.trim() : "ollama-local";
-    props.onSubmit({ baseUrl: normalizedUrl, apiKey: key, mode });
-  }, [baseUrl, apiKey, mode, props]);
+    const normalizedUrl = conn.baseUrl.trim().replace(/\/+$/, "") || OLLAMA_DEFAULT_BASE_URL;
+    const key = conn.mode === "cloud" ? conn.apiKey.trim() : "ollama-local";
+    props.onSubmit({ baseUrl: normalizedUrl, apiKey: key, mode: conn.mode });
+  }, [conn.baseUrl, conn.apiKey, conn.mode, props]);
 
-  const canSubmit = mode === "local" || apiKey.trim().length > 0;
-  const isBusy = props.busy || connectionStatus === "testing";
+  const canSubmit = conn.mode === "local" || conn.apiKey.trim().length > 0;
+  const isBusy = props.busy || conn.connectionStatus === "testing";
 
   return (
     <HeroPageLayout variant="compact" align="center" aria-label="Ollama setup" context="onboarding">
@@ -98,16 +59,16 @@ export function OllamaSetupPage(props: {
         >
           <button
             type="button"
-            className={`UiAuthModeBtn ${mode === "local" ? "UiAuthModeBtn--active" : ""}`}
-            onClick={() => setMode("local")}
+            className={`UiAuthModeBtn ${conn.mode === "local" ? "UiAuthModeBtn--active" : ""}`}
+            onClick={() => conn.setMode("local")}
             disabled={isBusy}
           >
             Local
           </button>
           <button
             type="button"
-            className={`UiAuthModeBtn ${mode === "cloud" ? "UiAuthModeBtn--active" : ""}`}
-            onClick={() => setMode("cloud")}
+            className={`UiAuthModeBtn ${conn.mode === "cloud" ? "UiAuthModeBtn--active" : ""}`}
+            onClick={() => conn.setMode("cloud")}
             disabled={isBusy}
           >
             Cloud + Local
@@ -126,18 +87,15 @@ export function OllamaSetupPage(props: {
             lineHeight: "16px",
           }}
         >
-          {OLLAMA_SETUP_STEPS[mode].map((step) => (
+          {OLLAMA_SETUP_STEPS[conn.mode].map((step) => (
             <li key={step}>{step}</li>
           ))}
         </ol>
 
         <div className="UiApiKeyInputRow">
           <TextInput
-            value={baseUrl}
-            onChange={(v) => {
-              setBaseUrl(v);
-              setConnectionStatus("idle");
-            }}
+            value={conn.baseUrl}
+            onChange={conn.setBaseUrl}
             placeholder={OLLAMA_DEFAULT_BASE_URL}
             autoCapitalize="none"
             autoCorrect="off"
@@ -147,12 +105,12 @@ export function OllamaSetupPage(props: {
           />
         </div>
 
-        {mode === "cloud" && (
+        {conn.mode === "cloud" && (
           <div className="UiApiKeyInputRow">
             <TextInput
               type="password"
-              value={apiKey}
-              onChange={setApiKey}
+              value={conn.apiKey}
+              onChange={conn.setApiKey}
               placeholder="ollama-api-key..."
               autoCapitalize="none"
               autoCorrect="off"
@@ -167,7 +125,7 @@ export function OllamaSetupPage(props: {
           className="UiApiKeySubtitle"
           style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
         >
-          {connectionStatus !== "idle" && (
+          {conn.connectionStatus !== "idle" && (
             <>
               <span
                 style={{
@@ -176,17 +134,18 @@ export function OllamaSetupPage(props: {
                   borderRadius: "50%",
                   flexShrink: 0,
                   background:
-                    connectionStatus === "ok"
+                    conn.connectionStatus === "ok"
                       ? "#22c55e"
-                      : connectionStatus === "error"
+                      : conn.connectionStatus === "error"
                         ? "#ef4444"
                         : "rgba(255,255,255,0.3)",
                 }}
               />
               <span>
-                {connectionStatus === "testing" && "Testing connection..."}
-                {connectionStatus === "ok" && "Connected to Ollama"}
-                {connectionStatus === "error" && `Connection failed: ${connectionError}`}
+                {conn.connectionStatus === "testing" && "Testing connection..."}
+                {conn.connectionStatus === "ok" && "Connected to Ollama"}
+                {conn.connectionStatus === "error" &&
+                  `Connection failed: ${conn.connectionError}`}
               </span>
             </>
           )}
@@ -199,10 +158,10 @@ export function OllamaSetupPage(props: {
           <div className="flex-row-center">
             <SecondaryButton
               size="sm"
-              disabled={isBusy || !baseUrl.trim()}
-              onClick={() => void testConnection()}
+              disabled={isBusy || !conn.baseUrl.trim()}
+              onClick={() => void conn.testConnection()}
             >
-              {connectionStatus === "testing" ? "Testing..." : "Test Connection"}
+              {conn.connectionStatus === "testing" ? "Testing..." : "Test Connection"}
             </SecondaryButton>
             <PrimaryButton
               size="sm"

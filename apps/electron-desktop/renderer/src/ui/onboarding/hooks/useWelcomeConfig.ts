@@ -2,7 +2,7 @@ import React from "react";
 import { errorToMessage } from "@shared/toast";
 import type { GatewayState } from "@main/types";
 import type { ConfigSnapshot, GatewayRpcLike } from "./types";
-import { getObject, inferWorkspaceDirFromConfigPath } from "./utils";
+import { getObject, inferWorkspaceDirFromConfigPath } from "./onboarding-config-helpers";
 
 type UseWelcomeConfigInput = {
   gw: GatewayRpcLike;

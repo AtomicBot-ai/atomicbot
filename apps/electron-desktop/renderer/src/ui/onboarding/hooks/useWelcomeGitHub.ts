@@ -1,7 +1,7 @@
 import React from "react";
 import { getDesktopApi } from "@ipc/desktopApi";
 import type { AsyncRunner, ConfigSnapshot, GatewayRpcLike, SkillId } from "./types";
-import { getObject, getStringArray, unique } from "./utils";
+import { getObject, getStringArray, unique } from "./onboarding-config-helpers";
 
 type UseWelcomeGitHubInput = {
   gw: GatewayRpcLike;

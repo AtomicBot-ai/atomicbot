@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { getObject, getStringArray, inferWorkspaceDirFromConfigPath, unique } from "./utils";
+import { getObject, getStringArray, inferWorkspaceDirFromConfigPath, unique } from "./onboarding-config-helpers";
 
 // ── getObject ──────────────────────────────────────────────────────────────────
 

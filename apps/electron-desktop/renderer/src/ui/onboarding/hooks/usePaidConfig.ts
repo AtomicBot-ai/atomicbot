@@ -2,7 +2,7 @@ import React from "react";
 import type { ConfigSnapshot, GatewayRpcLike, ModelsListResult } from "./types";
 import type { ModelEntry } from "@shared/models/modelPresentation";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
-import { getObject } from "./utils";
+import { getObject } from "./onboarding-config-helpers";
 import { loadExtraModels, mergeExtraModels } from "@shared/models/merge-extra-models";
 
 type PaidConfigInput = {

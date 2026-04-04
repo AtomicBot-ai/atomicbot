@@ -8,7 +8,7 @@ import type {
   UiToolCall,
   UiToolResult,
 } from "./chat-types";
-import { isApprovalContinueMessage, isHeartbeatMessage } from "./chat-utils";
+import { isApprovalContinueMessage, isHeartbeatMessage } from "./parse-history-messages";
 
 export type { ChatSliceState, UiMessage, UiToolCall, UiToolResult, LiveToolCall };
 export type { UiMessageAttachment, GatewayRequest, ChatAttachmentInput } from "./chat-types";
@@ -23,7 +23,7 @@ export {
   normalizeMessageText,
   parseHistoryMessages,
   parseRole,
-} from "./chat-utils";
+} from "./parse-history-messages";
 
 
 const initialState: ChatSliceState = {

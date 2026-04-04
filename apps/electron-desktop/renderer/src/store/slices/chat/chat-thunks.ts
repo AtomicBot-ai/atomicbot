@@ -7,7 +7,7 @@ import type {
   GatewayRequest,
   UiMessageAttachment,
 } from "./chat-types";
-import { dataUrlToBase64, parseHistoryMessages } from "./chat-utils";
+import { dataUrlToBase64, parseHistoryMessages } from "./parse-history-messages";
 import { chatActions } from "./chatSlice";
 import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 

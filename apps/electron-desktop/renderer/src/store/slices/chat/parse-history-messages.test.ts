@@ -12,7 +12,7 @@ import {
   isApprovalContinueMessage,
   isHeartbeatMessage,
   parseHistoryMessages,
-} from "./chat-utils";
+} from "./parse-history-messages";
 
 // ── dataUrlToBase64 ─────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { errorToMessage } from "@shared/toast";
 import type { ChannelsStatusResult, ConfigSnapshot, GatewayRpcLike } from "./types";
-import { getObject, getStringArray, unique } from "./utils";
+import { getObject, getStringArray, unique } from "./onboarding-config-helpers";
 
 type ConnectionStatus = "connect" | "connected";
 

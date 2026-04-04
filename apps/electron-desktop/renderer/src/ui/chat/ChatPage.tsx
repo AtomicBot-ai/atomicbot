@@ -60,7 +60,6 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const composerRef = React.useRef<ChatComposerRef | null>(null);
 
   const scrollToBottom = React.useCallback((behavior: ScrollBehavior = "smooth") => {
-    console.log(behavior, "behavior");
     const el = scrollRef.current;
     if (!el) {
       return;

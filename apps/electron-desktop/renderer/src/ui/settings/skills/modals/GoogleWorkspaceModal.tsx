@@ -5,6 +5,8 @@ import { DESKTOP_API_UNAVAILABLE, getDesktopApiOrNull } from "@ipc/desktopApi";
 import { ActionButton, TextInput } from "@shared/kit";
 import { errorToMessage } from "@shared/toast";
 import { openExternal } from "@shared/utils/openExternal";
+import { useGogCredentialsForm } from "./useGogCredentialsForm";
+import { useGogConnectedAccounts } from "./useGogConnectedAccounts";
 
 const DEFAULT_GOG_SERVICES = "gmail,calendar,drive,docs,sheets,contacts";
 const GOOGLE_CLOUD_CONSOLE_URL = "https://console.cloud.google.com/apis/credentials";
@@ -19,38 +21,6 @@ type GogExecResult = {
   stdout: string;
   stderr: string;
 };
-
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsText(file);
-  });
-}
-
-function parseEmailsFromAuthList(stdout: string): string[] {
-  const text = (stdout || "").trim();
-  if (!text) return [];
-
-  // Try JSON format first (gogAuthList --json)
-  try {
-    const parsed = JSON.parse(text) as { accounts?: unknown };
-    const accounts = Array.isArray(parsed.accounts) ? parsed.accounts : [];
-    const emails = accounts
-      .map((a) => (a && typeof a === "object" ? (a as { email?: unknown }).email : undefined))
-      .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-      .map((v) => v.trim());
-    if (emails.length > 0) return emails;
-  } catch {
-    // Not JSON — fall through to line-based parsing.
-  }
-
-  // Plain text: extract email-like tokens from each line
-  const emailRe = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
-  const found = text.match(emailRe);
-  return found ? [...new Set(found)] : [];
-}
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -78,42 +48,10 @@ export function GoogleWorkspaceModalContent(props: {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | undefined>();
   const [errorText, setErrorText] = React.useState("");
-  const [credentialsJson, setCredentialsJson] = React.useState("");
-  const [credentialsBusy, setCredentialsBusy] = React.useState(false);
-  const [credentialsError, setCredentialsError] = React.useState<string | null>(null);
-  const [credentialsSet, setCredentialsSet] = React.useState(props.isConnected);
-  const [showCredentials, setShowCredentials] = React.useState(!props.isConnected);
-  const [connectedEmails, setConnectedEmails] = React.useState<string[]>([]);
   const [showConnectForm, setShowConnectForm] = React.useState(!props.isConnected);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
-    if (!props.isConnected) {
-      return;
-    }
-    const api = getDesktopApiOrNull();
-    if (!api) {
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await api.gogAuthList();
-        if (cancelled) {
-          return;
-        }
-        if (res.ok && res.stdout?.trim()) {
-          const emails = parseEmailsFromAuthList(res.stdout);
-          setConnectedEmails(emails);
-        }
-      } catch {
-        // Best-effort.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [props.isConnected]);
+  const credentials = useGogCredentialsForm(props.isConnected);
+  const { connectedEmails } = useGogConnectedAccounts(props.isConnected);
 
   const runGog = React.useCallback(async (fn: () => Promise<GogExecResult>) => {
     setError(undefined);
@@ -130,43 +68,6 @@ export function GoogleWorkspaceModalContent(props: {
     } finally {
       setBusy(false);
     }
-  }, []);
-
-  const handleSetCredentials = React.useCallback(async () => {
-    const trimmed = credentialsJson.trim();
-    if (!trimmed) return;
-    const api = getDesktopApiOrNull();
-    if (!api) {
-      setCredentialsError(DESKTOP_API_UNAVAILABLE);
-      return;
-    }
-    setCredentialsError(null);
-    setCredentialsBusy(true);
-    try {
-      const res = await api.gogAuthCredentials({ credentialsJson: trimmed });
-      if (res.ok) {
-        setCredentialsSet(true);
-        setShowCredentials(false);
-      } else {
-        setCredentialsError(res.stderr?.trim() || "Failed to set credentials");
-      }
-    } catch (err) {
-      setCredentialsError(errorToMessage(err));
-    } finally {
-      setCredentialsBusy(false);
-    }
-  }, [credentialsJson]);
-
-  const handleFilePick = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await readFileAsText(file);
-      setCredentialsJson(text);
-    } catch {
-      // Best-effort.
-    }
-    e.target.value = "";
   }, []);
 
   const handleConnect = React.useCallback(async () => {
@@ -217,15 +118,15 @@ export function GoogleWorkspaceModalContent(props: {
         locally.
       </div>
 
-      <details open={showCredentials || undefined}>
+      <details open={credentials.showCredentials || undefined}>
         <summary
           style={{ cursor: "pointer", fontSize: "13px", fontWeight: 600, marginTop: "12px" }}
           onClick={(e) => {
             e.preventDefault();
-            setShowCredentials((prev) => !prev);
+            credentials.toggleShowCredentials();
           }}
         >
-          {credentialsSet ? "Update OAuth credentials" : "Set OAuth credentials"}
+          {credentials.credentialsSet ? "Update OAuth credentials" : "Set OAuth credentials"}
         </summary>
         <div style={{ marginTop: "8px" }}>
           <ol
@@ -276,11 +177,11 @@ export function GoogleWorkspaceModalContent(props: {
           </ol>
           <textarea
             className="UiTextarea"
-            value={credentialsJson}
-            onChange={(e) => setCredentialsJson(e.target.value)}
+            value={credentials.credentialsJson}
+            onChange={(e) => credentials.setCredentialsJson(e.target.value)}
             placeholder="Paste your client_secret.json contents here..."
             rows={5}
-            disabled={credentialsBusy}
+            disabled={credentials.credentialsBusy}
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -295,27 +196,27 @@ export function GoogleWorkspaceModalContent(props: {
             }}
           />
           <input
-            ref={fileInputRef}
+            ref={credentials.fileInputRef}
             type="file"
             accept=".json,application/json"
             style={{ display: "none" }}
-            onChange={(e) => void handleFilePick(e)}
+            onChange={(e) => void credentials.handleFilePick(e)}
           />
-          {credentialsError && (
+          {credentials.credentialsError && (
             <div className="UiErrorText" style={{ marginTop: "4px" }}>
-              {credentialsError}
+              {credentials.credentialsError}
             </div>
           )}
           <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-            <ActionButton disabled={credentialsBusy} onClick={() => fileInputRef.current?.click()}>
+            <ActionButton disabled={credentials.credentialsBusy} onClick={() => credentials.fileInputRef.current?.click()}>
               Choose File
             </ActionButton>
             <ActionButton
               variant="primary"
-              disabled={credentialsBusy || !credentialsJson.trim()}
-              onClick={() => void handleSetCredentials()}
+              disabled={credentials.credentialsBusy || !credentials.credentialsJson.trim()}
+              onClick={() => void credentials.handleSetCredentials()}
             >
-              {credentialsBusy ? "Setting..." : "Set Credentials"}
+              {credentials.credentialsBusy ? "Setting..." : "Set Credentials"}
             </ActionButton>
           </div>
         </div>
@@ -340,7 +241,7 @@ export function GoogleWorkspaceModalContent(props: {
         </div>
       )}
 
-      {credentialsSet && !showConnectForm && props.isConnected && (
+      {credentials.credentialsSet && !showConnectForm && props.isConnected && (
         <div style={{ marginTop: "8px" }}>
           <ActionButton onClick={() => setShowConnectForm(true)}>
             Setup another email
@@ -348,7 +249,7 @@ export function GoogleWorkspaceModalContent(props: {
         </div>
       )}
 
-      {credentialsSet && showConnectForm && (
+      {credentials.credentialsSet && showConnectForm && (
         <div className={sm.UiSkillModalField} style={{ marginTop: "16px" }}>
           <label className={sm.UiSkillModalLabel}>Google account email</label>
           <TextInput

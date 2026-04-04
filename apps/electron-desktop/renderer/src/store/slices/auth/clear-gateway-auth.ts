@@ -4,7 +4,7 @@
  */
 import type { DesktopApi } from "@ipc/desktopApi";
 import type { ConfigSnapshot } from "./auth-types";
-import { getBaseHash } from "./auth-utils";
+import { getBaseHash } from "./auth-slice-helpers";
 
 type RequestFn = <T = unknown>(method: string, params?: unknown) => Promise<T>;
 

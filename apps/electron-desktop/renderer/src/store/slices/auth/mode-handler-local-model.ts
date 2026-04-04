@@ -6,7 +6,7 @@
  * Server start and model selection happen separately in the UI (handleSelect).
  */
 import type { ModeHandler, SwitchContext, ModeSetupResult } from "./mode-switch";
-import { clearGatewayAuth } from "./mode-switch-utils";
+import { clearGatewayAuth } from "./clear-gateway-auth";
 import {
   readLocalModelBackup,
   saveLocalModelBackup,

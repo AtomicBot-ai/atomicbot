@@ -11,7 +11,6 @@ import type { NavigateFunction } from "react-router-dom";
 import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
 import {
-  storeAuthToken,
   authActions,
   fetchAutoTopUpSettings,
   fetchDesktopStatus,
@@ -20,8 +19,7 @@ import {
 import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";
 import { setOnboarded } from "@store/slices/onboardingSlice";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
-import { backendApi, type SubscriptionPriceInfo } from "@ipc/backendApi";
-import { openExternal } from "@shared/utils/openExternal";
+import { backendApi } from "@ipc/backendApi";
 import { useDeepLinkAuth } from "@shared/hooks/useDeepLinkAuth";
 import { persistDesktopMode } from "../../shared/persistMode";
 import { addToastError } from "@shared/toast";
@@ -31,8 +29,9 @@ import { routes } from "../../app/routes";
 import { usePaidNavigation } from "./usePaidNavigation";
 import { usePaidConfig } from "./usePaidConfig";
 import { useSharedOnboardingSkills } from "./useSharedOnboardingSkills";
+import { usePaidGoogleAuth } from "./usePaidGoogleAuth";
+import { usePaidCheckout } from "./usePaidCheckout";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://api.atomicbot.ai";
 type BackendKeys = { openrouterApiKey: string | null; openaiApiKey: string | null };
 
 type PaidOnboardingInput = {
@@ -48,16 +47,6 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
 
   const [selectedModel, setSelectedModel] = React.useState<string | null>(null);
   const [selectedModelName, setSelectedModelName] = React.useState<string | null>(null);
-  const [authBusy, setAuthBusy] = React.useState(false);
-  const [authError, setAuthError] = React.useState<string | null>(null);
-  const [payBusy, setPayBusy] = React.useState(false);
-  const [payError, setPayError] = React.useState<string | null>(null);
-  const [paymentPending, setPaymentPending] = React.useState(false);
-  const [alreadySubscribed, setAlreadySubscribed] = React.useState(false);
-
-  const [subscriptionPrice, setSubscriptionPrice] = React.useState<SubscriptionPriceInfo | null>(
-    null
-  );
 
   const [skillStatus, setSkillStatus] = React.useState<string | null>(null);
   const [skillError, setSkillErrorState] = React.useState<string | null>(null);
@@ -73,6 +62,17 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
   const { refreshProviderFlags, loadConfig, savePlaceholderOpenRouterKey, loadModels } = config;
   const { models, saveDefaultModel } = config;
   const { goPaidModelSelect, goPaidSkills, goSetupReview, goSuccess } = nav;
+
+  const checkout = usePaidCheckout(jwt);
+
+  const onAuthSuccess = React.useCallback(async () => {
+    await savePlaceholderOpenRouterKey();
+    void checkout.loadSubscriptionPrice();
+    await loadModels();
+    goPaidModelSelect();
+  }, [savePlaceholderOpenRouterKey, checkout.loadSubscriptionPrice, loadModels, goPaidModelSelect]);
+
+  const googleAuth = usePaidGoogleAuth({ onAuthSuccess });
 
   const goPaidMediaUnderstanding = React.useCallback(() => {
     void refreshProviderFlags();
@@ -96,15 +96,6 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
   });
 
   // ── Flow handlers ──
-
-  const loadSubscriptionPrice = React.useCallback(async () => {
-    try {
-      const info = await backendApi.getSubscriptionInfo();
-      setSubscriptionPrice(info);
-    } catch {
-      // Non-critical: UI will show a fallback price
-    }
-  }, []);
 
   const onStartChat = React.useCallback(
     async (keys: BackendKeys | null) => {
@@ -151,45 +142,6 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
     [dispatch, gw, loadConfig, navigate]
   );
 
-  const onGoogleAuthSuccess = React.useCallback(
-    async (params: { jwt: string; email: string; userId: string; isNewUser: boolean }) => {
-      try {
-        await dispatch(storeAuthToken(params));
-
-        try {
-          const status = await backendApi.getStatus(params.jwt);
-          if (status.subscription && status.hasKey) {
-            setAlreadySubscribed(true);
-          }
-        } catch {
-          // Status check failed — continue with normal onboarding flow
-        }
-
-        await savePlaceholderOpenRouterKey();
-        void loadSubscriptionPrice();
-        await loadModels();
-        goPaidModelSelect();
-      } catch (err) {
-        setAuthError(String(err));
-      } finally {
-        setAuthBusy(false);
-      }
-    },
-    [dispatch, savePlaceholderOpenRouterKey, loadSubscriptionPrice, loadModels, goPaidModelSelect]
-  );
-
-  const startGoogleAuth = React.useCallback(async () => {
-    setAuthError(null);
-    setAuthBusy(true);
-    try {
-      const url = `${BACKEND_URL}/auth/google/desktop`;
-      openExternal(url);
-    } catch (err) {
-      setAuthError(String(err));
-      setAuthBusy(false);
-    }
-  }, []);
-
   const onPaidModelSelect = React.useCallback(
     async (modelId: string) => {
       setSelectedModel(modelId);
@@ -203,7 +155,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
   );
 
   const onPaidConnectionsContinue = React.useCallback(async () => {
-    if (alreadySubscribed && jwt) {
+    if (googleAuth.alreadySubscribed && jwt) {
       try {
         const keys = await backendApi.getKeys(jwt);
         await onStartChat(keys);
@@ -213,29 +165,7 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
       return;
     }
     goSetupReview();
-  }, [alreadySubscribed, goSetupReview, jwt, onStartChat]);
-
-  const onPay = React.useCallback(async () => {
-    if (!jwt) {
-      setPayError("Not authenticated");
-      return;
-    }
-
-    setPayBusy(true);
-    setPayError(null);
-
-    try {
-      const result = await backendApi.createSetupCheckout(jwt, {});
-
-      openExternal(result.checkoutUrl);
-
-      setPaymentPending(true);
-    } catch (err) {
-      setPayError(String(err));
-    } finally {
-      setPayBusy(false);
-    }
-  }, [jwt]);
+  }, [googleAuth.alreadySubscribed, goSetupReview, jwt, onStartChat]);
 
   React.useEffect(() => {
     if (!jwt || autoTopUpLoaded || autoTopUpLoading) {
@@ -258,12 +188,9 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
 
   useDeepLinkAuth({
     onAuth: (params) => {
-      void onGoogleAuthSuccess(params);
+      void googleAuth.onGoogleAuthSuccess(params);
     },
-    onAuthError: () => {
-      setAuthError("Authentication failed — missing token data");
-      setAuthBusy(false);
-    },
+    onAuthError: googleAuth.onAuthError,
     onStripeSuccess: () => {
       void dispatch(fetchDesktopStatus()).finally(() => {
         dispatch(upgradePaywallActions.close());
@@ -275,15 +202,21 @@ export function usePaidOnboarding({ navigate }: PaidOnboardingInput) {
   return {
     // ── Domain-grouped properties (used directly by WelcomePage routes) ──
 
-    auth: { jwt, busy: authBusy, error: authError, startGoogleAuth, alreadySubscribed },
+    auth: {
+      jwt,
+      busy: googleAuth.authBusy,
+      error: googleAuth.authError,
+      startGoogleAuth: googleAuth.startGoogleAuth,
+      alreadySubscribed: googleAuth.alreadySubscribed,
+    },
     pay: {
-      busy: payBusy,
-      error: payError,
-      pending: paymentPending,
-      cancelPending: React.useCallback(() => setPaymentPending(false), []),
-      onPay,
-      subscriptionPrice,
-      loadSubscriptionPrice,
+      busy: checkout.payBusy,
+      error: checkout.payError,
+      pending: checkout.paymentPending,
+      cancelPending: checkout.cancelPending,
+      onPay: checkout.onPay,
+      subscriptionPrice: checkout.subscriptionPrice,
+      loadSubscriptionPrice: checkout.loadSubscriptionPrice,
     },
     model: {
       selected: selectedModel,

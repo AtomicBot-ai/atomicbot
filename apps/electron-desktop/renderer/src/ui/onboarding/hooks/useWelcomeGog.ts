@@ -3,7 +3,7 @@ import { getDesktopApi } from "@ipc/desktopApi";
 import { errorToMessage } from "@shared/toast";
 import { DEFAULT_GOG_SERVICES } from "./constants";
 import type { ConfigSnapshot, GatewayRpcLike, GogExecResult } from "./types";
-import { getObject, getStringArray, unique } from "./utils";
+import { getObject, getStringArray, unique } from "./onboarding-config-helpers";
 
 type UseWelcomeGogInput = {
   gw: GatewayRpcLike;

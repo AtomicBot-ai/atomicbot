@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { HashRouter } from "react-router-dom";
 import { App } from "./ui/app/App";
+import { ErrorBoundary } from "./ui/app/ErrorBoundary";
 import { Toaster } from "./ui/shared/Toaster";
 import { WhatsNewModal } from "./ui/updates/WhatsNewModal";
 import { BannerProvider } from "./ui/shared/banners/BannerContext";
@@ -28,7 +29,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Provider store={store}>
       <HashRouter>
         <BannerProvider>
-          <App />
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
           <Toaster />
           <WhatsNewModal />
         </BannerProvider>

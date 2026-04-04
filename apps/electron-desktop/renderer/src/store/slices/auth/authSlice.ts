@@ -28,7 +28,7 @@ import {
   getBaseHash,
   normalizeAutoTopUpSettings,
   resetAuthFields,
-} from "./auth-utils";
+} from "./auth-slice-helpers";
 
 export type { SetupMode, AutoTopUpState, AuthSliceState, AuthRefreshReason } from "./auth-types";
 export { persistMode } from "./auth-persistence";

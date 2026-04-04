@@ -4,7 +4,7 @@
  */
 import { backendApi } from "@ipc/backendApi";
 import type { ModeHandler, SwitchContext, ModeSetupResult } from "./mode-switch";
-import { clearGatewayAuth } from "./mode-switch-utils";
+import { clearGatewayAuth } from "./clear-gateway-auth";
 import type { ConfigSnapshot, PaidBackup } from "./auth-types";
 import {
   readPersistedAuthToken,
@@ -12,7 +12,7 @@ import {
   savePaidBackup,
   clearPaidBackup,
 } from "./auth-persistence";
-import { extractAuth, extractModel, getBaseHash } from "./auth-utils";
+import { extractAuth, extractModel, getBaseHash } from "./auth-slice-helpers";
 
 export const paidHandler: ModeHandler = {
   async saveBackup(ctx: SwitchContext): Promise<void> {

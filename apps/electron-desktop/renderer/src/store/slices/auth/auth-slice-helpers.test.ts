@@ -11,7 +11,7 @@ import {
   getBaseHash,
   normalizeAutoTopUpSettings,
   resetAuthFields,
-} from "./auth-utils";
+} from "./auth-slice-helpers";
 
 // ── extractAuth ─────────────────────────────────────────────────────────────
 

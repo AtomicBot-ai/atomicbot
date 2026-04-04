@@ -3,10 +3,10 @@
  * Backs up credentials + config; restores from self-managed backup on setup.
  */
 import type { ModeHandler, SwitchContext, ModeSetupResult } from "./mode-switch";
-import { clearGatewayAuth } from "./mode-switch-utils";
+import { clearGatewayAuth } from "./clear-gateway-auth";
 import type { ConfigSnapshot, SelfManagedBackup } from "./auth-types";
 import { readBackup, saveBackup, clearBackup } from "./auth-persistence";
-import { extractAuth, extractModel, getBaseHash } from "./auth-utils";
+import { extractAuth, extractModel, getBaseHash } from "./auth-slice-helpers";
 
 export const selfManagedHandler: ModeHandler = {
   async saveBackup(ctx: SwitchContext): Promise<void> {
