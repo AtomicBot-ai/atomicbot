@@ -11,6 +11,8 @@ import { getDesktopApiOrNull } from "@ipc/desktopApi";
 const SERVER_POLL_INTERVAL_MS = 2_000;
 const SERVER_POLL_MAX_ATTEMPTS = 60;
 const WARMUP_TIMEOUT_MS = 180_000;
+const MAX_WARMUP_RETRIES = 5;
+const WARMUP_RETRY_DELAY_MS = 3_000;
 
 /**
  * Triggers a KV-cache warmup for local llama.cpp models.
@@ -31,6 +33,7 @@ export function useLocalModelWarmup(): void {
   const warmupStatus = useAppSelector((s) => s.llamacpp.warmupStatus);
   const warmupSessionKey = useAppSelector((s) => s.llamacpp.warmupSessionKey);
   const triggeredRef = React.useRef(false);
+  const warmupRetryRef = React.useRef(0);
 
   // Phase 1: check main process warmup state (survives Cmd+R)
   React.useEffect(() => {
@@ -56,6 +59,7 @@ export function useLocalModelWarmup(): void {
   React.useEffect(() => {
     if (authMode !== "local-model" || warmupStatus === "idle") {
       triggeredRef.current = false;
+      warmupRetryRef.current = 0;
     }
   }, [authMode, warmupStatus]);
 
@@ -176,15 +180,27 @@ export function useLocalModelWarmup(): void {
       }
 
       if (payload.state === "error" || payload.state === "aborted") {
-        console.warn("[warmup] run failed, state:", payload.state);
         clearTimeout(timeout);
         unsubscribe();
-        dispatch(llamacppActions.setWarmupStatus("error"));
-        const api = getDesktopApiOrNull();
-        void api?.llamacppWarmupSet?.({ state: "idle", modelId: null });
         void gw
           .request("sessions.delete", { key: currentKey })
           .catch((err) => console.warn("[warmup] sessions.delete (run error):", err));
+
+        const retryCount = warmupRetryRef.current;
+        if (retryCount < MAX_WARMUP_RETRIES) {
+          warmupRetryRef.current = retryCount + 1;
+          console.warn(
+            `[warmup] run failed (state=${payload.state}), scheduling retry ${retryCount + 1}/${MAX_WARMUP_RETRIES}`
+          );
+          setTimeout(() => {
+            void dispatch(warmupLocalModel(gw.request));
+          }, WARMUP_RETRY_DELAY_MS);
+        } else {
+          console.warn("[warmup] run failed, max retries exhausted");
+          dispatch(llamacppActions.setWarmupStatus("error"));
+          const api = getDesktopApiOrNull();
+          void api?.llamacppWarmupSet?.({ state: "idle", modelId: null });
+        }
       }
     });
 
