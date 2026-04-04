@@ -28,7 +28,11 @@ import { registerTerminalIpcHandlers } from "../terminal/ipc";
 import { createTailBuffer, pickPort } from "../util/net";
 import { killUpdateSplash } from "../update-splash";
 import { readActiveModelId } from "../llamacpp/model-state";
-import { resolveServerBinPath, isBackendDownloaded } from "../llamacpp/backend-download";
+import {
+  resolveServerBinPath,
+  isBackendDownloaded,
+  downloadBackend,
+} from "../llamacpp/backend-download";
 import {
   getLlamacppModelDef,
   resolveLlamacppModelPath,
@@ -37,6 +41,7 @@ import {
 } from "../llamacpp/models";
 import { startLlamacppServer } from "../llamacpp/server";
 import { getSystemInfo, computeContextLength } from "../llamacpp/hardware";
+import { runLlamacppMigrations } from "../llamacpp/migrations";
 import { readOnboardedState } from "../onboarding-state";
 import { readSetupMode } from "../setup-mode-state";
 import { initAutoUpdater } from "../updater";
@@ -108,6 +113,7 @@ export async function bootstrapApp(params: {
   ensureGatewayConfigFile({ configPath, token });
   runConfigMigrations({ configPath, stateDir });
   runExecApprovalsMigrations({ stateDir });
+  const llamacppMigrationResult = runLlamacppMigrations({ stateDir, dataDir: llamacppDataDir });
 
   const rendererIndex = resolveRendererIndex({
     isPackaged: app.isPackaged,
@@ -244,6 +250,34 @@ export async function bootstrapApp(params: {
         } else {
           console.warn("[main] llama auto-start skipped: missing model or binary file");
         }
+      } else if (llamacppMigrationResult.backendDeleted && onboarded && setupMode === "local-model") {
+        console.log("[main] backend was removed by migration, re-downloading in background");
+        downloadBackend(llamacppDataDir)
+          .then(({ tag }) => {
+            console.log(`[main] backend re-downloaded after migration: ${tag}`);
+            if (!activeId) return;
+            const model = getLlamacppModelDef(activeId as LlamacppModelId);
+            const modelPath = resolveLlamacppModelPath(llamacppDataDir, model);
+            const binPath = resolveServerBinPath(llamacppDataDir);
+            if (!fs.existsSync(modelPath) || !fs.existsSync(binPath)) {
+              console.warn("[main] post-migration auto-start skipped: missing model or binary");
+              return;
+            }
+            const sysInfo = getSystemInfo();
+            const ctxLen = computeContextLength(sysInfo.totalRamGb, model);
+            const chatTemplateFile = resolveChatTemplatePath(model, {
+              isPackaged: app.isPackaged,
+              appPath: app.getAppPath(),
+            });
+            console.log(`[main] auto-starting llama-server after migration re-download (model=${activeId}, context=${ctxLen})`);
+            return startLlamacppServer(binPath, modelPath, {
+              contextLength: ctxLen,
+              modelId: activeId,
+              chatTemplateFile,
+              stateDir,
+            });
+          })
+          .catch((err) => console.error(`[main] backend re-download failed: ${String(err)}`));
       } else {
         console.log("[main] llama auto-start skipped: preconditions not met");
       }

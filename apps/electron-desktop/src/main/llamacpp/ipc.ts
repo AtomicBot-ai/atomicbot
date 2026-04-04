@@ -79,6 +79,33 @@ export function registerLlamacppIpcHandlers(params: LlamacppHandlerParams): void
         signal: abort.signal,
       });
       backendAbort = null;
+
+      // Restart the server if it was running so it picks up the new binary
+      const status = await getLlamacppServerStatus();
+      if (status.running) {
+        const activeModelId = (readActiveModelId(stateDir) ?? DEFAULT_LLAMACPP_MODEL_ID) as LlamacppModelId;
+        const model = getLlamacppModelDef(activeModelId);
+        const modelPath = resolveLlamacppModelPath(llamacppDataDir, model);
+        const binPath = resolveServerBinPath(llamacppDataDir);
+
+        if (fs.existsSync(modelPath) && fs.existsSync(binPath)) {
+          const sysInfo = getSystemInfo();
+          const ctxLen = computeContextLength(sysInfo.totalRamGb, model);
+          const chatTemplateFile = resolveChatTemplatePath(model, {
+            isPackaged: app.isPackaged,
+            appPath: app.getAppPath(),
+          });
+          console.log(`[llamacpp] restarting server after backend update (model=${activeModelId})`);
+          resetWarmupState();
+          await startLlamacppServer(binPath, modelPath, {
+            contextLength: ctxLen,
+            modelId: activeModelId,
+            chatTemplateFile,
+            stateDir,
+          });
+        }
+      }
+
       return { ok: true, tag: result.tag };
     } catch (err) {
       backendAbort = null;
