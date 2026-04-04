@@ -54,6 +54,25 @@ const REMINDER_CONTEXT_PER_MESSAGE_MAX = 220;
 const REMINDER_CONTEXT_TOTAL_MAX = 700;
 const REMINDER_CONTEXT_MARKER = "\n\nRecent context:\n";
 
+function nullableStringSchema(description: string) {
+  return Type.Optional(
+    Type.Unsafe<string | null>({
+      type: ["string", "null"],
+      description,
+    }),
+  );
+}
+
+function nullableStringArraySchema(description: string) {
+  return Type.Optional(
+    Type.Unsafe<string[] | null>({
+      type: ["array", "null"],
+      items: { type: "string" },
+      description,
+    }),
+  );
+}
+
 function cronPayloadObjectSchema(params: { toolsAllow: TSchema }) {
   return Type.Object(
     {
