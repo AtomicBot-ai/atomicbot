@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { errorToMessage } from "../../ui/shared/toast";
+import { errorToMessage } from "@lib/error-format";
 import type { GatewayRequest } from "./chat/chatSlice";
 
 /** Typed structure for openclaw config; allows other fields via index signature. */

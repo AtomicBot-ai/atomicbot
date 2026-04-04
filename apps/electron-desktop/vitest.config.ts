@@ -20,6 +20,7 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "renderer/src/ui/shared"),
       "@styles": path.resolve(__dirname, "renderer/src/ui/styles"),
       "@ui": path.resolve(__dirname, "renderer/src/ui"),
+      "@lib": path.resolve(__dirname, "renderer/src/lib"),
       "@analytics": path.resolve(__dirname, "renderer/src/analytics"),
     },
   },

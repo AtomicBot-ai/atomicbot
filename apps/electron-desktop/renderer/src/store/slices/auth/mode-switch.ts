@@ -9,7 +9,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import type { DesktopApi } from "@ipc/desktopApi";
-import { debugLog, debugWarn } from "../../../ui/shared/debug-log";
+import { debugLog, debugWarn } from "@lib/debug-log";
 import type { GatewayRequest } from "../chat/chatSlice";
 import type { SetupMode } from "./auth-types";
 import type { AppDispatch, RootState } from "../../store";

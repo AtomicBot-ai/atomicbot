@@ -1,10 +1,9 @@
 import React from "react";
 
 import sm from "./SkillModal.module.css";
-import { useSettingsSkillAdapter } from "./useSettingsSkillAdapter";
+import { useSkillModalState } from "./useSkillModalState";
 import { getDesktopApi, getDesktopApiOrNull } from "@ipc/desktopApi";
 import { ActionButton, InlineError, TextInput } from "@shared/kit";
-import { errorToMessage } from "@shared/toast";
 import { useWelcomeGitHub } from "@ui/onboarding/hooks/useWelcomeGitHub";
 import type { ConfigSnapshot, GatewayRpcLike } from "@ui/onboarding/hooks/types";
 
@@ -16,11 +15,9 @@ export function GitHubModalContent(props: {
   onDisabled: () => void;
 }) {
   const [pat, setPat] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<string | null>(null);
   const [ghUser, setGhUser] = React.useState<string | null>(null);
-  const { run, markSkillConnected, goSkills } = useSettingsSkillAdapter();
+  const { busy, error, status, setError, setStatus, run, markSkillConnected, goSkills, wrapAction } =
+    useSkillModalState();
 
   const { enableGitHub } = useWelcomeGitHub({
     gw: props.gw,
@@ -68,10 +65,8 @@ export function GitHubModalContent(props: {
   }, [props.isConnected]);
 
   const handleConnect = React.useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setStatus("Checking gh…");
-    try {
+    await wrapAction(async () => {
+      setStatus("Checking gh…");
       const api = getDesktopApi();
 
       const checkRes = await api.ghCheck();
@@ -105,13 +100,8 @@ export function GitHubModalContent(props: {
       if (ok) {
         props.onConnected();
       }
-    } catch (err) {
-      setError(errorToMessage(err));
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }, [enableGitHub, pat, props]);
+    });
+  }, [enableGitHub, pat, props, wrapAction, setStatus]);
 
   return (
     <div className={sm.UiSkillModalContent}>

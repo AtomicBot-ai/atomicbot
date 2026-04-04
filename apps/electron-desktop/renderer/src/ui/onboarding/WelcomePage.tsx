@@ -1,36 +1,24 @@
 import React from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
-import { clearAuth } from "@store/slices/auth/authSlice";
-import { switchMode } from "@store/slices/auth/mode-switch";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
-import { startLlamacppServer } from "@store/slices/llamacppSlice";
-import { applyLocalModelConfig } from "@store/slices/llamacpp-config";
-import { resetSessionModelSelection } from "@store/slices/session-model-reset";
-import { reloadConfig } from "@store/slices/configSlice";
 import type { GatewayState } from "@main/types";
 import { routes } from "../app/routes";
 import { useGatewayRpc } from "@gateway/context";
 import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
 import { addToastError } from "@shared/toast";
-import { ApiKeyPage } from "./providers/ApiKeyPage";
-import { OAuthProviderPage } from "./providers/OAuthProviderPage";
-import { OllamaSetupPage } from "./providers/OllamaSetupPage";
-import { SetupModePage } from "./providers/SetupModePage";
-import { LocalBackendSetupPage } from "./providers/LocalBackendSetupPage";
-import { LocalModelSelectPage } from "./providers/LocalModelSelectPage";
-import { ModelSelectPage } from "./providers/ModelSelectPage";
-import { ProviderSelectPage } from "./providers/ProviderSelectPage";
-import { SetupReviewPage } from "./SetupReviewPage";
-import { SuccessPage } from "./SuccessPage";
-import { RestoreOptionPage } from "./RestoreOptionPage";
-import { RestoreFilePage } from "./RestoreFilePage";
 import { useWelcomeState } from "./hooks/useWelcomeState";
 import { usePaidOnboarding } from "./hooks/usePaidOnboarding";
-import { SELF_FLOW, PAID_FLOW, LOCAL_MODEL_FLOW, RESTORE_FLOW } from "./hooks/onboardingSteps";
+import { SELF_FLOW, PAID_FLOW, LOCAL_MODEL_FLOW } from "./hooks/onboardingSteps";
 import { OnboardingFlowContext, type OnboardingFlow } from "./hooks/onboarding-flow-context";
-import { resolveModelSelectBackTarget } from "./hooks/resolve-model-select-back-target";
 import { renderSharedFlowRoutes } from "./SharedFlowRoutes";
+import {
+  renderSetupModeRoute,
+  renderPaidRoutes,
+  renderLocalModelRoutes,
+  renderSelfManagedRoutes,
+  renderRestoreRoutes,
+} from "./welcome-routes";
 
 function WelcomeAutoStart(props: {
   startBusy: boolean;
@@ -117,12 +105,8 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   const goSlackFromConnections =
     flow === "paid" ? paid.nav.goPaidSlackFromConnections : welcome.goSlackFromConnections;
   const goSlackBack = flow === "paid" ? paid.nav.goPaidSlackBack : welcome.goSlackBack;
-  const selfManagedModelSelectBack =
-    resolveModelSelectBackTarget(welcome.selectedProvider) === "ollama-setup"
-      ? welcome.goOllamaSetup
-      : welcome.goApiKey;
-  const selfManagedModelSelectRetry =
-    welcome.selectedProvider === "ollama" ? welcome.retryOllamaSubmit : welcome.loadModels;
+
+  const routeDeps = { welcome, paid, dispatch, navigate, gw, isMac, flow, setFlow };
 
   return (
     <OnboardingFlowContext.Provider value={flow}>
@@ -140,252 +124,10 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
           }
         />
 
-        {/* ── Setup mode selection ── */}
-        <Route
-          path="setup-mode"
-          element={
-            <SetupModePage
-              totalSteps={PAID_FLOW.totalSteps}
-              activeStep={PAID_FLOW.steps.auth}
-              localModelComingSoon={!isMac}
-              onSelect={(mode) => {
-                if (mode === "paid") {
-                  setFlow("paid");
-                  void paid.auth.startGoogleAuth();
-                } else if (mode === "local-model") {
-                  setFlow("local-model");
-                  void navigate(`${routes.welcome}/local-backend-setup`);
-                } else {
-                  setFlow("self-managed");
-                  void dispatch(clearAuth());
-                  welcome.goProviderSelect();
-                }
-              }}
-              onStartGoogleAuth={() => {
-                setFlow("paid");
-                void paid.auth.startGoogleAuth();
-              }}
-              authBusy={paid.auth.busy}
-              authError={paid.auth.error}
-              onBack={() => void navigate(routes.consent)}
-            />
-          }
-        />
-
-        {/* ── Paid-only routes ── */}
-        <Route
-          path="paid-model-select"
-          element={
-            <ModelSelectPage
-              totalSteps={PAID_FLOW.totalSteps}
-              activeStep={PAID_FLOW.steps.model}
-              models={paid.model.models}
-              filterProvider="openrouter"
-              defaultModelId="gemini-3-flash-preview"
-              loading={paid.model.modelsLoading}
-              error={paid.model.modelsError}
-              onSelect={(modelId) => void paid.model.onSelect(modelId)}
-              onBack={paid.nav.goSetupMode}
-              onRetry={() => void paid.model.loadModels()}
-            />
-          }
-        />
-
-        <Route
-          path="setup-review"
-          element={
-            <SetupReviewPage
-              totalSteps={PAID_FLOW.totalSteps}
-              activeStep={PAID_FLOW.steps.review}
-              selectedModel={paid.model.selectedName ?? paid.model.selected ?? "GPT-5.2 Pro"}
-              subscriptionPrice={paid.pay.subscriptionPrice}
-              onPay={() => void paid.pay.onPay()}
-              onBack={welcome.goConnections}
-              onCancelPayment={paid.pay.cancelPending}
-              busy={paid.pay.busy}
-              paymentPending={paid.pay.pending}
-              autoTopUp={paid.billing.autoTopUp}
-              autoTopUpLoading={paid.billing.autoTopUpLoading}
-              autoTopUpSaving={paid.billing.autoTopUpSaving}
-              autoTopUpError={paid.billing.autoTopUpError}
-              onAutoTopUpPatch={paid.billing.onAutoTopUpPatch}
-              onError={addToastError}
-              onSkip={() => void paid.flow.onStartChat(null)}
-            />
-          }
-        />
-
-        <Route
-          path="success"
-          element={
-            paid.auth.jwt ? (
-              <SuccessPage
-                jwt={paid.auth.jwt}
-                onStartChat={(key) => void paid.flow.onStartChat(key)}
-              />
-            ) : (
-              <Navigate to={`${routes.welcome}/setup-mode`} replace />
-            )
-          }
-        />
-
-        {/* ── Local-model-only routes ── */}
-        <Route
-          path="local-backend-setup"
-          element={
-            <LocalBackendSetupPage
-              totalSteps={LOCAL_MODEL_FLOW.totalSteps}
-              activeStep={LOCAL_MODEL_FLOW.steps.backendDownload}
-              onContinue={() => void navigate(`${routes.welcome}/local-model-select`)}
-              onBack={() => void navigate(`${routes.welcome}/setup-mode`)}
-            />
-          }
-        />
-
-        <Route
-          path="local-model-select"
-          element={
-            <LocalModelSelectPage
-              totalSteps={LOCAL_MODEL_FLOW.totalSteps}
-              activeStep={LOCAL_MODEL_FLOW.steps.modelSelect}
-              onSelect={async (modelId) => {
-                const serverResult = await dispatch(startLlamacppServer(modelId)).unwrap();
-                if (gw) {
-                  await dispatch(
-                    switchMode({
-                      request: gw.request,
-                      target: "local-model",
-                      modelId: serverResult?.modelId,
-                      modelName: serverResult?.modelName,
-                      contextLength: serverResult?.contextLength,
-                    })
-                  ).unwrap();
-
-                  const cfgModelId = serverResult?.modelId ?? modelId;
-                  const cfgModelName = serverResult?.modelName ?? "Local Model";
-                  const maxAttempts = 6;
-                  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                    try {
-                      await applyLocalModelConfig({
-                        request: gw.request,
-                        modelId: cfgModelId,
-                        modelName: cfgModelName,
-                        contextLength: serverResult?.contextLength,
-                      });
-                      await gw
-                        .request("secrets.reload", {})
-                        .catch((err) => console.warn("[onboarding] secrets.reload:", err));
-                      await resetSessionModelSelection(gw.request);
-                      break;
-                    } catch (retryErr) {
-                      const msg = String(retryErr);
-                      const isRestart =
-                        msg.includes("1012") ||
-                        msg.includes("service restart") ||
-                        msg.includes("gateway closed") ||
-                        msg.includes("did not persist");
-                      if (!isRestart || attempt === maxAttempts) throw retryErr;
-                      await new Promise((r) => setTimeout(r, 800 * attempt));
-                    }
-                  }
-
-                  await dispatch(reloadConfig({ request: gw.request }))
-                    .unwrap()
-                    .catch((err) => console.warn("[onboarding] reloadConfig:", err));
-                }
-                welcome.goSkills();
-              }}
-              onContinue={welcome.goSkills}
-              onBack={() => void navigate(`${routes.welcome}/setup-mode`)}
-            />
-          }
-        />
-
-        {/* ── Self-managed-only routes ── */}
-        <Route
-          path="provider-select"
-          element={
-            <ProviderSelectPage
-              totalSteps={SELF_FLOW.totalSteps}
-              activeStep={SELF_FLOW.steps.provider}
-              selectedProvider={welcome.selectedProvider}
-              error={welcome.error}
-              onSelect={welcome.onProviderSelect}
-              onBack={() => void navigate(`${routes.welcome}/setup-mode`)}
-              onSkip={welcome.goSkills}
-            />
-          }
-        />
-
-        <Route
-          path="api-key"
-          element={
-            welcome.selectedProvider ? (
-              <ApiKeyPage
-                totalSteps={SELF_FLOW.totalSteps}
-                activeStep={SELF_FLOW.steps.apiKey}
-                provider={welcome.selectedProvider}
-                status={welcome.status}
-                error={welcome.error}
-                busy={welcome.apiKeyBusy}
-                onSubmit={welcome.onApiKeySubmit}
-                onSubmitSetupToken={(token) => void welcome.onSetupTokenSubmit(token)}
-                onBack={welcome.goProviderSelect}
-              />
-            ) : (
-              <Navigate to={`${routes.welcome}/provider-select`} replace />
-            )
-          }
-        />
-
-        <Route
-          path="oauth-provider"
-          element={
-            welcome.selectedProvider ? (
-              <OAuthProviderPage
-                totalSteps={SELF_FLOW.totalSteps}
-                activeStep={SELF_FLOW.steps.apiKey}
-                provider={welcome.selectedProvider}
-                onSuccess={(profileId) => void welcome.onOAuthSuccess(profileId)}
-                onBack={welcome.goProviderSelect}
-              />
-            ) : (
-              <Navigate to={`${routes.welcome}/provider-select`} replace />
-            )
-          }
-        />
-
-        <Route
-          path="ollama-setup"
-          element={
-            <OllamaSetupPage
-              totalSteps={SELF_FLOW.totalSteps}
-              activeStep={SELF_FLOW.steps.apiKey}
-              busy={welcome.apiKeyBusy}
-              error={welcome.error}
-              onSubmit={(params) => void welcome.onOllamaSubmit(params)}
-              onBack={welcome.goProviderSelect}
-            />
-          }
-        />
-
-        <Route
-          path="model-select"
-          element={
-            <ModelSelectPage
-              totalSteps={SELF_FLOW.totalSteps}
-              activeStep={SELF_FLOW.steps.model}
-              models={welcome.models}
-              filterProvider={welcome.selectedProvider ?? undefined}
-              loading={welcome.modelsLoading}
-              error={welcome.modelsError}
-              onSelect={(modelId) => void welcome.onModelSelect(modelId)}
-              onBack={selfManagedModelSelectBack}
-              onRetry={() => void selfManagedModelSelectRetry()}
-              onSkip={welcome.goSkills}
-            />
-          }
-        />
+        {renderSetupModeRoute(routeDeps)}
+        {renderPaidRoutes(routeDeps)}
+        {renderLocalModelRoutes(routeDeps)}
+        {renderSelfManagedRoutes(routeDeps)}
 
         {/* ── Unified shared routes (skills, connections, skill subpages) ── */}
         {renderSharedFlowRoutes({
@@ -414,24 +156,7 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
           },
         })}
 
-        <Route
-          path="restore"
-          element={
-            <RestoreOptionPage
-              totalSteps={RESTORE_FLOW.totalSteps}
-              activeStep={RESTORE_FLOW.steps.option}
-            />
-          }
-        />
-        <Route
-          path="restore-file"
-          element={
-            <RestoreFilePage
-              totalSteps={RESTORE_FLOW.totalSteps}
-              activeStep={RESTORE_FLOW.steps.file}
-            />
-          }
-        />
+        {renderRestoreRoutes()}
 
         <Route path="*" element={<Navigate to={routes.welcome} replace />} />
       </Routes>

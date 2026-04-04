@@ -13,7 +13,7 @@ import { useAppDispatch, useAppSelector } from "@store/hooks";
 import type { SetupMode } from "@store/slices/auth/authSlice";
 import { switchMode } from "@store/slices/auth/mode-switch";
 import type { ConfigData } from "@store/slices/configSlice";
-import { addToast, addToastError } from "@shared/toast";
+import { addToastError } from "@shared/toast";
 
 import {
   MODEL_PROVIDERS,
@@ -27,98 +27,21 @@ import { getDefaultModelPrimary } from "../providers/configParsing";
 import { useModelProvidersState } from "../providers/useModelProvidersState";
 import { AccountTab } from "../account/AccountTab";
 import { RichSelect, type RichOption } from "./RichSelect";
-import { InlineApiKey } from "./InlineApiKey";
 import { useAccountState } from "@ui/settings/account/useAccountState";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
-import { openExternal } from "@shared/utils/openExternal";
 import { LocalModelsTab } from "../local-models/LocalModelsTab";
 import { fetchLlamacppServerStatus } from "@store/slices/llamacppSlice";
-import { LLAMACPP_LOCAL_BASE_URL } from "../../../../../src/main/constants";
 
+import { ConnectionToggle, MODE_LABELS, providerBadge, ProviderModelSection } from "./ProviderModelSection";
+import {
+  AccountModelsStatusBar,
+  LLAMACPP_PRIMARY_PREFIX,
+  formatModelIdForStatusBar,
+} from "./AccountModelsStatusBar";
 import s from "./AccountModelsTab.module.css";
 import type { ConfigSnapshot, GatewayRpcLike } from "../../onboarding/hooks/types";
 
 type GatewayRpcWithStatus = GatewayRpcLike & { connected?: boolean };
-
-function providerBadge(p: (typeof MODEL_PROVIDERS)[number]):
-  | {
-      text: string;
-      variant: string;
-    }
-  | undefined {
-  if (p.recommended) return { text: "Recommended", variant: "recommended" };
-  if (p.popular) return { text: "Popular", variant: "popular" };
-  if (p.localModels) return { text: "Local models", variant: "local" };
-  if (p.privacyFirst) return { text: "Privacy First", variant: "privacy" };
-  return undefined;
-}
-
-function ConnectionToggle(props: {
-  activeMode: SetupMode | null;
-  disabled: boolean;
-  onSelect: (mode: SetupMode) => void;
-}) {
-  const active = props.activeMode;
-  return (
-    <div className={s.connectionSection}>
-      <div className={s.connectionSelector} role="radiogroup" aria-label="Connection mode">
-        <button
-          type="button"
-          className={`${s.connectionOption}${active === "paid" ? ` ${s["connectionOption--active"]}` : ""}`}
-          onClick={() => void props.onSelect("paid")}
-          disabled={props.disabled}
-        >
-          Subscription
-        </button>
-        <button
-          type="button"
-          className={`${s.connectionOption}${active === "self-managed" ? ` ${s["connectionOption--active"]}` : ""}`}
-          onClick={() => void props.onSelect("self-managed")}
-          disabled={props.disabled}
-        >
-          API keys
-        </button>
-        <button
-          type="button"
-          className={`${s.connectionOption}${active === "local-model" ? ` ${s["connectionOption--active"]}` : ""}`}
-          onClick={() => void props.onSelect("local-model")}
-          disabled={props.disabled}
-        >
-          Local Models
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const MODE_LABELS: Record<SetupMode, string> = {
-  paid: "Subscription",
-  "self-managed": "API keys",
-  "local-model": "Local Models",
-};
-
-const SERVER_STATUS_LABELS: Record<string, string> = {
-  stopped: "Stopped",
-  starting: "Starting…",
-  loading: "Loading model…",
-  running: "Running",
-  error: "Error",
-};
-
-/** OpenAI-compatible base URL for bundled llama.cpp (matches default local provider `baseUrl`). */
-const LOCAL_MODELS_API_ENDPOINT = `${LLAMACPP_LOCAL_BASE_URL}/v1`;
-
-const LLAMACPP_PRIMARY_PREFIX = "llamacpp/";
-
-/** Readable label when the catalog entry is not loaded yet (`provider/modelId`). */
-function formatModelIdForStatusBar(rawId: string): string {
-  const t = rawId.trim();
-  const i = t.indexOf("/");
-  if (i >= 0 && i < t.length - 1) {
-    return t.slice(i + 1);
-  }
-  return t;
-}
 
 export function AccountModelsTab(props: {
   gw: GatewayRpcWithStatus;
@@ -173,7 +96,6 @@ export function AccountModelsTab(props: {
     }
   }, [authMode, tabMode, dispatch]);
 
-  // Auto-select provider from current active model on first load (self-managed only)
   const autoSelectedRef = React.useRef(false);
   React.useEffect(() => {
     if (!isPaidMode && !autoSelectedRef.current && activeProviderKey && !providerFilter) {
@@ -260,10 +182,6 @@ export function AccountModelsTab(props: {
     [saveDefaultModel]
   );
 
-  // Auto-select first model when provider changes and current model doesn't belong to it.
-  // Skip when in local-model mode — the local models tab manages its own primary model
-  // via applyLocalModelConfig, and this effect would race with it by writing back
-  // a stale self-managed model (e.g. anthropic) from the still-loaded model options.
   React.useEffect(() => {
     if (
       !isPaidMode &&
@@ -289,8 +207,6 @@ export function AccountModelsTab(props: {
       setTabMode(mode);
 
       if (mode === authMode) return;
-
-      // Defer mode switch for local-model — happens on explicit Select
       if (mode === "local-model") return;
 
       setModeSwitchBusy(true);
@@ -340,12 +256,6 @@ export function AccountModelsTab(props: {
     !accountState.provisioning &&
     !isLoading;
 
-  /**
-   * Status bar Mode + Model must follow **effective** auth while a paid↔self-managed
-   * switch runs: `tabMode` updates immediately on click, but config/`isPaidMode` lag
-   * until `switchMode` + `reloadConfig` finish. Local-models tab still uses `tabMode`
-   * when the user only selects the segment (switch deferred until Select).
-   */
   const statusDisplayMode = modeSwitchBusy && authMode != null ? authMode : (tabMode ?? authMode);
   const statusModeLabel = statusDisplayMode != null ? MODE_LABELS[statusDisplayMode] : "";
 
@@ -376,94 +286,17 @@ export function AccountModelsTab(props: {
 
   const isLocalModelsStatusLayout = statusDisplayMode === "local-model";
 
-  const copyLocalApiEndpoint = React.useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(LOCAL_MODELS_API_ENDPOINT);
-      addToast("Copied to clipboard");
-    } catch (err) {
-      addToastError(err);
-    }
-  }, []);
-
   return (
     <div className={s.root}>
       {!noTitle && <div className={s.title}>AI Models</div>}
 
       {authMode && (
-        <div
-          className={`${s.statusBar} ${isLocalModelsStatusLayout ? s.statusBarHorizontal : s.statusBarVertical}`}
-        >
-          {isLocalModelsStatusLayout ? (
-            <div className={s.statusBarHorizontalMain}>
-              <div className={s.statusSegment}>
-                <span className={s.statusLabel}>Mode</span>
-                <span className={s.statusValue}>
-                  <span className={s.statusValueText}>{statusModeLabel}</span>
-                </span>
-              </div>
-              <div className={s.statusSegment}>
-                <span className={s.statusLabel}>Model</span>
-                <span className={s.statusValue}>
-                  <span className={s.statusValueText}>{currentModelName ?? "Not selected"}</span>
-                </span>
-              </div>
-              <div className={s.statusSegment}>
-                <span className={s.statusLabel}>Server</span>
-                <span className={s.statusValue}>
-                  <span
-                    className={`${s.serverDot} ${s[`serverDot--${llamacpp.serverStatus}`] ?? ""}`}
-                  />
-                  <span className={s.statusValueText}>
-                    {SERVER_STATUS_LABELS[llamacpp.serverStatus] ?? llamacpp.serverStatus}
-                  </span>
-                </span>
-              </div>
-              <div className={`${s.statusSegment} ${s.statusBarApiEndpoint}`}>
-                <span className={s.statusLabel}>API Endpoint</span>
-                <span className={s.statusValue}>
-                  <span className={s.apiEndpointRow}>
-                    <a
-                      className={s.apiEndpointLink}
-                      href={LOCAL_MODELS_API_ENDPOINT}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openExternal(LOCAL_MODELS_API_ENDPOINT);
-                      }}
-                    >
-                      {LOCAL_MODELS_API_ENDPOINT}
-                    </a>
-                    <button
-                      type="button"
-                      className={s.apiEndpointCopyBtn}
-                      onClick={() => void copyLocalApiEndpoint()}
-                      aria-label="Copy API endpoint URL"
-                    >
-                      <ApiEndpointCopyIcon />
-                    </button>
-                  </span>
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className={s.statusBarVerticalMain}>
-              <div className={s.statusSegment}>
-                <span className={s.statusLabel}>Mode</span>
-                <span className={s.statusValue}>
-                  <span className={s.statusValueText}>{statusModeLabel}</span>
-                </span>
-              </div>
-              <div className={s.statusSegment}>
-                <span className={s.statusLabel}>Model</span>
-                <span className={s.statusValue}>
-                  <span className={s.statusValueText}>{currentModelName ?? "Not selected"}</span>
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+        <AccountModelsStatusBar
+          isLocalModels={isLocalModelsStatusLayout}
+          modeLabel={statusModeLabel}
+          modelName={currentModelName}
+          serverStatus={llamacpp.serverStatus}
+        />
       )}
 
       <ConnectionToggle
@@ -524,88 +357,30 @@ export function AccountModelsTab(props: {
       )}
 
       {tabMode === "self-managed" && !isLoading && (
-        <div className="fade-in">
-          <div className={s.dropdownRow}>
-            <div className={s.dropdownGroup}>
-              <div className={s.dropdownLabel}>Provider</div>
-              <RichSelect
-                value={selectedProvider}
-                onChange={handleProviderChange}
-                options={providerOptions}
-                placeholder="Select provider…"
-                disabled={modelsLoading}
-              />
-            </div>
-            <div className={s.dropdownGroup}>
-              <div className={s.dropdownLabel}>Model</div>
-              <RichSelect
-                value={activeModelId ?? null}
-                onChange={handleModelChange}
-                options={modelOptions}
-                placeholder={
-                  !selectedProvider
-                    ? "Select provider first"
-                    : modelOptions.length === 0
-                      ? "Enter API key to choose a model"
-                      : "Select model…"
-                }
-                disabled={
-                  !selectedProvider || modelsLoading || modelBusy || modelOptions.length === 0
-                }
-                disabledStyles={!selectedProvider || modelOptions.length === 0}
-                onlySelectedIcon
-              />
-            </div>
-          </div>
-
-          {selectedProvider && modelOptions.length === 0 && !modelsLoading && (
-            <div className={s.noModelsHint}>
-              {!isSelectedProviderConfigured
-                ? "Add an API key below to load models for this provider."
-                : "No models loaded. Try restarting the app to refresh the model catalog."}
-            </div>
-          )}
-
-          {/* Self-managed: inline API key entry */}
-          {selectedProviderInfo && (
-            <InlineApiKey
-              provider={selectedProviderInfo}
-              configured={isProviderConfigured(selectedProvider!)}
-              busy={busyProvider === selectedProvider}
-              onSave={saveProviderApiKey}
-              onSaveSetupToken={saveProviderSetupToken}
-              onSaveOllama={saveOllamaProvider}
-              onRefreshModels={loadModels}
-              onPaste={pasteFromClipboard}
-              configHash={configHash}
-              onOAuthSuccess={handleOAuthSuccess}
-            />
-          )}
-        </div>
+        <ProviderModelSection
+          selectedProvider={selectedProvider}
+          selectedProviderInfo={selectedProviderInfo}
+          providerOptions={providerOptions}
+          modelOptions={modelOptions}
+          activeModelId={activeModelId ?? null}
+          modelsLoading={modelsLoading}
+          modelBusy={modelBusy}
+          isSelectedProviderConfigured={isSelectedProviderConfigured}
+          busyProvider={busyProvider}
+          isProviderConfigured={isProviderConfigured}
+          configHash={configHash}
+          onProviderChange={handleProviderChange}
+          onModelChange={handleModelChange}
+          onSaveApiKey={saveProviderApiKey}
+          onSaveSetupToken={saveProviderSetupToken}
+          onSaveOllama={saveOllamaProvider}
+          onRefreshModels={loadModels}
+          onPaste={pasteFromClipboard}
+          onOAuthSuccess={handleOAuthSuccess}
+        />
       )}
 
-      {/* Paid: account / billing content */}
       {isPaidMode && !modeSwitchBusy && tabMode === "paid" && <AccountTab />}
     </div>
-  );
-}
-
-function ApiEndpointCopyIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={16}
-      height={16}
-      fill="none"
-      viewBox="0 0 16 16"
-      aria-hidden
-    >
-      <path
-        fill="currentColor"
-        fillRule="evenodd"
-        d="M12 2.5H8A1.5 1.5 0 0 0 6.5 4v1H8a3 3 0 0 1 3 3v1.5h1A1.5 1.5 0 0 0 13.5 8V4A1.5 1.5 0 0 0 12 2.5M11 11h1a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H4a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3zM4 6.5h4A1.5 1.5 0 0 1 9.5 8v4A1.5 1.5 0 0 1 8 13.5H4A1.5 1.5 0 0 1 2.5 12V8A1.5 1.5 0 0 1 4 6.5"
-        clipRule="evenodd"
-      />
-    </svg>
   );
 }

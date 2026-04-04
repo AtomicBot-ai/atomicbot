@@ -1,9 +1,8 @@
 import React from "react";
 
 import sm from "./SkillModal.module.css";
-import { useSettingsSkillAdapter } from "./useSettingsSkillAdapter";
+import { useSkillModalState } from "./useSkillModalState";
 import { ActionButton, InlineError, TextInput } from "@shared/kit";
-import { errorToMessage } from "@shared/toast";
 import { useWelcomeSlack } from "@ui/onboarding/hooks/useWelcomeSlack";
 import type { ConfigSnapshot, GatewayRpcLike } from "@ui/onboarding/hooks/types";
 
@@ -17,10 +16,17 @@ export function SlackModalContent(props: {
   const [botName, setBotName] = React.useState("");
   const [botToken, setBotToken] = React.useState("");
   const [appToken, setAppToken] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<string | null>(null);
-  const { run, markSkillConnected, goSkills: goSlackReturn } = useSettingsSkillAdapter();
+  const {
+    busy,
+    error,
+    status,
+    setError,
+    setStatus,
+    run,
+    markSkillConnected,
+    goSkills: goSlackReturn,
+    wrapAction,
+  } = useSkillModalState();
 
   const { saveSlackConfig } = useWelcomeSlack({
     gw: props.gw,
@@ -33,10 +39,8 @@ export function SlackModalContent(props: {
   });
 
   const handleConnect = React.useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setStatus(null);
-    try {
+    await wrapAction(async () => {
+      setStatus(null);
       const ok = await saveSlackConfig({
         botName: botName.trim() || "openclaw",
         botToken,
@@ -49,12 +53,8 @@ export function SlackModalContent(props: {
       if (ok) {
         props.onConnected();
       }
-    } catch (err) {
-      setError(errorToMessage(err));
-    } finally {
-      setBusy(false);
-    }
-  }, [appToken, botName, botToken, props, saveSlackConfig]);
+    });
+  }, [appToken, botName, botToken, props, saveSlackConfig, wrapAction, setStatus]);
 
   return (
     <div className={sm.UiSkillModalContent}>

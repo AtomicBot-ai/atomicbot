@@ -1,4 +1,4 @@
-import { LLAMACPP_LOCAL_BASE_URL } from "../../../../src/main/constants";
+import { LLAMACPP_LOCAL_BASE_URL } from "@main/constants";
 import type { GatewayRequest } from "./chat/chatSlice";
 import type { ConfigSnapshot } from "../../ui/onboarding/hooks/types";
 

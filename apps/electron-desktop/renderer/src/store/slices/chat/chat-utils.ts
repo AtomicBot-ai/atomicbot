@@ -1,4 +1,4 @@
-import { stripMetadata } from "@ui/chat/hooks/messageParser";
+import { stripMetadata } from "@lib/message-strip";
 import type { UiMessage, UiMessageAttachment, UiToolCall, UiToolResult } from "./chat-types";
 
 /**

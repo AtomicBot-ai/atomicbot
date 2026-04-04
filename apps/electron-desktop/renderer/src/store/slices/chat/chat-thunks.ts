@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
-import { errorToMessage } from "../../../ui/shared/toast";
+import { errorToMessage } from "@lib/error-format";
 import type {
   ChatAttachmentInput,
   ChatHistoryResult,

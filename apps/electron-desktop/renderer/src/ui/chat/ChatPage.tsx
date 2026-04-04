@@ -6,10 +6,9 @@ import {
   chatActions,
   isHeartbeatMessage,
   isApprovalContinueMessage,
-  loadChatHistory,
-  sendChatMessage,
   type ChatAttachmentInput,
 } from "@store/slices/chat/chatSlice";
+import { loadChatHistory, sendChatMessage } from "@store/slices/chat/chat-thunks";
 import { upgradePaywallActions } from "@store/slices/upgradePaywallSlice";
 import type { GatewayState } from "@main/types";
 import { HIDDEN_TOOL_NAMES } from "./components/ToolCallCard";

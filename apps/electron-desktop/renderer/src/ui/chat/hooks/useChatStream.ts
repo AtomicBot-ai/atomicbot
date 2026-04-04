@@ -5,8 +5,8 @@ import {
   extractText,
   extractToolCalls,
   normalizeMessageText,
-  loadChatHistory,
 } from "@store/slices/chat/chatSlice";
+import { loadChatHistory } from "@store/slices/chat/chat-thunks";
 import { HIDDEN_TOOL_NAMES } from "../components/ToolCallCard";
 import type { GatewayRpcLike } from "../../onboarding/hooks/types";
 

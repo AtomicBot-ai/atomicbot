@@ -1,10 +1,9 @@
 import React from "react";
 
 import sm from "./SkillModal.module.css";
-import { useSettingsSkillAdapter } from "./useSettingsSkillAdapter";
+import { useSkillModalState } from "./useSkillModalState";
 import { getDesktopApi } from "@ipc/desktopApi";
 import { ActionButton, InlineError } from "@shared/kit";
-import { errorToMessage } from "@shared/toast";
 import { useWelcomeAppleNotes } from "@ui/onboarding/hooks/useWelcomeAppleNotes";
 import { useWelcomeAppleReminders } from "@ui/onboarding/hooks/useWelcomeAppleReminders";
 import type { ConfigSnapshot, GatewayRpcLike } from "@ui/onboarding/hooks/types";
@@ -17,10 +16,8 @@ export function AppleNotesModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<string | null>(null);
-  const { run, markSkillConnected, goSkills } = useSettingsSkillAdapter();
+  const { busy, error, status, setError, setStatus, run, markSkillConnected, goSkills, wrapAction } =
+    useSkillModalState();
 
   const { enableAppleNotes } = useWelcomeAppleNotes({
     gw: props.gw,
@@ -33,10 +30,8 @@ export function AppleNotesModalContent(props: {
   });
 
   const handleEnable = React.useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setStatus("Checking memo…");
-    try {
+    await wrapAction(async () => {
+      setStatus("Checking memo…");
       const api = getDesktopApi();
 
       const res = await api.memoCheck();
@@ -47,13 +42,8 @@ export function AppleNotesModalContent(props: {
       if (ok) {
         props.onConnected();
       }
-    } catch (err) {
-      setError(errorToMessage(err));
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }, [enableAppleNotes, props]);
+    });
+  }, [enableAppleNotes, props, wrapAction, setStatus]);
 
   return (
     <div className={sm.UiSkillModalContent}>
@@ -94,10 +84,8 @@ export function AppleRemindersModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<string | null>(null);
-  const { run, markSkillConnected, goSkills } = useSettingsSkillAdapter();
+  const { busy, error, status, setError, setStatus, run, markSkillConnected, goSkills, wrapAction } =
+    useSkillModalState();
 
   const { enableAppleReminders } = useWelcomeAppleReminders({
     gw: props.gw,
@@ -110,10 +98,8 @@ export function AppleRemindersModalContent(props: {
   });
 
   const handleEnable = React.useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setStatus("Authorizing remindctl…");
-    try {
+    await wrapAction(async () => {
+      setStatus("Authorizing remindctl…");
       const api = getDesktopApi();
 
       const authorizeRes = await api.remindctlAuthorize();
@@ -136,13 +122,8 @@ export function AppleRemindersModalContent(props: {
       if (ok) {
         props.onConnected();
       }
-    } catch (err) {
-      setError(errorToMessage(err));
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }, [enableAppleReminders, props]);
+    });
+  }, [enableAppleReminders, props, wrapAction, setStatus]);
 
   return (
     <div className={sm.UiSkillModalContent}>

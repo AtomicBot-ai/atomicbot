@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
         "@shared": path.resolve(__dirname, "src/ui/shared"),
         "@styles": path.resolve(__dirname, "src/ui/styles"),
         "@ui": path.resolve(__dirname, "src/ui"),
+        "@lib": path.resolve(__dirname, "src/lib"),
         "@analytics": path.resolve(__dirname, "src/analytics"),
       },
     },

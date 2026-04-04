@@ -24,7 +24,7 @@ export {
   parseHistoryMessages,
   parseRole,
 } from "./chat-utils";
-export { loadChatHistory, sendChatMessage } from "./chat-thunks";
+
 
 const initialState: ChatSliceState = {
   messages: [],

@@ -1,10 +1,10 @@
 import React from "react";
 
 import sm from "./SkillModal.module.css";
-import { useSettingsSkillAdapter } from "./useSettingsSkillAdapter";
+import { useSkillModalState } from "./useSkillModalState";
 import { getDesktopApi, getDesktopApiOrNull } from "@ipc/desktopApi";
 import { ActionButton, InlineError } from "@shared/kit";
-import { errorToMessage } from "@shared/toast";
+import { errorToMessage } from "@lib/error-format";
 import { useWelcomeObsidian } from "@ui/onboarding/hooks/useWelcomeObsidian";
 import type { ConfigSnapshot, GatewayRpcLike } from "@ui/onboarding/hooks/types";
 
@@ -21,13 +21,11 @@ export function ObsidianModalContent(props: {
   onConnected: () => void;
   onDisabled: () => void;
 }) {
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [status, setStatus] = React.useState<string | null>(null);
   const [vaults, setVaults] = React.useState<ObsidianVault[]>([]);
   const [vaultsLoading, setVaultsLoading] = React.useState(false);
   const [selectedVault, setSelectedVault] = React.useState("");
-  const { run, markSkillConnected, goSkills } = useSettingsSkillAdapter();
+  const { busy, error, status, setError, setStatus, run, markSkillConnected, goSkills, wrapAction } =
+    useSkillModalState();
   const goObsidianPage = React.useCallback(() => {}, []);
 
   const { enableObsidian } = useWelcomeObsidian({
@@ -93,13 +91,11 @@ export function ObsidianModalContent(props: {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setError]);
 
   const handleCheckAndEnable = React.useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setStatus("Checking obsidian-cli…");
-    try {
+    await wrapAction(async () => {
+      setStatus("Checking obsidian-cli…");
       const api = getDesktopApi();
 
       const checkRes = await api.obsidianCliCheck();
@@ -128,15 +124,9 @@ export function ObsidianModalContent(props: {
         props.onConnected();
         return;
       }
-      // Keep skill enabled but alert about missing default vault.
       setStatus('Obsidian enabled. Set a default vault, then click "Check & enable" again.');
-    } catch (err) {
-      setError(errorToMessage(err));
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }, [enableObsidian, props, selectedVault]);
+    });
+  }, [enableObsidian, props, selectedVault, wrapAction, setStatus]);
 
   return (
     <div className={sm.UiSkillModalContent}>

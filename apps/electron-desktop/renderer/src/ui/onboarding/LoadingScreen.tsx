@@ -1,9 +1,8 @@
 import type { GatewayState } from "@main/types";
 import { FooterText, FullscreenShell, SpinningSplashLogo } from "@shared/kit";
-import pkg from "../../../../package.json";
+import { APP_VERSION } from "@lib/app-version";
 
 export function LoadingScreen({ state: _state }: { state: GatewayState | null }) {
-  const appVersion = pkg.version || "0.0.0";
 
   return (
     <FullscreenShell role="status" aria-label="Loading">
@@ -17,7 +16,7 @@ export function LoadingScreen({ state: _state }: { state: GatewayState | null })
             </div>
           </div>
         </div>
-        <FooterText>Version {appVersion}</FooterText>
+        <FooterText>Version {APP_VERSION}</FooterText>
       </div>
     </FullscreenShell>
   );

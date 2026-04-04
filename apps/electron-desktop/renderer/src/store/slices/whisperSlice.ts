@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { DESKTOP_API_UNAVAILABLE, getDesktopApiOrNull } from "@ipc/desktopApi";
-import { errorToMessage } from "../../ui/shared/toast";
-import { setVoiceProvider } from "@ui/chat/hooks/useVoiceInput";
+import { errorToMessage } from "@lib/error-format";
+import { setVoiceProvider } from "@lib/voice-storage";
 
 export type WhisperModelInfo = {
   id: string;

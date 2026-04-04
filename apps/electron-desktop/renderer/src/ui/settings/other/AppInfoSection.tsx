@@ -8,13 +8,11 @@ import { useTerminalSidebarVisible } from "@shared/hooks/useTerminalSidebarVisib
 import { errorToMessage } from "@shared/toast";
 import { DESKTOP_API_UNAVAILABLE } from "@ipc/desktopApi";
 import s from "../OtherTab.module.css";
-import pkg from "../../../../../package.json";
+import { APP_VERSION } from "@lib/app-version";
 
 export function AppInfoSection({ onError }: { onError: (msg: string | null) => void }) {
   const [launchAtStartup, setLaunchAtStartup] = React.useState(false);
   const [terminalSidebar, setTerminalSidebar] = useTerminalSidebarVisible();
-
-  const appVersion = pkg.version || "0.0.0";
 
   React.useEffect(() => {
     const api = getDesktopApiOrNull();
@@ -52,7 +50,7 @@ export function AppInfoSection({ onError }: { onError: (msg: string | null) => v
         <div className={s.UiSettingsOtherCard}>
           <div className={s.UiSettingsOtherRow}>
             <span className={s.UiSettingsOtherRowLabel}>Version</span>
-            <span className={s.UiSettingsOtherAppRowValue}>Atomic Bot v{appVersion}</span>
+            <span className={s.UiSettingsOtherAppRowValue}>Atomic Bot v{APP_VERSION}</span>
           </div>
           <div className={s.UiSettingsOtherRow}>
             <span className={s.UiSettingsOtherRowLabel}>Auto start</span>

@@ -5,7 +5,7 @@ import { openExternal } from "@shared/utils/openExternal";
 import { FooterText, HeroPageLayout, PrimaryButton, SplashLogo } from "@shared/kit";
 import { addToastError } from "@shared/toast";
 import { optInRenderer, getCurrentUserId, captureRenderer, ANALYTICS_EVENTS } from "@analytics";
-import pkg from "../../../../package.json";
+import { APP_VERSION } from "@lib/app-version";
 import s from "./ConsentScreen.module.css";
 
 export type ConsentDesktopApi = NonNullable<Window["openclawDesktop"]> & {
@@ -22,7 +22,6 @@ export function ConsentScreen({
 }) {
   const api = getDesktopApiOrNull() as ConsentDesktopApi | null;
   const [busy, setBusy] = React.useState(false);
-  const appVersion = pkg.version || "0.0.0";
   const termsUrl = "https://atomicbot.ai/terms-of-service";
 
   // Record consent acceptance, enable analytics by default, then invoke the callback.
@@ -104,7 +103,7 @@ export function ConsentScreen({
           </div>
         </div>
 
-        <FooterText>Version {appVersion}</FooterText>
+        <FooterText>Version {APP_VERSION}</FooterText>
       </div>
     </HeroPageLayout>
   );

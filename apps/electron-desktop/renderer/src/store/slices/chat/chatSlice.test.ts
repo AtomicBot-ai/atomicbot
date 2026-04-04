@@ -13,10 +13,9 @@ import {
   extractAttachmentsFromMessage,
   extractText,
   isHeartbeatMessage,
-  loadChatHistory,
   parseHistoryMessages,
-  sendChatMessage,
 } from "./chatSlice";
+import { loadChatHistory, sendChatMessage } from "./chat-thunks";
 
 // ── Initial state ──────────────────────────────────────────────────────────────
 

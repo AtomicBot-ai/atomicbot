@@ -1,5 +1,7 @@
 import toast from "react-hot-toast";
 
+export { errorToMessage } from "@lib/error-format";
+
 const defaultDuration = 3000;
 
 export const toastStyles = {
@@ -9,35 +11,6 @@ export const toastStyles = {
   minWidth: 150,
   overflow: "hidden",
 };
-
-export function errorToMessage(error: unknown): string {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error instanceof Error) {
-    return error.message || "Unknown error";
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof (error as { message: unknown }).message === "string"
-  ) {
-    return (error as { message: string }).message || "Unknown error";
-  }
-
-  try {
-    const json = JSON.stringify(error);
-    if (json === "{}" || json === "[]") {
-      return "Unknown error";
-    }
-    return json;
-  } catch {
-    return String(error);
-  }
-}
 
 /** Show an info toast. */
 export function addToast(message: string): void {

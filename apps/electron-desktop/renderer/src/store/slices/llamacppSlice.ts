@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { DESKTOP_API_UNAVAILABLE, getDesktopApiOrNull } from "@ipc/desktopApi";
-import { debugError, debugLog, debugWarn } from "../../ui/shared/debug-log";
-import { errorToMessage } from "../../ui/shared/toast";
+import { debugError, debugLog, debugWarn } from "@lib/debug-log";
+import { errorToMessage } from "@lib/error-format";
 import type { GatewayRequest } from "./chat/chat-types";
 
 export const WARMUP_SESSION_KEY_PREFIX = "__warmup__";
