@@ -10,6 +10,13 @@ import {
   storeAuthToken,
   type AuthSliceState,
 } from "../slices/auth/authSlice";
+import {
+  configActions,
+  extractLlamacppDefaultModelId,
+  reloadConfig,
+  type ConfigData,
+} from "../slices/configSlice";
+import { fetchLlamacppServerStatus, llamacppActions } from "../slices/llamacppSlice";
 
 const REFRESH_INTERVAL_MS = 15_000;
 const REFRESH_COOLDOWN_MS = 15_000;
@@ -130,6 +137,46 @@ function registerLifecycleListener(startListening: StartListening): void {
   });
 }
 
+function registerLocalModelLlamacppSyncListener(startListening: StartListening): void {
+  startListening({
+    matcher: isAnyOf(restoreMode.fulfilled, authActions.setMode),
+    effect: (_action, listenerApi) => {
+      const mode = listenerApi.getState().auth.mode;
+      if (mode !== "local-model") {
+        return;
+      }
+      void listenerApi.dispatch(fetchLlamacppServerStatus());
+    },
+  });
+}
+
+/** Backfill Redux `activeModelId` from gateway `primary` when IPC/file state is empty (badge label). */
+function registerLocalModelIdFromConfigListener(startListening: StartListening): void {
+  type SyncState = {
+    auth: { mode: string | null };
+    config: { snap: { config?: ConfigData } | null };
+    llamacpp: { activeModelId: string | null };
+  };
+
+  startListening({
+    matcher: isAnyOf(reloadConfig.fulfilled, configActions.setSnapshot),
+    effect: (_action, listenerApi) => {
+      const state = listenerApi.getState() as unknown as SyncState;
+      if (state.auth.mode !== "local-model") {
+        return;
+      }
+      const id = extractLlamacppDefaultModelId(state.config.snap?.config ?? null);
+      if (!id) {
+        return;
+      }
+      if (!state.llamacpp.activeModelId?.trim()) {
+        listenerApi.dispatch(llamacppActions.setActiveModelId(id));
+        void listenerApi.dispatch(fetchLlamacppServerStatus());
+      }
+    },
+  });
+}
+
 function registerTriggerListeners(startListening: StartListening): void {
   startListening({
     actionCreator: authActions.requestBackgroundRefresh,
@@ -163,6 +210,8 @@ export function setupAuthRefreshListeners(): void {
 
   const startListening = authRefreshListenerMiddleware.startListening as StartListening;
   registerLifecycleListener(startListening);
+  registerLocalModelLlamacppSyncListener(startListening);
+  registerLocalModelIdFromConfigListener(startListening);
   registerTriggerListeners(startListening);
 }
 

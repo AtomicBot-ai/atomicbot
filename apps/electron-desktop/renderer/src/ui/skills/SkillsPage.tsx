@@ -8,6 +8,7 @@ import { addToastError } from "@shared/toast";
 import { SkillsIntegrationsTab } from "@ui/settings/skills/SkillsIntegrationsTab";
 import { CustomSkillUploadModal } from "@ui/settings/skills/CustomSkillUploadModal";
 import { useCustomSkills } from "@ui/settings/skills/useCustomSkills";
+import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import s from "./SkillsPage.module.css";
 
 export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
@@ -44,7 +45,10 @@ export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "re
     >
       <div className={s.UiSkillsShellWrapper}>
         <div className={s.UiSkillsHeader}>
-          <h1 className={s.UiSkillsTitle}>Skills</h1>
+          <div className={s.UiSkillsHeaderLeft}>
+            <ActiveModelBadge />
+            <h1 className={s.UiSkillsTitle}>Skills</h1>
+          </div>
 
           <button
             type="button"

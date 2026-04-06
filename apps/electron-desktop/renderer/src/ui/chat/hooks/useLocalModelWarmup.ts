@@ -1,11 +1,7 @@
 import React from "react";
 import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch, useAppSelector } from "@store/hooks";
-import {
-  warmupLocalModel,
-  fetchLlamacppServerStatus,
-  llamacppActions,
-} from "@store/slices/llamacppSlice";
+import { warmupLocalModel, llamacppActions } from "@store/slices/llamacppSlice";
 import { getDesktopApiOrNull } from "@ipc/desktopApi";
 
 const SERVER_POLL_INTERVAL_MS = 2_000;
@@ -49,6 +45,13 @@ export function useLocalModelWarmup(): void {
         console.log("[warmup] main reports done, skipping warmup");
         triggeredRef.current = true;
         dispatch(llamacppActions.setWarmupStatus("ready"));
+        // Phase 2 polling is skipped when warmup is not "idle"; apply one IPC read
+        // synchronously in the store (no extra async thunk — avoids stale fulfills).
+        void api.llamacppServerStatus?.().then((probe) => {
+          if (probe) {
+            dispatch(llamacppActions.syncServerFromProbe(probe));
+          }
+        });
       }
     });
   }, [authMode, dispatch]);
@@ -79,7 +82,7 @@ export function useLocalModelWarmup(): void {
 
       try {
         const status = await api.llamacppServerStatus();
-        void dispatch(fetchLlamacppServerStatus());
+        dispatch(llamacppActions.syncServerFromProbe(status));
 
         if (status.healthy && status.running) {
           // Wait for gateway config to have a llamacpp model as primary.

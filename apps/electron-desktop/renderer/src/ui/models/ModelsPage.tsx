@@ -5,6 +5,7 @@ import { configActions, reloadConfig } from "@store/slices/configSlice";
 import { HeroPageLayout } from "@shared/kit";
 import { addToastError } from "@shared/toast";
 import { AccountModelsTab } from "@ui/settings/account-models/AccountModelsTab";
+import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import s from "./ModelsPage.module.css";
 
 export function ModelsPage() {
@@ -39,7 +40,10 @@ export function ModelsPage() {
     >
       <div className={s.UiModelsShellWrapper}>
         <div className={s.UiModelsHeader}>
-          <h1 className={s.UiModelsTitle}>AI Models</h1>
+          <div className={s.UiModelsHeaderLeft}>
+            <ActiveModelBadge />
+            <h1 className={s.UiModelsTitle}>AI Models</h1>
+          </div>
         </div>
 
         <AccountModelsTab

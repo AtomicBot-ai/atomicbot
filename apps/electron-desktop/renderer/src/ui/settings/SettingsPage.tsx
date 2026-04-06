@@ -24,6 +24,7 @@ import { VoiceRecognitionTab } from "./voice/VoiceRecognitionTab";
 import { AccountTab } from "./account/AccountTab";
 import { AccountModelsTab } from "./account-models/AccountModelsTab";
 import { addToastError } from "@shared/toast";
+import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 
 export type SettingsOutletContext = {
   state: Extract<GatewayState, { kind: "ready" }>;
@@ -214,7 +215,10 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
     >
       <div className={s.UiSettingsShellWrapper}>
         <div className={s.UiSettingsHeader}>
-          <h1 className={s.UiSettingsTitle}>Settings</h1>
+          <div className={s.UiSettingsTitleRow}>
+            <ActiveModelBadge />
+            <h1 className={s.UiSettingsTitle}>Settings</h1>
+          </div>
           <nav className={s.UiSettingsTabs} aria-label="Settings sections">
             {visibleTabs.map(({ path, label }) => (
               <SettingsTabItem key={path} to={path}>
