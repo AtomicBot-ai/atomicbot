@@ -6,6 +6,8 @@ export const routes = {
   legacy: "/legacy",
   chat: "/chat",
   settings: "/settings",
+  /** Settings tab: AccountModelsTab (“AI Models” in the tab bar). */
+  settingsAiModels: "/settings/account-models",
   terminal: "/terminal",
   skills: "/skills",
   clawhubDetail: "/skills/clawhub",

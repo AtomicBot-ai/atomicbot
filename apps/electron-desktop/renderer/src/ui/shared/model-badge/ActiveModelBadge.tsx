@@ -112,7 +112,12 @@ export function ActiveModelBadge(props: { className?: string; mainPaneCorner?: b
         <span className={s.localDot} title={localLiveTitle} aria-label={localLiveTitle} />
       ) : null}
       <span className={s.name}>{label ?? "No model selected"}</span>
-      <NavLink to={routes.settings} className={s.gear} aria-label="Open settings" title="Settings">
+      <NavLink
+        to={routes.settingsAiModels}
+        className={s.gear}
+        aria-label="Open AI Models settings"
+        title="AI Models"
+      >
         <IconGear />
       </NavLink>
     </div>
