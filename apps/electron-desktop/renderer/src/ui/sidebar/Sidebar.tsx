@@ -55,7 +55,33 @@ function isHeartbeatSession(row: SessionsListResult["sessions"][number]): boolea
   return false;
 }
 
-// cleanDerivedTitle is now in ./utils/messageParser.ts
+const SIDEBAR_COLLAPSED_LS_KEY = "atomicbot:sidebar-collapsed";
+
+function readSidebarCollapsedFromStorage(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_LS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function IconSidebarPanelCollapse() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <rect x="3" y="3.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.25" />
+      <path d="M7.25 6.25v5.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSidebarPanelExpand() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <rect x="3" y="3.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.25" />
+      <path d="M10.75 6.25v5.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function titleFromRow(row: SessionsListResult["sessions"][number]): string {
   const cleaned = cleanDerivedTitle(row.derivedTitle);
@@ -87,6 +113,19 @@ export function Sidebar() {
     (location.state as { optimisticNewSession?: OptimisticSession } | null)?.optimisticNewSession ??
     null;
   const optimistic = optimisticFromContext ?? optimisticFromState;
+
+  const [collapsed, setCollapsed] = React.useState(readSidebarCollapsedFromStorage);
+  React.useEffect(() => {
+    try {
+      if (collapsed) {
+        localStorage.setItem(SIDEBAR_COLLAPSED_LS_KEY, "1");
+      } else {
+        localStorage.removeItem(SIDEBAR_COLLAPSED_LS_KEY);
+      }
+    } catch {
+      // ignore quota / private mode
+    }
+  }, [collapsed]);
 
   const [sessions, setSessions] = React.useState<SessionWithTitle[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -179,35 +218,104 @@ export function Sidebar() {
     [currentSessionKey, gw, loadSessionsWithTitles, navigate]
   );
 
+  const asideClass =
+    `${css.UiChatSidebar}${collapsed ? ` ${css.UiChatSidebarCollapsed}` : ""}`.trim();
+
+  const handleCollapsedAsideClick = React.useCallback(
+    (e: React.MouseEvent<HTMLAsideElement>) => {
+      if (!collapsed) {
+        return;
+      }
+      const t = e.target as HTMLElement | null;
+      if (!t || t.closest("button")) {
+        return;
+      }
+      setCollapsed(false);
+    },
+    [collapsed]
+  );
+
   return (
-    <aside className={css.UiChatSidebar} aria-label="Chat sessions">
+    <aside
+      className={asideClass}
+      aria-label="Chat sessions"
+      onClick={handleCollapsedAsideClick}
+    >
       <div className={css.UiChatSidebarHeader}>
-        <SidebarLogo />
+        {collapsed ? (
+          <button
+            type="button"
+            className={css.UiChatSidebarToggle}
+            aria-label="Expand sidebar"
+            onClick={() => setCollapsed(false)}
+          >
+            <IconSidebarPanelExpand />
+          </button>
+        ) : (
+          <>
+            <SidebarLogo />
+            <button
+              type="button"
+              className={css.UiChatSidebarToggle}
+              aria-label="Collapse sidebar"
+              onClick={() => setCollapsed(true)}
+            >
+              <IconSidebarPanelCollapse />
+            </button>
+          </>
+        )}
       </div>
       <div className={css.UiChatSidebarBody}>
-        <div onClick={handleNewSession} className={css.UiChatSidebarNavLink}>
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+        <div
+          onClick={handleNewSession}
+          className={css.UiChatSidebarNavLink}
+          role="button"
+          tabIndex={0}
+          title={collapsed ? "New task" : undefined}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleNewSession();
+            }
+          }}
+        >
+          <span
+            className={`${css.UiChatSidebarSettingsIcon}${collapsed ? ` ${css.UiChatSidebarNewTaskIcon}` : ""}`}
+            aria-hidden="true"
+          >
             <IconPlus />
           </span>
-          New task
+          <span className={css.UiChatSidebarNavLabel}>New task</span>
         </div>
-        <NavLink to={routes.skills} className={css.UiChatSidebarNavLink}>
+        <NavLink
+          to={routes.skills}
+          className={css.UiChatSidebarNavLink}
+          title={collapsed ? "ClawHub skills" : undefined}
+        >
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <IconSkills />
           </span>
-          ClawHub skills
+          <span className={css.UiChatSidebarNavLabel}>ClawHub skills</span>
         </NavLink>
-        <NavLink to={routes.models} className={css.UiChatSidebarNavLink}>
+        <NavLink
+          to={routes.models}
+          className={css.UiChatSidebarNavLink}
+          title={collapsed ? "AI Models" : undefined}
+        >
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <IconModels />
           </span>
-          AI Models
+          <span className={css.UiChatSidebarNavLabel}>AI Models</span>
         </NavLink>
-        <NavLink to={routes.legacy} className={css.UiChatSidebarNavLink}>
+        <NavLink
+          to={routes.legacy}
+          className={css.UiChatSidebarNavLink}
+          title={collapsed ? "Dashboard" : undefined}
+        >
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <OpenClawIcon />
           </span>
-          Dashboard
+          <span className={css.UiChatSidebarNavLabel}>Dashboard</span>
         </NavLink>
       </div>
 
@@ -247,6 +355,7 @@ export function Sidebar() {
             className={css.UiChatSidebarSettings}
             onClick={openUpgradePaywall}
             aria-label="Upgrade plan"
+            title={collapsed ? "Upgrade plan" : undefined}
           >
             <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
               <svg
@@ -265,11 +374,16 @@ export function Sidebar() {
                 />
               </svg>
             </span>
-            Upgrade plan
+            <span className={css.UiChatSidebarNavLabel}>Upgrade plan</span>
           </button>
         )}
         {showTerminal && (
-          <NavLink to={routes.terminal} className={css.UiChatSidebarSettings} aria-label="Terminal">
+          <NavLink
+            to={routes.terminal}
+            className={css.UiChatSidebarSettings}
+            aria-label="Terminal"
+            title={collapsed ? "Terminal" : undefined}
+          >
             <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -294,10 +408,15 @@ export function Sidebar() {
                 />
               </svg>
             </span>
-            Terminal
+            <span className={css.UiChatSidebarNavLabel}>Terminal</span>
           </NavLink>
         )}
-        <NavLink to={routes.settings} className={css.UiChatSidebarSettings} aria-label="Settings">
+        <NavLink
+          to={routes.settings}
+          className={css.UiChatSidebarSettings}
+          aria-label="Settings"
+          title={collapsed ? "Settings" : undefined}
+        >
           <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -322,7 +441,7 @@ export function Sidebar() {
               />
             </svg>
           </span>
-          Settings
+          <span className={css.UiChatSidebarNavLabel}>Settings</span>
         </NavLink>
       </div>
     </aside>
