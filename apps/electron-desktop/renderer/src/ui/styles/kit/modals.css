@@ -134,7 +134,7 @@
 .UiConfirmDialog__confirm {
   padding: 6px 16px;
   font-size: 13px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
   appearance: none;

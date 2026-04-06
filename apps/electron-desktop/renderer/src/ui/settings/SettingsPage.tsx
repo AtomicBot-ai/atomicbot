@@ -25,7 +25,6 @@ import { AccountTab } from "./account/AccountTab";
 import { AccountModelsTab } from "./account-models/AccountModelsTab";
 import { McpServersTab } from "./mcp-servers/McpServersTab";
 import { addToastError } from "@shared/toast";
-import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 
 export type SettingsOutletContext = {
   state: Extract<GatewayState, { kind: "ready" }>;
@@ -219,33 +218,30 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
   );
 
   return (
-    <>
-      <ActiveModelBadge mainPaneCorner />
-      <HeroPageLayout
-        aria-label="Settings page"
-        hideTopbar
-        color="secondary"
-        className={s.UiSettingsShell + " scrollable"}
-      >
-        <div className={s.UiSettingsShellWrapper}>
-          <div className={s.UiSettingsHeader}>
-            <div className={s.UiSettingsTitleRow}>
-              <h1 className={s.UiSettingsTitle}>Settings</h1>
-            </div>
-            <nav className={s.UiSettingsTabs} aria-label="Settings sections">
-              {visibleTabs.map(({ path, label }) => (
-                <SettingsTabItem key={path} to={path}>
-                  {label}
-                </SettingsTabItem>
-              ))}
-            </nav>
+    <HeroPageLayout
+      aria-label="Settings page"
+      hideTopbar
+      color="secondary"
+      className={s.UiSettingsShell + " scrollable"}
+    >
+      <div className={s.UiSettingsShellWrapper}>
+        <div className={s.UiSettingsHeader}>
+          <div className={s.UiSettingsTitleRow}>
+            <h1 className={s.UiSettingsTitle}>Settings</h1>
           </div>
-          <div className={s.UiSettingsContent}>
-            <Outlet context={outletContext} />
-          </div>
+          <nav className={s.UiSettingsTabs} aria-label="Settings sections">
+            {visibleTabs.map(({ path, label }) => (
+              <SettingsTabItem key={path} to={path}>
+                {label}
+              </SettingsTabItem>
+            ))}
+          </nav>
         </div>
-      </HeroPageLayout>
-    </>
+        <div className={s.UiSettingsContent}>
+          <Outlet context={outletContext} />
+        </div>
+      </div>
+    </HeroPageLayout>
   );
 }
 

@@ -45,8 +45,8 @@ function IconGear({ className }: { className?: string }) {
   );
 }
 
-export function ActiveModelBadge(props: { className?: string; mainPaneCorner?: boolean }) {
-  const { className, mainPaneCorner } = props;
+export function ActiveModelBadge(props: { className?: string }) {
+  const { className } = props;
   const gw = useGatewayRpc();
   const dispatch = useAppDispatch();
   const authMode = useAppSelector((st) => st.auth.mode);
@@ -104,7 +104,7 @@ export function ActiveModelBadge(props: { className?: string; mainPaneCorner?: b
 
   return (
     <div
-      className={`${s.badge}${mainPaneCorner ? ` ${s.mainPaneCorner}` : ""}${className ? ` ${className}` : ""}`.trim()}
+      className={`${s.badge}${className ? ` ${className}` : ""}`.trim()}
       role="status"
       aria-live="polite"
     >

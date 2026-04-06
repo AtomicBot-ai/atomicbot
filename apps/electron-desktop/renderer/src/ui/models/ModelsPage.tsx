@@ -5,7 +5,6 @@ import { configActions, reloadConfig } from "@store/slices/configSlice";
 import { HeroPageLayout } from "@shared/kit";
 import { addToastError } from "@shared/toast";
 import { AccountModelsTab } from "@ui/settings/account-models/AccountModelsTab";
-import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import s from "./ModelsPage.module.css";
 
 export function ModelsPage() {
@@ -32,30 +31,27 @@ export function ModelsPage() {
   }, [configError, dispatch]);
 
   return (
-    <>
-      <ActiveModelBadge mainPaneCorner />
-      <HeroPageLayout
-        aria-label="Models page"
-        hideTopbar
-        color="secondary"
-        className={s.UiModelsShell + " scrollable"}
-      >
-        <div className={s.UiModelsShellWrapper}>
-          <div className={s.UiModelsHeader}>
-            <div className={s.UiModelsHeaderLeft}>
-              <h1 className={s.UiModelsTitle}>AI Models</h1>
-            </div>
+    <HeroPageLayout
+      aria-label="Models page"
+      hideTopbar
+      color="secondary"
+      className={s.UiModelsShell + " scrollable"}
+    >
+      <div className={s.UiModelsShellWrapper}>
+        <div className={s.UiModelsHeader}>
+          <div className={s.UiModelsHeaderLeft}>
+            <h1 className={s.UiModelsTitle}>AI Models</h1>
           </div>
-
-          <AccountModelsTab
-            gw={gw}
-            configSnap={configSnap ?? null}
-            reload={reload}
-            onError={setPageError}
-            noTitle
-          />
         </div>
-      </HeroPageLayout>
-    </>
+
+        <AccountModelsTab
+          gw={gw}
+          configSnap={configSnap ?? null}
+          reload={reload}
+          onError={setPageError}
+          noTitle
+        />
+      </div>
+    </HeroPageLayout>
   );
 }

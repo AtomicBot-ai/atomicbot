@@ -1,11 +1,3 @@
-/* Same inset as `.UiChatNewTaskBadgeRow` (main pane); parent must be `.UiChatLayoutMain`. */
-.mainPaneCorner {
-  position: absolute;
-  top: 12px;
-  left: 24px;
-  z-index: 150;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -30,13 +22,14 @@
   text-overflow: ellipsis;
 }
 
+/* Match `AccountModelsTab.module.css` `.serverDot--running` */
 .localDot {
   flex-shrink: 0;
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
-  background: var(--lime);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--lime) 55%, transparent);
+  background: #22c55e;
+  box-shadow: 0 0 10px color-mix(in srgb, #22c55e 55%, transparent);
 }
 
 .gear {
