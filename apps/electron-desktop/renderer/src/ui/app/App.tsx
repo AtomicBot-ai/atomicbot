@@ -45,6 +45,27 @@ import { useLocalModelWarmup } from "../chat/hooks/useLocalModelWarmup";
 import { WarmupBanner } from "../chat/components/WarmupBanner";
 import a from "./App.module.css";
 
+const SIDEBAR_OPEN_LS_KEY = "atomicbot:sidebar-open";
+const LEGACY_SIDEBAR_COLLAPSED_LS_KEY = "atomicbot:sidebar-collapsed";
+
+function readSidebarOpenFromStorage(): boolean {
+  try {
+    const v = localStorage.getItem(SIDEBAR_OPEN_LS_KEY);
+    if (v === "0") {
+      return false;
+    }
+    if (v === "1") {
+      return true;
+    }
+    if (localStorage.getItem(LEGACY_SIDEBAR_COLLAPSED_LS_KEY) === "1") {
+      return false;
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
   const [searchParams] = useSearchParams();
   const session = searchParams.get("session");
@@ -62,6 +83,15 @@ function ChatRoute({ state }: { state: Extract<GatewayState, { kind: "ready" }> 
 
 function SidebarLayout() {
   useLocalModelWarmup();
+  const [sidebarOpen, setSidebarOpen] = React.useState(readSidebarOpenFromStorage);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_OPEN_LS_KEY, sidebarOpen ? "1" : "0");
+    } catch {
+      // ignore quota / private mode
+    }
+  }, [sidebarOpen]);
 
   return (
     <OptimisticSessionProvider>
@@ -75,7 +105,7 @@ function SidebarLayout() {
       </div>
       <div className={a.UiAppShell}>
         <div className={`${a.UiAppPage} ${a.UiChatLayout}`}>
-          <Sidebar />
+          <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
           <div className={a.UiChatLayoutMain}>
             <Outlet />
           </div>

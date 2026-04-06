@@ -5,13 +5,13 @@ import type { OptimisticSession } from "../chat/hooks/optimisticSessionContext";
 import { useOptimisticSession } from "../chat/hooks/optimisticSessionContext";
 import { routes } from "../app/routes";
 import { addToastError } from "@shared/toast";
-import { IconModels, IconPlus, IconSkills, OpenClawIcon, SidebarLogo } from "@shared/kit/icons";
-import { SessionSidebarItem } from "./SessionSidebarItem";
+import { IconModels, IconPlus, IconSkills, OpenClawIcon } from "@shared/kit/icons";
 import { cleanDerivedTitle } from "../chat/hooks/messageParser";
 import { useTerminalSidebarVisible } from "@shared/hooks/useTerminalSidebarVisible";
 import { useAppSelector } from "@store/hooks";
 const WARMUP_SESSION_KEY = "__warmup__";
 import { useUpgradePaywall } from "../app/hooks/useUpgradePaywall";
+import { SidebarContent } from "./SidebarContent";
 import css from "./Sidebar.module.css";
 
 type SessionsListResult = {
@@ -36,14 +36,9 @@ type SessionWithTitle = {
 const SESSIONS_LIST_LIMIT = 50;
 const TITLE_MAX_LEN = 48;
 
-// Heartbeat prompt prefix — specific enough to avoid false positives on normal
-// messages that merely mention HEARTBEAT.md.
 const HEARTBEAT_TITLE_PREFIX = "Read HEARTBEAT.md";
 
-/** Returns true if a session row looks like a heartbeat-only session that should be hidden. */
 function isHeartbeatSession(row: SessionsListResult["sessions"][number]): boolean {
-  // cleanDerivedTitle strips gateway metadata (date headers, untrusted context
-  // blocks, etc.) so startsWith works reliably on the cleaned text.
   const title = cleanDerivedTitle(row.derivedTitle);
   if (title.startsWith(HEARTBEAT_TITLE_PREFIX)) {
     return true;
@@ -55,7 +50,14 @@ function isHeartbeatSession(row: SessionsListResult["sessions"][number]): boolea
   return false;
 }
 
-// cleanDerivedTitle is now in ./utils/messageParser.ts
+function IconSidebarPanelExpand() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <rect x="3" y="3.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.25" />
+      <path d="M10.75 6.25v5.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function titleFromRow(row: SessionsListResult["sessions"][number]): string {
   const cleaned = cleanDerivedTitle(row.derivedTitle);
@@ -65,7 +67,15 @@ function titleFromRow(row: SessionsListResult["sessions"][number]): string {
   return "New Chat";
 }
 
-export function Sidebar() {
+export type SidebarProps = {
+  /** Wide sidebar open (synced from parent + optional localStorage). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+/** Shell: width transition + stacked narrow / full layers (opacity). Content in `SidebarContent`. */
+export function Sidebar(props: SidebarProps) {
+  const { open, onOpenChange } = props;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -127,10 +137,6 @@ export function Sidebar() {
     [gw]
   );
 
-  // Don't attempt to load sessions until the gateway WebSocket is actually
-  // connected — avoids pointless "gateway not connected" errors on startup
-  // (e.g. before onboarding finishes or while the gateway is still booting).
-  // Also reload when the connection is restored after a disconnect (e.g. gateway restart).
   const isInitialLoad = React.useRef(true);
   const wasConnectedRef = React.useRef(false);
   React.useEffect(() => {
@@ -142,7 +148,6 @@ export function Sidebar() {
     wasConnectedRef.current = true;
 
     if (isInitialLoad.current || reconnected) {
-      // First load: show loading spinner (foreground). Reconnect: refresh silently (background).
       const background = !isInitialLoad.current;
       isInitialLoad.current = false;
       void loadSessionsWithTitles(background);
@@ -179,151 +184,191 @@ export function Sidebar() {
     [currentSessionKey, gw, loadSessionsWithTitles, navigate]
   );
 
+  const asideClass = `${css.UiChatSidebar}${open ? "" : ` ${css.UiChatSidebarClosed}`}`.trim();
+
+  const handleClosedAsideClick = React.useCallback(
+    (e: React.MouseEvent<HTMLAsideElement>) => {
+      if (open) {
+        return;
+      }
+      const t = e.target as HTMLElement | null;
+      if (!t || t.closest("button")) {
+        return;
+      }
+      onOpenChange(true);
+    },
+    [open, onOpenChange]
+  );
+
   return (
-    <aside className={css.UiChatSidebar} aria-label="Chat sessions">
-      <div className={css.UiChatSidebarHeader}>
-        <SidebarLogo />
-      </div>
-      <div className={css.UiChatSidebarBody}>
-        <div onClick={handleNewSession} className={css.UiChatSidebarNavLink}>
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-            <IconPlus />
-          </span>
-          New task
-        </div>
-        <NavLink to={routes.skills} className={css.UiChatSidebarNavLink}>
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-            <IconSkills />
-          </span>
-          ClawHub skills
-        </NavLink>
-        <NavLink to={routes.models} className={css.UiChatSidebarNavLink}>
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-            <IconModels />
-          </span>
-          AI Models
-        </NavLink>
-        <NavLink to={routes.legacy} className={css.UiChatSidebarNavLink}>
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-            <OpenClawIcon />
-          </span>
-          Dashboard
-        </NavLink>
-      </div>
-
-      <div className={css.UiChatSidebarSessions}>
-        <h2 className={css.UiChatSidebarSessionsTitle}>Tasks</h2>
-        {loading && !optimistic ? (
-          <div className={css.UiChatSidebarSubtitle}>Loading...</div>
-        ) : (
-          <ul className={css.UiChatSidebarSessionList} role="list">
-            {!sessions.length && !optimistic && (
-              <div className={css.UiChatSidebarSubtitle}>No tasks yet</div>
-            )}
-            {(optimistic
-              ? [
-                  { key: optimistic.key, title: optimistic.title },
-                  ...sessions.filter((s) => s.key !== optimistic.key),
-                ]
-              : sessions
-            ).map((s) => (
-              <SessionSidebarItem
-                key={s.key}
-                sessionKey={s.key}
-                title={s.title}
-                isActive={currentSessionKey != null && currentSessionKey === s.key}
-                onSelect={() => handleSelectSession(s.key)}
-                onDelete={handleDeleteSession}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className={css.UiChatSidebarFooter}>
-        {showUpgradePlan && (
-          <button
-            type="button"
-            className={css.UiChatSidebarSettings}
-            onClick={openUpgradePaywall}
-            aria-label="Upgrade plan"
-          >
-            <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M10 2.5L12.5 7.5L18 8L14 12L15 17.5L10 15L5 17.5L6 12L2 8L7.5 7.5L10 2.5Z"
-                  stroke="#c3ff42"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            Upgrade plan
-          </button>
-        )}
-        {showTerminal && (
-          <NavLink to={routes.terminal} className={css.UiChatSidebarSettings} aria-label="Terminal">
-            <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M4 7L8 10L4 13"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M10 14H16"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            Terminal
-          </NavLink>
-        )}
-        <NavLink to={routes.settings} className={css.UiChatSidebarSettings} aria-label="Settings">
-          <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
+    <aside
+      className={asideClass}
+      data-open={open ? "true" : "false"}
+      aria-label="Chat sessions"
+      onClick={handleClosedAsideClick}
+    >
+      <div className={css.UiChatSidebarLayers}>
+        <div
+          className={`${css.UiChatSidebarLayer} ${css.UiChatSidebarNarrow}`}
+          aria-hidden={open}
+        >
+          <div className={css.UiChatSidebarNarrowHeader}>
+            <button
+              type="button"
+              className={css.UiChatSidebarToggle}
+              aria-label="Expand sidebar"
+              onClick={() => onOpenChange(true)}
             >
-              <path
-                d="M7.82918 16.1427L8.31622 17.238C8.461 17.5641 8.69728 17.8412 8.99641 18.0356C9.29553 18.23 9.64464 18.3335 10.0014 18.3334C10.3582 18.3335 10.7073 18.23 11.0064 18.0356C11.3055 17.8412 11.5418 17.5641 11.6866 17.238L12.1736 16.1427C12.347 15.754 12.6386 15.43 13.007 15.2167C13.3776 15.0029 13.8064 14.9119 14.232 14.9566L15.4236 15.0834C15.7784 15.1209 16.1363 15.0547 16.4542 14.8929C16.7721 14.731 17.0361 14.4803 17.2144 14.1714C17.3928 13.8626 17.4779 13.5086 17.4591 13.1525C17.4404 12.7963 17.3187 12.4532 17.1088 12.1649L16.4033 11.1955C16.152 10.8477 16.0178 10.4291 16.0199 10.0001C16.0198 9.57224 16.1553 9.15537 16.407 8.80934L17.1125 7.8399C17.3224 7.55154 17.4441 7.20847 17.4628 6.85231C17.4816 6.49615 17.3966 6.1422 17.2181 5.83341C17.0398 5.52444 16.7758 5.27382 16.4579 5.11194C16.14 4.95005 15.7821 4.88386 15.4273 4.92138L14.2357 5.04823C13.8101 5.09292 13.3813 5.00185 13.0107 4.78804C12.6416 4.57362 12.3499 4.24788 12.1773 3.85749L11.6866 2.76212C11.5418 2.43606 11.3055 2.15901 11.0064 1.96458C10.7073 1.77015 10.3582 1.66669 10.0014 1.66675C9.64464 1.66669 9.29553 1.77015 8.99641 1.96458C8.69728 2.15901 8.461 2.43606 8.31622 2.76212L7.82918 3.85749C7.65662 4.24788 7.36491 4.57362 6.99585 4.78804C6.62519 5.00185 6.19641 5.09292 5.77085 5.04823L4.57548 4.92138C4.22075 4.88386 3.86276 4.95005 3.54491 5.11194C3.22705 5.27382 2.96299 5.52444 2.78474 5.83341C2.60625 6.1422 2.52122 6.49615 2.53996 6.85231C2.5587 7.20847 2.6804 7.55154 2.89029 7.8399L3.59585 8.80934C3.84747 9.15537 3.98296 9.57224 3.98288 10.0001C3.98296 10.4279 3.84747 10.8448 3.59585 11.1908L2.89029 12.1603C2.6804 12.4486 2.5587 12.7917 2.53996 13.1479C2.52122 13.504 2.60625 13.858 2.78474 14.1667C2.96317 14.4756 3.22726 14.726 3.54507 14.8879C3.86288 15.0498 4.22078 15.1161 4.57548 15.0788L5.76714 14.9519C6.1927 14.9072 6.62149 14.9983 6.99214 15.2121C7.36258 15.4259 7.65565 15.7517 7.82918 16.1427Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9.99991 12.5001C11.3806 12.5001 12.4999 11.3808 12.4999 10.0001C12.4999 8.61937 11.3806 7.50008 9.99991 7.50008C8.6192 7.50008 7.49991 8.61937 7.49991 10.0001C7.49991 11.3808 8.6192 12.5001 9.99991 12.5001Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          Settings
-        </NavLink>
+              <IconSidebarPanelExpand />
+            </button>
+          </div>
+          <div className={css.UiChatSidebarNarrowBody}>
+            <div
+              onClick={handleNewSession}
+              className={css.UiChatSidebarNarrowLink}
+              role="button"
+              tabIndex={0}
+              title="New task"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleNewSession();
+                }
+              }}
+            >
+              <span className={`${css.UiChatSidebarSettingsIcon} ${css.UiChatSidebarNarrowNewIcon}`} aria-hidden="true">
+                <IconPlus />
+              </span>
+            </div>
+            <NavLink to={routes.skills} className={css.UiChatSidebarNarrowLink} title="ClawHub skills">
+              <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                <IconSkills />
+              </span>
+            </NavLink>
+            <NavLink to={routes.models} className={css.UiChatSidebarNarrowLink} title="AI Models">
+              <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                <IconModels />
+              </span>
+            </NavLink>
+            <NavLink to={routes.legacy} className={css.UiChatSidebarNarrowLink} title="Dashboard">
+              <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                <OpenClawIcon />
+              </span>
+            </NavLink>
+          </div>
+          <div className={css.UiChatSidebarNarrowFooter}>
+            {showUpgradePlan && (
+              <button
+                type="button"
+                className={css.UiChatSidebarNarrowFooterBtn}
+                onClick={openUpgradePaywall}
+                aria-label="Upgrade plan"
+                title="Upgrade plan"
+              >
+                <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                  >
+                    <path
+                      d="M10 2.5L12.5 7.5L18 8L14 12L15 17.5L10 15L5 17.5L6 12L2 8L7.5 7.5L10 2.5Z"
+                      stroke="#c3ff42"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              </button>
+            )}
+            {showTerminal && (
+              <NavLink
+                to={routes.terminal}
+                className={css.UiChatSidebarNarrowFooterBtn}
+                aria-label="Terminal"
+                title="Terminal"
+              >
+                <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                  >
+                    <path
+                      d="M4 7L8 10L4 13"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 14H16"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              </NavLink>
+            )}
+            <NavLink
+              to={routes.settings}
+              className={css.UiChatSidebarNarrowFooterBtn}
+              aria-label="Settings"
+              title="Settings"
+            >
+              <span className={css.UiChatSidebarSettingsIcon} aria-hidden="true">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                >
+                  <path
+                    d="M7.82918 16.1427L8.31622 17.238C8.461 17.5641 8.69728 17.8412 8.99641 18.0356C9.29553 18.23 9.64464 18.3335 10.0014 18.3334C10.3582 18.3335 10.7073 18.23 11.0064 18.0356C11.3055 17.8412 11.5418 17.5641 11.6866 17.238L12.1736 16.1427C12.347 15.754 12.6386 15.43 13.007 15.2167C13.3776 15.0029 13.8064 14.9119 14.232 14.9566L15.4236 15.0834C15.7784 15.1209 16.1363 15.0547 16.4542 14.8929C16.7721 14.731 17.0361 14.4803 17.2144 14.1714C17.3928 13.8626 17.4779 13.5086 17.4591 13.1525C17.4404 12.7963 17.3187 12.4532 17.1088 12.1649L16.4033 11.1955C16.152 10.8477 16.0178 10.4291 16.0199 10.0001C16.0198 9.57224 16.1553 9.15537 16.407 8.80934L17.1125 7.8399C17.3224 7.55154 17.4441 7.20847 17.4628 6.85231C17.4816 6.49615 17.3966 6.1422 17.2181 5.83341C17.0398 5.52444 16.7758 5.27382 16.4579 5.11194C16.14 4.95005 15.7821 4.88386 15.4273 4.92138L14.2357 5.04823C13.8101 5.09292 13.3813 5.00185 13.0107 4.78804C12.6416 4.57362 12.3499 4.24788 12.1773 3.85749L11.6866 2.76212C11.5418 2.43606 11.3055 2.15901 11.0064 1.96458C10.7073 1.77015 10.3582 1.66669 10.0014 1.66675C9.64464 1.66669 9.29553 1.77015 8.99641 1.96458C8.69728 2.15901 8.461 2.43606 8.31622 2.76212L7.82918 3.85749C7.65662 4.24788 7.36491 4.57362 6.99585 4.78804C6.62519 5.00185 6.19641 5.09292 5.77085 5.04823L4.57548 4.92138C4.22075 4.88386 3.86276 4.95005 3.54491 5.11194C3.22705 5.27382 2.96299 5.52444 2.78474 5.83341C2.60625 6.1422 2.52122 6.49615 2.53996 6.85231C2.5587 7.20847 2.6804 7.55154 2.89029 7.8399L3.59585 8.80934C3.84747 9.15537 3.98296 9.57224 3.98288 10.0001C3.98296 10.4279 3.84747 10.8448 3.59585 11.1908L2.89029 12.1603C2.6804 12.4486 2.5587 12.7917 2.53996 13.1479C2.52122 13.504 2.60625 13.858 2.78474 14.1667C2.96317 14.4756 3.22726 14.726 3.54507 14.8879C3.86288 15.0498 4.22078 15.1161 4.57548 15.0788L5.76714 14.9519C6.1927 14.9072 6.62149 14.9983 6.99214 15.2121C7.36258 15.4259 7.65565 15.7517 7.82918 16.1427Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9.99991 12.5001C11.3806 12.5001 12.4999 11.3808 12.4999 10.0001C12.4999 8.61937 11.3806 7.50008 9.99991 7.50008C8.6192 7.50008 7.49991 8.61937 7.49991 10.0001C7.49991 11.3808 8.6192 12.5001 9.99991 12.5001Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </NavLink>
+          </div>
+        </div>
+
+        <div
+          className={`${css.UiChatSidebarLayer} ${css.UiChatSidebarWide}`}
+          aria-hidden={!open}
+        >
+          <SidebarContent
+            onCollapse={() => onOpenChange(false)}
+            onNewSession={handleNewSession}
+            sessions={sessions}
+            loading={loading}
+            optimistic={optimistic}
+            currentSessionKey={currentSessionKey}
+            onSelectSession={handleSelectSession}
+            onDeleteSession={handleDeleteSession}
+            showUpgradePlan={showUpgradePlan}
+            onUpgrade={openUpgradePaywall}
+            showTerminal={showTerminal}
+          />
+        </div>
       </div>
     </aside>
   );

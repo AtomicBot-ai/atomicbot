@@ -180,7 +180,7 @@ describe("Smoke render tests", () => {
   it("Sidebar renders with empty sessions", () => {
     const { container } = render(
       <TestShell initialEntries={["/chat"]}>
-        <Sidebar />
+        <Sidebar open onOpenChange={() => {}} />
       </TestShell>
     );
     // The sidebar should render its wrapper element.

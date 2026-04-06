@@ -1,14 +1,165 @@
-/* Chat sidebar */
+/* Chat sidebar — shell: width transition; inner: stacked narrow / wide layers (opacity). */
+
 .UiChatSidebar {
+  position: relative;
   width: 220px;
   min-width: 200px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  align-self: stretch;
   background: var(--surface-primary);
   min-height: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
+  overflow-x: hidden;
+  backface-visibility: hidden;
+  transition:
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .UiChatSidebar {
+    transition: none;
+  }
+
+  .UiChatSidebarLayer {
+    transition: none !important;
+  }
+}
+
+.UiChatSidebarClosed {
+  width: 52px;
+  min-width: 52px;
+}
+
+.UiChatSidebarLayers {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.UiChatSidebarLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.UiChatSidebarNarrow {
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.UiChatSidebarWide {
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.UiChatSidebar[data-open="false"] .UiChatSidebarNarrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.UiChatSidebar[data-open="true"] .UiChatSidebarWide {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Narrow rail (icons only, always mounted) ── */
+
+.UiChatSidebarNarrowHeader {
+  flex-shrink: 0;
+  display: flex;
+  height: 56px;
+  padding: 10px 6px;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.UiChatSidebarNarrowBody {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px;
+  align-items: center;
+}
+
+.UiChatSidebarNarrowLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: var(--radius-10);
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.UiChatSidebarNarrowLink:hover {
+  background: var(--border-subtle);
+  color: var(--text);
+}
+
+.UiChatSidebarNarrowLink:global(.active) {
+  background: var(--border-subtle);
+  color: var(--text);
+}
+
+.UiChatSidebarNarrowNewIcon {
+  color: var(--lime);
+}
+
+.UiChatSidebarNarrowFooter {
+  flex-shrink: 0;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  gap: 2px;
+}
+
+.UiChatSidebarNarrowFooterBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-10);
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  background: none;
+  appearance: none;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.UiChatSidebarNarrowFooterBtn:hover {
+  background: var(--border-subtle) !important;
+  color: var(--text);
+}
+
+/* ── Full layout (SidebarContent) ── */
 
 .UiChatSidebarHeader {
   flex-shrink: 0;
@@ -21,37 +172,34 @@
   box-sizing: border-box;
 }
 
+.UiChatSidebarToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.UiChatSidebarToggle:hover {
+  background: var(--border-subtle);
+  color: var(--text);
+}
+
 .UiChatSidebarBody {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 0 6px;
-}
-
-.UiChatSidebarNewTask {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: var(--radius-10);
-  border: none;
-  background: none;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  cursor: pointer;
-  transition:
-    background 140ms ease,
-    color 140ms ease;
-  text-align: left;
-  appearance: none;
-  width: 100%;
-}
-
-.UiChatSidebarNewTask:hover {
-  background: var(--border-subtle);
-  color: var(--text);
 }
 
 .UiChatSidebarNavLink {
@@ -79,6 +227,10 @@
 .UiChatSidebarNavLink:global(.active) {
   background: var(--border-subtle);
   color: var(--text);
+}
+
+.UiChatSidebarNavLabel {
+  min-width: 0;
 }
 
 .UiChatSidebarSessions {
@@ -125,6 +277,7 @@
 
 .UiChatSidebarFooter {
   flex-shrink: 0;
+  margin-top: auto;
   padding: 6px;
 }
 
