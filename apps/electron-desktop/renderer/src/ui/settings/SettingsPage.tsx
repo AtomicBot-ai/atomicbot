@@ -207,31 +207,33 @@ export function SettingsPage({ state }: { state: Extract<GatewayState, { kind: "
   );
 
   return (
-    <HeroPageLayout
-      aria-label="Settings page"
-      hideTopbar
-      color="secondary"
-      className={s.UiSettingsShell + " scrollable"}
-    >
-      <div className={s.UiSettingsShellWrapper}>
-        <div className={s.UiSettingsHeader}>
-          <div className={s.UiSettingsTitleRow}>
-            <ActiveModelBadge />
-            <h1 className={s.UiSettingsTitle}>Settings</h1>
+    <>
+      <ActiveModelBadge mainPaneCorner />
+      <HeroPageLayout
+        aria-label="Settings page"
+        hideTopbar
+        color="secondary"
+        className={s.UiSettingsShell + " scrollable"}
+      >
+        <div className={s.UiSettingsShellWrapper}>
+          <div className={s.UiSettingsHeader}>
+            <div className={s.UiSettingsTitleRow}>
+              <h1 className={s.UiSettingsTitle}>Settings</h1>
+            </div>
+            <nav className={s.UiSettingsTabs} aria-label="Settings sections">
+              {visibleTabs.map(({ path, label }) => (
+                <SettingsTabItem key={path} to={path}>
+                  {label}
+                </SettingsTabItem>
+              ))}
+            </nav>
           </div>
-          <nav className={s.UiSettingsTabs} aria-label="Settings sections">
-            {visibleTabs.map(({ path, label }) => (
-              <SettingsTabItem key={path} to={path}>
-                {label}
-              </SettingsTabItem>
-            ))}
-          </nav>
+          <div className={s.UiSettingsContent}>
+            <Outlet context={outletContext} />
+          </div>
         </div>
-        <div className={s.UiSettingsContent}>
-          <Outlet context={outletContext} />
-        </div>
-      </div>
-    </HeroPageLayout>
+      </HeroPageLayout>
+    </>
   );
 }
 

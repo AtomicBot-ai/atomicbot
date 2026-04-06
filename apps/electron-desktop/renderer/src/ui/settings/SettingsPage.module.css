@@ -29,6 +29,8 @@
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 16px;
+  /* Reserve space for `ActiveModelBadge` (absolute); matches former in-flow badge + gap. */
+  padding-top: 46px;
 }
 
 .UiSettingsTitle {

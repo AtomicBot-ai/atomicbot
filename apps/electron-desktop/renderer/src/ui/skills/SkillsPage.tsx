@@ -37,27 +37,28 @@ export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "re
   const custom = useCustomSkills(setPageError);
 
   return (
-    <HeroPageLayout
-      aria-label="Skills page"
-      hideTopbar
-      color="secondary"
-      className={s.UiSkillsShell + " scrollable"}
-    >
-      <div className={s.UiSkillsShellWrapper}>
-        <div className={s.UiSkillsHeader}>
-          <div className={s.UiSkillsHeaderLeft}>
-            <ActiveModelBadge />
-            <h1 className={s.UiSkillsTitle}>Skills</h1>
-          </div>
+    <>
+      <ActiveModelBadge mainPaneCorner />
+      <HeroPageLayout
+        aria-label="Skills page"
+        hideTopbar
+        color="secondary"
+        className={s.UiSkillsShell + " scrollable"}
+      >
+        <div className={s.UiSkillsShellWrapper}>
+          <div className={s.UiSkillsHeader}>
+            <div className={s.UiSkillsHeaderLeft}>
+              <h1 className={s.UiSkillsTitle}>Skills</h1>
+            </div>
 
-          <button
-            type="button"
-            className={s.UiAddCustomSkillLink}
-            onClick={() => custom.setShowUploadModal(true)}
-          >
-            + Add custom skill
-          </button>
-        </div>
+            <button
+              type="button"
+              className={s.UiAddCustomSkillLink}
+              onClick={() => custom.setShowUploadModal(true)}
+            >
+              + Add custom skill
+            </button>
+          </div>
 
         <SkillsIntegrationsTab
           state={state}
@@ -75,6 +76,7 @@ export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "re
           onInstalled={custom.handleCustomSkillInstalled}
         />
       </div>
-    </HeroPageLayout>
+      </HeroPageLayout>
+    </>
   );
 }

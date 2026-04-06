@@ -32,28 +32,30 @@ export function ModelsPage() {
   }, [configError, dispatch]);
 
   return (
-    <HeroPageLayout
-      aria-label="Models page"
-      hideTopbar
-      color="secondary"
-      className={s.UiModelsShell + " scrollable"}
-    >
-      <div className={s.UiModelsShellWrapper}>
-        <div className={s.UiModelsHeader}>
-          <div className={s.UiModelsHeaderLeft}>
-            <ActiveModelBadge />
-            <h1 className={s.UiModelsTitle}>AI Models</h1>
+    <>
+      <ActiveModelBadge mainPaneCorner />
+      <HeroPageLayout
+        aria-label="Models page"
+        hideTopbar
+        color="secondary"
+        className={s.UiModelsShell + " scrollable"}
+      >
+        <div className={s.UiModelsShellWrapper}>
+          <div className={s.UiModelsHeader}>
+            <div className={s.UiModelsHeaderLeft}>
+              <h1 className={s.UiModelsTitle}>AI Models</h1>
+            </div>
           </div>
-        </div>
 
-        <AccountModelsTab
-          gw={gw}
-          configSnap={configSnap ?? null}
-          reload={reload}
-          onError={setPageError}
-          noTitle
-        />
-      </div>
-    </HeroPageLayout>
+          <AccountModelsTab
+            gw={gw}
+            configSnap={configSnap ?? null}
+            reload={reload}
+            onError={setPageError}
+            noTitle
+          />
+        </div>
+      </HeroPageLayout>
+    </>
   );
 }
