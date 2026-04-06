@@ -54,7 +54,7 @@ export function LocalBackendSetupPage(props: {
   const isDownloading = backendDownload.kind === "downloading";
 
   return (
-    <HeroPageLayout variant="compact" align="center" aria-label="Local backend setup">
+    <HeroPageLayout variant="compact" align="center" aria-label="Local backend setup" context="onboarding">
       <OnboardingHeader
         totalSteps={props.totalSteps}
         activeStep={props.activeStep}
