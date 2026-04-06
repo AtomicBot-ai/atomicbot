@@ -253,19 +253,40 @@ export async function getLlamacppServerStatus(): Promise<{
   healthy: boolean;
   loading: boolean;
 }> {
-  const running = state.process !== null;
-  if (!running) {
-    return { running: false, modelPath: null, port: state.port, healthy: false, loading: false };
+  if (state.process !== null) {
+    const liveStatus = await checkHealth(state.port);
+    state.healthy = liveStatus === "ok";
+
+    return {
+      running: true,
+      modelPath: state.modelPath,
+      port: state.port,
+      healthy: liveStatus === "ok",
+      loading: liveStatus === "loading",
+    };
   }
 
+  // No in-memory child handle (e.g. app restarted) — still probe the port so UI
+  // does not report "stopped" while an llama-server is actually listening.
   const liveStatus = await checkHealth(state.port);
-  state.healthy = liveStatus === "ok";
+  if (liveStatus === "ok") {
+    return {
+      running: true,
+      modelPath: state.modelPath,
+      port: state.port,
+      healthy: true,
+      loading: false,
+    };
+  }
+  if (liveStatus === "loading") {
+    return {
+      running: true,
+      modelPath: state.modelPath,
+      port: state.port,
+      healthy: false,
+      loading: true,
+    };
+  }
 
-  return {
-    running: true,
-    modelPath: state.modelPath,
-    port: state.port,
-    healthy: liveStatus === "ok",
-    loading: liveStatus === "loading",
-  };
+  return { running: false, modelPath: null, port: state.port, healthy: false, loading: false };
 }

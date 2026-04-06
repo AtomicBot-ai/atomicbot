@@ -19,6 +19,15 @@
   scrollbar-gutter: stable;
 }
 
+.UiChatNewTaskBadgeRow {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-start;
+  padding: 12px 24px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .UiChatTranscriptInner {
   box-sizing: border-box;
   width: 100%;

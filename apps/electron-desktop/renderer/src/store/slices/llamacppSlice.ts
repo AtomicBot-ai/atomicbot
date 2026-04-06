@@ -45,6 +45,21 @@ export type LlamacppModelDownloadStatus =
 export type LlamacppServerStatus = "stopped" | "starting" | "loading" | "running" | "error";
 export type LlamacppWarmupStatus = "idle" | "warming" | "ready" | "error";
 
+/** True while the llama.cpp process is up or expected to come up (for live UI indicators). */
+export function isLlamacppServerLiveStatus(status: LlamacppServerStatus): boolean {
+  return status === "running" || status === "loading" || status === "starting";
+}
+
+/** IPC payload from `llamacppServerStatus` (main ↔ renderer). */
+export type LlamacppServerProbePayload = {
+  running: boolean;
+  modelPath: string | null;
+  port: number;
+  healthy: boolean;
+  loading: boolean;
+  activeModelId: string | null;
+};
+
 export type LlamacppSliceState = {
   backendDownloaded: boolean;
   backendVersion: string | null;
@@ -57,7 +72,45 @@ export type LlamacppSliceState = {
   warmupStatus: LlamacppWarmupStatus;
   warmupSessionKey: string | null;
   modelSwitchInFlight: boolean;
+  /** Latest in-flight `fetchLlamacppServerStatus` requestId; stale fulfills are ignored. */
+  serverStatusRequestId: string | null;
 };
+
+/**
+ * IPC sometimes returns `activeModelId: null` (race, file read) while the model
+ * is still selected — overwriting Redux would clear the badge label.
+ */
+function mergeActiveModelIdFromProbe(
+  current: string | null,
+  fromProbe: string | null | undefined
+): string | null {
+  const incoming = typeof fromProbe === "string" ? fromProbe.trim() : "";
+  if (incoming) {
+    return incoming;
+  }
+  return current;
+}
+
+function applyLlamacppServerProbeToState(
+  state: LlamacppSliceState,
+  payload: LlamacppServerProbePayload
+): void {
+  if (state.modelSwitchInFlight) {
+    const merged = mergeActiveModelIdFromProbe(state.activeModelId, payload.activeModelId);
+    state.activeModelId = merged;
+    return;
+  }
+  if (payload.healthy) {
+    state.serverStatus = "running";
+  } else if (payload.loading) {
+    state.serverStatus = "loading";
+  } else if (payload.running) {
+    state.serverStatus = "starting";
+  } else {
+    state.serverStatus = "stopped";
+  }
+  state.activeModelId = mergeActiveModelIdFromProbe(state.activeModelId, payload.activeModelId);
+}
 
 const initialState: LlamacppSliceState = {
   backendDownloaded: false,
@@ -71,6 +124,7 @@ const initialState: LlamacppSliceState = {
   warmupStatus: "idle",
   warmupSessionKey: null,
   modelSwitchInFlight: false,
+  serverStatusRequestId: null,
 };
 
 export const fetchLlamacppSystemInfo = createAsyncThunk("llamacpp/fetchSystemInfo", async () => {
@@ -339,6 +393,14 @@ const llamacppSlice = createSlice({
     setWarmupStatus(state, action: PayloadAction<LlamacppWarmupStatus>) {
       state.warmupStatus = action.payload;
     },
+    /**
+     * Apply a probe result synchronously (e.g. warmup poll). Invalidates in-flight
+     * `fetchLlamacppServerStatus` thunks so their late fulfills cannot overwrite this.
+     */
+    syncServerFromProbe(state, action: PayloadAction<LlamacppServerProbePayload>) {
+      state.serverStatusRequestId = null;
+      applyLlamacppServerProbeToState(state, action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchLlamacppSystemInfo.fulfilled, (state, action) => {
@@ -363,23 +425,24 @@ const llamacppSlice = createSlice({
       state.models = action.payload;
     });
 
+    builder.addCase(fetchLlamacppServerStatus.pending, (state, action) => {
+      state.serverStatusRequestId = action.meta.requestId;
+    });
     builder.addCase(fetchLlamacppServerStatus.fulfilled, (state, action) => {
-      if (action.payload) {
-        if (state.modelSwitchInFlight) {
-          state.activeModelId = action.payload.activeModelId;
-          return;
-        }
-        if (action.payload.healthy) {
-          state.serverStatus = "running";
-        } else if (action.payload.loading) {
-          state.serverStatus = "loading";
-        } else if (action.payload.running) {
-          state.serverStatus = "starting";
-        } else {
-          state.serverStatus = "stopped";
-        }
-        state.activeModelId = action.payload.activeModelId;
+      if (action.meta.requestId !== state.serverStatusRequestId) {
+        return;
       }
+      if (!action.payload) {
+        return;
+      }
+      applyLlamacppServerProbeToState(state, action.payload);
+    });
+
+    builder.addCase(fetchLlamacppServerStatus.rejected, (state, action) => {
+      if (action.meta.requestId !== state.serverStatusRequestId) {
+        return;
+      }
+      state.serverStatusRequestId = null;
     });
 
     builder.addCase(downloadLlamacppBackend.fulfilled, (state) => {
@@ -409,9 +472,11 @@ const llamacppSlice = createSlice({
 
     builder.addCase(startLlamacppServer.pending, (state) => {
       state.modelSwitchInFlight = true;
+      state.serverStatusRequestId = null;
     });
     builder.addCase(startLlamacppServer.fulfilled, (state, action) => {
       state.modelSwitchInFlight = false;
+      state.serverStatusRequestId = null;
       state.serverStatus = "running";
       if (action.payload?.modelId) {
         state.activeModelId = action.payload.modelId;
@@ -419,19 +484,23 @@ const llamacppSlice = createSlice({
     });
     builder.addCase(startLlamacppServer.rejected, (state) => {
       state.modelSwitchInFlight = false;
+      state.serverStatusRequestId = null;
     });
 
     builder.addCase(stopLlamacppServer.fulfilled, (state) => {
       state.serverStatus = "stopped";
+      state.serverStatusRequestId = null;
       state.warmupStatus = "idle";
       state.warmupSessionKey = null;
     });
 
     builder.addCase(setLlamacppActiveModel.pending, (state) => {
       state.modelSwitchInFlight = true;
+      state.serverStatusRequestId = null;
     });
     builder.addCase(setLlamacppActiveModel.fulfilled, (state, action) => {
       state.modelSwitchInFlight = false;
+      state.serverStatusRequestId = null;
       state.serverStatus = "running";
       state.warmupStatus = "idle";
       state.warmupSessionKey = null;
@@ -441,6 +510,7 @@ const llamacppSlice = createSlice({
     });
     builder.addCase(setLlamacppActiveModel.rejected, (state) => {
       state.modelSwitchInFlight = false;
+      state.serverStatusRequestId = null;
     });
 
     builder.addCase(warmupLocalModel.fulfilled, (state, action) => {

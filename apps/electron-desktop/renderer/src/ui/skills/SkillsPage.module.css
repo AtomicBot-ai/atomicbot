@@ -21,6 +21,18 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+}
+
+.UiSkillsHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  /* Reserve space for `ActiveModelBadge` (absolute); matches former in-flow badge + gap. */
+  padding-top: 46px;
 }
 
 .UiSkillsTitle {
@@ -31,6 +43,10 @@
   line-height: 32px;
   letter-spacing: -0.26px;
   margin: 0 0 16px;
+}
+
+.UiSkillsHeaderLeft .UiSkillsTitle {
+  margin-bottom: 0;
 }
 
 .UiAddCustomSkillLink {

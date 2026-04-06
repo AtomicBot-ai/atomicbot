@@ -23,6 +23,16 @@
   z-index: 100;
 }
 
+.UiSettingsTitleRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  /* Reserve space for `ActiveModelBadge` (absolute); matches former in-flow badge + gap. */
+  padding-top: 46px;
+}
+
 .UiSettingsTitle {
   color: #fff;
   font-size: 26px;
@@ -30,7 +40,7 @@
   font-weight: 700;
   line-height: 32px;
   letter-spacing: -0.26px;
-  margin: 0 0 16px;
+  margin: 0;
 }
 
 /* Top-level horizontal tab bar (AI Models, AI Providers, …) */

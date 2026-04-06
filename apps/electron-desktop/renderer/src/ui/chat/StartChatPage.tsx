@@ -12,6 +12,7 @@ import { downloadWhisperModel } from "@store/slices/whisperSlice";
 import { addToastError } from "@shared/toast";
 import { routes } from "../app/routes";
 import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
+import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import ct from "./ChatTranscript.module.css";
 
 /** Persists New task composer text while switching sidebar routes (same app session). */
@@ -226,6 +227,9 @@ export function StartChatPage({
 
   return (
     <div className={ct.UiChatShell}>
+      <div className={ct.UiChatNewTaskBadgeRow}>
+        <ActiveModelBadge />
+      </div>
       <div className={ct.UiChatTranscript}>
         <div className={ct.UiChatEmpty}>
           <img className={ct.UiChatEmptyLogo} src={logoUrl} alt="" aria-hidden="true" />

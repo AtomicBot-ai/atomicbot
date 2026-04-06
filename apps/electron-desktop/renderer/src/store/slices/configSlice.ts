@@ -32,6 +32,22 @@ export type ConfigSliceState = {
   error: string | null;
 };
 
+const LLAMACPP_PRIMARY_PREFIX = "llamacpp/";
+
+/** Bundled local model id from `agents.defaults.model.primary` (e.g. `qwen-3.5-9b`). */
+export function extractLlamacppDefaultModelId(config: ConfigData | undefined | null): string | null {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return null;
+  }
+  const primary = config.agents?.defaults?.model?.primary;
+  const raw = typeof primary === "string" ? primary.trim() : "";
+  if (!raw.startsWith(LLAMACPP_PRIMARY_PREFIX)) {
+    return null;
+  }
+  const id = raw.slice(LLAMACPP_PRIMARY_PREFIX.length).trim();
+  return id || null;
+}
+
 const initialState: ConfigSliceState = {
   snap: null,
   status: "idle",

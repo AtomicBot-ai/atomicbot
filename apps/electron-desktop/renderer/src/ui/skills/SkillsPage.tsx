@@ -8,6 +8,7 @@ import { addToastError } from "@shared/toast";
 import { SkillsIntegrationsTab } from "@ui/settings/skills/SkillsIntegrationsTab";
 import { CustomSkillUploadModal } from "@ui/settings/skills/CustomSkillUploadModal";
 import { useCustomSkills } from "@ui/settings/skills/useCustomSkills";
+import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import s from "./SkillsPage.module.css";
 
 export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "ready" }> }) {
@@ -36,24 +37,28 @@ export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "re
   const custom = useCustomSkills(setPageError);
 
   return (
-    <HeroPageLayout
-      aria-label="Skills page"
-      hideTopbar
-      color="secondary"
-      className={s.UiSkillsShell + " scrollable"}
-    >
-      <div className={s.UiSkillsShellWrapper}>
-        <div className={s.UiSkillsHeader}>
-          <h1 className={s.UiSkillsTitle}>Skills</h1>
+    <>
+      <ActiveModelBadge mainPaneCorner />
+      <HeroPageLayout
+        aria-label="Skills page"
+        hideTopbar
+        color="secondary"
+        className={s.UiSkillsShell + " scrollable"}
+      >
+        <div className={s.UiSkillsShellWrapper}>
+          <div className={s.UiSkillsHeader}>
+            <div className={s.UiSkillsHeaderLeft}>
+              <h1 className={s.UiSkillsTitle}>Skills</h1>
+            </div>
 
-          <button
-            type="button"
-            className={s.UiAddCustomSkillLink}
-            onClick={() => custom.setShowUploadModal(true)}
-          >
-            + Add custom skill
-          </button>
-        </div>
+            <button
+              type="button"
+              className={s.UiAddCustomSkillLink}
+              onClick={() => custom.setShowUploadModal(true)}
+            >
+              + Add custom skill
+            </button>
+          </div>
 
         <SkillsIntegrationsTab
           state={state}
@@ -71,6 +76,7 @@ export function SkillsPage({ state }: { state: Extract<GatewayState, { kind: "re
           onInstalled={custom.handleCustomSkillInstalled}
         />
       </div>
-    </HeroPageLayout>
+      </HeroPageLayout>
+    </>
   );
 }
