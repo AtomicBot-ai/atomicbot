@@ -23,6 +23,7 @@ import { SkillsIntegrationsTab } from "./skills/SkillsIntegrationsTab";
 import { VoiceRecognitionTab } from "./voice/VoiceRecognitionTab";
 import { AccountTab } from "./account/AccountTab";
 import { AccountModelsTab } from "./account-models/AccountModelsTab";
+import { McpServersTab } from "./mcp-servers/McpServersTab";
 import { addToastError } from "@shared/toast";
 
 export type SettingsOutletContext = {
@@ -41,6 +42,7 @@ export type SettingsTabId =
   | "voice"
   | "account"
   | "account-models"
+  | "mcp-servers"
   | "other";
 
 type TabDef = { path: string; label: string; tab: SettingsTabId };
@@ -53,6 +55,7 @@ const ALL_TABS: TabDef[] = [
   { path: "ai-providers", label: "AI Providers", tab: "providers" },
   { path: "messengers", label: "Messengers", tab: "connectors" },
   { path: "voice", label: "Voice", tab: "voice" },
+  { path: "mcp-servers", label: "MCP Servers", tab: "mcp-servers" },
   { path: "other", label: "Other", tab: "other" },
 ];
 
@@ -141,6 +144,15 @@ export function SettingsTab({ tab }: { tab: SettingsTabId }) {
     case "account-models":
       return (
         <AccountModelsTab
+          gw={ctx.gw}
+          configSnap={ctx.configSnap ?? null}
+          reload={ctx.reload}
+          onError={ctx.onError}
+        />
+      );
+    case "mcp-servers":
+      return (
+        <McpServersTab
           gw={ctx.gw}
           configSnap={ctx.configSnap ?? null}
           reload={ctx.reload}

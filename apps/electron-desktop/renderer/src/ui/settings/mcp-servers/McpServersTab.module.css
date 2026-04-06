@@ -1,0 +1,93 @@
+.McpEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  color: rgba(230, 237, 243, 0.55);
+  font-size: 14px;
+}
+
+.McpHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.McpServerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--surface-overlay, rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+  transition: background var(--transition-fast, 120ms);
+}
+
+.McpServerCard:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.McpServerCard + .McpServerCard {
+  margin-top: 8px;
+}
+
+.McpServerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.McpServerName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.McpServerMeta {
+  font-size: 12px;
+  color: rgba(230, 237, 243, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.McpServerActions {
+  display: flex;
+  gap: 6px;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.McpDeleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: rgba(248, 113, 113, 0.85);
+  font-size: 12px;
+  transition: background var(--transition-fast, 120ms);
+}
+
+.McpDeleteButton:hover {
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.McpSyncBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(230, 237, 243, 0.5);
+  font-weight: 400;
+}
