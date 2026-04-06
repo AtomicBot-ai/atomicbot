@@ -1,3 +1,6 @@
+// [llamacpp-condensed] Extended from original 3 ids to cover all system prompt
+// sections. This lets provider plugins (e.g. llamacpp) override any section
+// via resolveSystemPromptContribution().sectionOverrides for token savings.
 export type ProviderSystemPromptSectionId =
   | "interaction_style"
   | "tool_call_style"

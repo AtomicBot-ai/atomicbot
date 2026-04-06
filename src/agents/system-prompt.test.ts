@@ -745,6 +745,8 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).not.toContain("Bias toward action and momentum.");
   });
 
+  // [llamacpp-condensed] Tests for the extended sectionOverrides — verifies
+  // provider plugins can replace all major prompt sections.
   it("replaces new overridable sections (tooling, safety, cli, etc.) via sectionOverrides", () => {
     const prompt = buildAgentSystemPrompt({
       workspaceDir: "/tmp/openclaw",
@@ -788,6 +790,8 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).not.toContain("heartbeat ack");
   });
 
+  // [llamacpp-condensed] Regression guard: default prompt is unchanged when
+  // no provider overrides are active.
   it("preserves default content when no sectionOverrides are provided", () => {
     const prompt = buildAgentSystemPrompt({
       workspaceDir: "/tmp/openclaw",

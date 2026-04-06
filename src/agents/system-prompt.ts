@@ -482,6 +482,9 @@ export function buildAgentSystemPrompt(params: {
     return "You are a personal assistant running inside OpenClaw.";
   }
 
+  // [llamacpp-condensed] Extracted toolingSection so it can be passed as
+  // fallback to buildOverridablePromptSection — allows provider plugins to
+  // replace it via sectionOverrides.tooling.
   const toolingSection = [
     "## Tooling",
     "Structured tool definitions are the source of truth for tool names, descriptions, and parameters.",
@@ -520,6 +523,11 @@ export function buildAgentSystemPrompt(params: {
     "",
   ];
 
+  // [llamacpp-condensed] All sections below are wrapped in buildOverridablePromptSection
+  // so provider plugins can replace them via sectionOverrides (e.g. llamacpp uses
+  // condensed versions of tooling, safety, cli, docs, etc. for smaller context).
+  // Original code inlined section content directly in the array; this refactor
+  // preserves the same output when no override is set.
   const lines = [
     "You are a personal assistant running inside OpenClaw.",
     "",

@@ -86,6 +86,8 @@ export async function applyLocalModelConfig(params: {
           ...currentDefaultModels,
           [localModelRef]: currentDefaultModels[localModelRef] ?? {},
         },
+        // [llamacpp-condensed] Limit bootstrap file injection to reduce
+        // system prompt size for local models with small context windows.
         bootstrapMaxChars: 5000,
         bootstrapTotalMaxChars: 20000,
       },

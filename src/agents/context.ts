@@ -25,6 +25,9 @@ type AgentModelEntry = { params?: Record<string, unknown> };
 
 const ANTHROPIC_1M_MODEL_PREFIXES = ["claude-opus-4", "claude-sonnet-4"] as const;
 export const ANTHROPIC_CONTEXT_1M_TOKENS = 1_048_576;
+// [llamacpp-local] Changed retry policy: no exponential backoff (factor=1,
+// maxMs=1s) + hard cap of 60 retries. Local llamacpp models may start slowly;
+// original 60s backoff caused long stalls on config load failures.
 const CONFIG_LOAD_RETRY_POLICY: BackoffPolicy = {
   initialMs: 1_000,
   maxMs: 1_000,
@@ -173,6 +176,8 @@ function primeConfiguredContextWindows(): OpenClawConfig | undefined {
     });
     return CONTEXT_WINDOW_RUNTIME_STATE.configuredConfig;
   }
+  // [llamacpp-local] Stop retrying after CONFIG_LOAD_MAX_RETRIES to avoid
+  // infinite retry loops when config is permanently unavailable.
   if (CONTEXT_WINDOW_RUNTIME_STATE.configLoadFailures >= CONFIG_LOAD_MAX_RETRIES) {
     return undefined;
   }
