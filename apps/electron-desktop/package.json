@@ -228,7 +228,10 @@
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.inherit.plist",
       "target": [
-        "zip"
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
       ],
       "extendInfo": {
         "NSRemindersUsageDescription": "Atomic Bot needs access to Reminders to create, list, and complete reminders on your behalf.",
