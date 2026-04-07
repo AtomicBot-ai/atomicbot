@@ -1,0 +1,15 @@
+{
+  "name": "@openclaw/computer-use",
+  "version": "2026.4.5",
+  "private": true,
+  "description": "Desktop computer-use tool: screenshot, mouse, keyboard control via usecomputer",
+  "type": "module",
+  "dependencies": {
+    "usecomputer": "0.1.10"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

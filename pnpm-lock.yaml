@@ -303,6 +303,12 @@ importers:
 
   extensions/comfy: {}
 
+  extensions/computer-use:
+    dependencies:
+      usecomputer:
+        specifier: 0.1.10
+        version: 0.1.10
+
   extensions/copilot-proxy: {}
 
   extensions/deepgram: {}
@@ -6391,6 +6397,11 @@ packages:
 
   url-parse@1.5.10:
     resolution: {integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==}
+
+  usecomputer@0.1.10:
+    resolution: {integrity: sha512-6xTSiPEtGbJXyEvJkacjpKqNhVEAzZpFt54MIf8IWqE0qygZjdv68DRlysIbwvCV/qSRdP835YHeYFO0Rl1bhQ==}
+    os: [darwin, linux, win32]
+    hasBin: true
 
   utif2@4.1.0:
     resolution: {integrity: sha512-+oknB9FHrJ7oW7A2WZYajOcv4FcDR4CfoGB0dPNfxbi4GO05RRnFmt5oa23+9w32EanrYcSJWspUiJkLMs+37w==}
@@ -13111,6 +13122,10 @@ snapshots:
     dependencies:
       querystringify: 2.2.0
       requires-port: 1.0.0
+
+  usecomputer@0.1.10:
+    dependencies:
+      zod: 4.3.6
 
   utif2@4.1.0:
     dependencies:
