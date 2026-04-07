@@ -5,7 +5,7 @@ import { getDesktopApiOrNull } from "@ipc/desktopApi";
 import type { GatewayState } from "@main/types";
 import { routes } from "../app/routes";
 import { useGatewayRpc } from "@gateway/context";
-import { GlassCard, HeroPageLayout, PrimaryButton } from "@shared/kit";
+import { FullscreenShell, GlassCard, HeroPageLayout, PrimaryButton, SpinningSplashLogo } from "@shared/kit";
 import { addToastError } from "@shared/toast";
 import { useWelcomeState } from "./hooks/useWelcomeState";
 import { usePaidOnboarding } from "./hooks/usePaidOnboarding";
@@ -37,7 +37,18 @@ function WelcomeAutoStart(props: {
   }, [onStart]);
 
   if (startBusy) {
-    return null;
+    return (
+      <FullscreenShell role="status" aria-label="Setting up">
+        <div className="UiLoadingStage" aria-live="polite">
+          <div className="UiLoadingCenter">
+            <SpinningSplashLogo iconAlt="Atomic Bot" />
+            <div>
+              <div className="UiLoadingTitle">Setting up your agent...</div>
+            </div>
+          </div>
+        </div>
+      </FullscreenShell>
+    );
   }
 
   if (error) {
