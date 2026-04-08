@@ -6,7 +6,6 @@ import type { GatewayState } from "@main/types";
 import { routes } from "../app/routes";
 import { useGatewayRpc } from "@gateway/context";
 import { FullscreenShell, GlassCard, HeroPageLayout, PrimaryButton, SpinningSplashLogo } from "@shared/kit";
-import { addToastError } from "@shared/toast";
 import { useWelcomeState } from "./hooks/useWelcomeState";
 import { usePaidOnboarding } from "./hooks/usePaidOnboarding";
 import { SELF_FLOW, PAID_FLOW, LOCAL_MODEL_FLOW } from "./hooks/onboardingSteps";
@@ -91,7 +90,6 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
   const fs = flow === "paid" ? paid : welcome;
   const flowStatus = flow === "paid" ? paid.skillStatus : welcome.status;
   const flowError = flow === "paid" ? paid.skillError : welcome.error;
-  const onPaidConnectionsContinue = paid.flow.onPaidConnectionsContinue;
   const finishWelcome = welcome.finish;
 
   const skillsOnBack =
@@ -102,11 +100,11 @@ export function WelcomePage({ state }: { state: Extract<GatewayState, { kind: "r
         : welcome.goModelSelect;
   const connectionsFinish = React.useCallback(() => {
     if (flow === "paid") {
-      void onPaidConnectionsContinue();
+      void paid.flow.onStartChat(null);
     } else {
       finishWelcome();
     }
-  }, [finishWelcome, flow, onPaidConnectionsContinue]);
+  }, [finishWelcome, flow, paid.flow]);
 
   const goMediaUnderstanding =
     flow === "paid" ? paid.nav.goPaidMediaUnderstanding : welcome.goMediaUnderstanding;

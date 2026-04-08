@@ -4,8 +4,8 @@ export const SELF_FLOW = {
 } as const;
 
 export const PAID_FLOW = {
-  totalSteps: 6,
-  steps: { auth: 0, model: 1, skills: 2, connections: 3, review: 4, success: 5 },
+  totalSteps: 4,
+  steps: { auth: 0, model: 1, skills: 2, connections: 3, },
 } as const;
 
 export const LOCAL_MODEL_FLOW = {

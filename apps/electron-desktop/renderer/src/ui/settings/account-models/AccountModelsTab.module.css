@@ -40,7 +40,7 @@
   align-items: flex-start;
   gap: 2px;
   flex: 0 1 auto;
-  min-width: 0;
+  min-width: 80px;
   max-width: 100%;
 }
 
@@ -502,7 +502,7 @@
 .apiKeySetupSteps {
   margin: 0 0 12px;
   padding-left: 20px;
-  height: 60px;
+  height: 84px;
 }
 
 .apiKeyInputRow {
@@ -513,6 +513,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  padding-bottom: 48px;
 }
 
 /* ── Auth mode toggle (API key / Setup token) ── */
