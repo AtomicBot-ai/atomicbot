@@ -23,6 +23,13 @@ const EXTRA_MODELS: ExtraModelEntry[] = [
     contextWindow: 1_000_000,
     reasoning: true,
   },
+  {
+    id: "glm-5.1",
+    name: "GLM-5.1",
+    provider: "zai",
+    contextWindow: 202_800,
+    reasoning: true,
+  },
 ];
 
 export function getExtraModels(): ExtraModelEntry[] {

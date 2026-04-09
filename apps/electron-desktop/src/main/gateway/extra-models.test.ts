@@ -19,13 +19,13 @@ describe("getExtraModels", () => {
     }
   });
 
-  it("contains the zai/glm-5-turbo entry", () => {
+  it("contains the zai/glm-5.1 entry", () => {
     const models = getExtraModels();
-    const turbo = models.find((m) => m.provider === "zai" && m.id === "glm-5-turbo");
-    expect(turbo).toBeDefined();
-    expect(turbo!.name).toBe("GLM-5-Turbo");
-    expect(turbo!.reasoning).toBe(true);
-    expect(turbo!.contextWindow).toBe(200_000);
+    const entry = models.find((m) => m.provider === "zai" && m.id === "glm-5.1");
+    expect(entry).toBeDefined();
+    expect(entry!.name).toBe("GLM-5.1");
+    expect(entry!.reasoning).toBe(true);
+    expect(entry!.contextWindow).toBe(202_800);
   });
 
   it("returns a stable reference (IPC serialization handles copying)", () => {

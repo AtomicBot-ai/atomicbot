@@ -11,7 +11,6 @@ import { applyLocalModelConfig } from "@store/slices/llamacpp-config";
 import { resetSessionModelSelection } from "@store/slices/session-model-reset";
 import { reloadConfig } from "@store/slices/configSlice";
 import { clearAuth } from "@store/slices/auth/authSlice";
-import type { GatewayState } from "@main/types";
 import { routes } from "../app/routes";
 import { PAID_FLOW, SELF_FLOW, LOCAL_MODEL_FLOW, RESTORE_FLOW } from "./hooks/onboardingSteps";
 import { resolveModelSelectBackTarget } from "./hooks/resolve-model-select-back-target";
@@ -23,8 +22,6 @@ import { LocalBackendSetupPage } from "./providers/LocalBackendSetupPage";
 import { LocalModelSelectPage } from "./providers/LocalModelSelectPage";
 import { ModelSelectPage } from "./providers/ModelSelectPage";
 import { ProviderSelectPage } from "./providers/ProviderSelectPage";
-import { SetupReviewPage } from "./SetupReviewPage";
-import { SuccessPage } from "./SuccessPage";
 import { RestoreOptionPage } from "./RestoreOptionPage";
 import { RestoreFilePage } from "./RestoreFilePage";
 import type { OnboardingFlow } from "./hooks/onboarding-flow-context";
@@ -83,65 +80,25 @@ export function renderSetupModeRoute(deps: WelcomeRouteDeps): React.ReactNode {
 }
 
 export function renderPaidRoutes(deps: WelcomeRouteDeps): React.ReactNode {
-  const { welcome, paid, navigate } = deps;
+  const { paid } = deps;
   return (
-    <>
-      <Route
-        path="paid-model-select"
-        element={
-          <ModelSelectPage
-            totalSteps={PAID_FLOW.totalSteps}
-            activeStep={PAID_FLOW.steps.model}
-            models={paid.model.models}
-            filterProvider="openrouter"
-            defaultModelId="gemini-3-flash-preview"
-            loading={paid.model.modelsLoading}
-            error={paid.model.modelsError}
-            onSelect={(modelId) => void paid.model.onSelect(modelId)}
-            onBack={paid.nav.goSetupMode}
-            onRetry={() => void paid.model.loadModels()}
-          />
-        }
-      />
-
-      <Route
-        path="setup-review"
-        element={
-          <SetupReviewPage
-            totalSteps={PAID_FLOW.totalSteps}
-            activeStep={PAID_FLOW.steps.review}
-            selectedModel={paid.model.selectedName ?? paid.model.selected ?? "GPT-5.2 Pro"}
-            subscriptionPrice={paid.pay.subscriptionPrice}
-            onPay={() => void paid.pay.onPay()}
-            onBack={welcome.goConnections}
-            onCancelPayment={paid.pay.cancelPending}
-            busy={paid.pay.busy}
-            paymentPending={paid.pay.pending}
-            autoTopUp={paid.billing.autoTopUp}
-            autoTopUpLoading={paid.billing.autoTopUpLoading}
-            autoTopUpSaving={paid.billing.autoTopUpSaving}
-            autoTopUpError={paid.billing.autoTopUpError}
-            onAutoTopUpPatch={paid.billing.onAutoTopUpPatch}
-            onError={welcome.goConnections}
-            onSkip={() => void paid.flow.onStartChat(null)}
-          />
-        }
-      />
-
-      <Route
-        path="success"
-        element={
-          paid.auth.jwt ? (
-            <SuccessPage
-              jwt={paid.auth.jwt}
-              onStartChat={(key) => void paid.flow.onStartChat(key)}
-            />
-          ) : (
-            <Navigate to={`${routes.welcome}/setup-mode`} replace />
-          )
-        }
-      />
-    </>
+    <Route
+      path="paid-model-select"
+      element={
+        <ModelSelectPage
+          totalSteps={PAID_FLOW.totalSteps}
+          activeStep={PAID_FLOW.steps.model}
+          models={paid.model.models}
+          filterProvider="openrouter"
+          defaultModelId="gemini-3-flash-preview"
+          loading={paid.model.modelsLoading}
+          error={paid.model.modelsError}
+          onSelect={(modelId) => void paid.model.onSelect(modelId)}
+          onBack={paid.nav.goSetupMode}
+          onRetry={() => void paid.model.loadModels()}
+        />
+      }
+    />
   );
 }
 
