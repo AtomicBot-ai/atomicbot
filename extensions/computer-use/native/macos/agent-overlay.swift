@@ -66,6 +66,57 @@ final class GlowBorderView: NSView {
     }
 }
 
+// ── Cursor label view ────────────────────────────────────────
+
+final class CursorLabelView: NSView {
+    override var wantsLayer: Bool { get { true } set {} }
+    override var isFlipped: Bool { false }
+
+    static let labelText = "Atomic bot"
+    static let fontSize: CGFloat = 11.0
+    static let paddingH: CGFloat = 8.0
+    static let paddingV: CGFloat = 3.0
+    static let cornerRadius: CGFloat = 4.0
+
+    private lazy var textAttrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: CursorLabelView.fontSize, weight: .medium),
+        .foregroundColor: NSColor.black,
+    ]
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.clear.setFill()
+        dirtyRect.fill()
+
+        let bgColor = NSColor(red: overlayR, green: overlayG, blue: overlayB, alpha: 1.0)
+        let pill = NSBezierPath(
+            roundedRect: bounds.insetBy(dx: 1, dy: 1),
+            xRadius: CursorLabelView.cornerRadius,
+            yRadius: CursorLabelView.cornerRadius
+        )
+        bgColor.setFill()
+        pill.fill()
+
+        let str = NSAttributedString(string: CursorLabelView.labelText, attributes: textAttrs)
+        let size = str.size()
+        let origin = NSPoint(
+            x: (bounds.width - size.width) / 2.0,
+            y: (bounds.height - size.height) / 2.0
+        )
+        str.draw(at: origin)
+    }
+
+    static func preferredSize() -> NSSize {
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .medium),
+        ]
+        let size = (labelText as NSString).size(withAttributes: attrs)
+        return NSSize(
+            width: ceil(size.width) + paddingH * 2 + 2,
+            height: ceil(size.height) + paddingV * 2 + 2
+        )
+    }
+}
+
 // ── Glow cursor ring view ────────────────────────────────────
 
 final class GlowCursorRingView: NSView {
@@ -146,6 +197,26 @@ cursorWindow.contentView = GlowCursorRingView(
 cursorWindow.contentView?.wantsLayer = true
 cursorWindow.alphaValue = 0
 
+// Label window — follows cursor, sits below the ring
+let labelSize = CursorLabelView.preferredSize()
+let labelWindow = NSWindow(
+    contentRect: NSRect(x: 0, y: 0, width: labelSize.width, height: labelSize.height),
+    styleMask: .borderless,
+    backing: .buffered,
+    defer: false
+)
+labelWindow.level = maxLevel
+labelWindow.backgroundColor = .clear
+labelWindow.isOpaque = false
+labelWindow.hasShadow = false
+labelWindow.ignoresMouseEvents = true
+labelWindow.collectionBehavior = [.canJoinAllSpaces, .stationary]
+labelWindow.contentView = CursorLabelView(
+    frame: NSRect(x: 0, y: 0, width: labelSize.width, height: labelSize.height)
+)
+labelWindow.contentView?.wantsLayer = true
+labelWindow.alphaValue = 0
+
 // ── Fade in ──────────────────────────────────────────────────
 
 NSAnimationContext.runAnimationGroup { ctx in
@@ -153,6 +224,7 @@ NSAnimationContext.runAnimationGroup { ctx in
     ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
     borderWindow.animator().alphaValue = 1.0
     cursorWindow.animator().alphaValue = 1.0
+    labelWindow.animator().alphaValue = 1.0
 }
 
 // ── Breathing pulse ─────────────────────────────────────────
@@ -169,6 +241,7 @@ Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { timer in
     DispatchQueue.main.async {
         borderWindow.alphaValue = alpha
         cursorWindow.alphaValue = alpha
+        labelWindow.alphaValue = alpha
     }
 }
 
@@ -182,6 +255,12 @@ Timer.scheduledTimer(withTimeInterval: CURSOR_POLL_INTERVAL, repeats: true) { _ 
             y: pos.y - CURSOR_RING_SIZE / 2.0
         ))
         cursorWindow.orderFrontRegardless()
+
+        labelWindow.setFrameOrigin(NSPoint(
+            x: pos.x + 6.0,
+            y: pos.y - labelSize.height - 8.0
+        ))
+        labelWindow.orderFrontRegardless()
     }
 }
 
@@ -194,6 +273,7 @@ func gracefulFadeOut() {
         ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
         borderWindow.animator().alphaValue = 0
         cursorWindow.animator().alphaValue = 0
+        labelWindow.animator().alphaValue = 0
     }, completionHandler: {
         exit(0)
     })

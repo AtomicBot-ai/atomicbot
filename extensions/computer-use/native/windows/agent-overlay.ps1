@@ -146,6 +146,45 @@ $cursorWindow.Add_SourceInitialized({
     [Win32Overlay]::MakeClickThrough($helper.Handle)
 })
 
+# ── Cursor label window (Figma-style pill) ───────────────────
+
+$labelText = "Atomic bot"
+$labelFontSize = 11
+$labelPadH = 8
+$labelPadV = 3
+$labelCornerRadius = 4
+
+$labelWindow = [System.Windows.Window]::new()
+$labelWindow.WindowStyle = 'None'
+$labelWindow.AllowsTransparency = $true
+$labelWindow.Background = [System.Windows.Media.Brushes]::Transparent
+$labelWindow.Topmost = $true
+$labelWindow.ShowInTaskbar = $false
+$labelWindow.ResizeMode = 'NoResize'
+$labelWindow.SizeToContent = 'WidthAndHeight'
+$labelWindow.Opacity = 0
+
+$labelBorder = [System.Windows.Controls.Border]::new()
+$labelBorder.CornerRadius = [System.Windows.CornerRadius]::new($labelCornerRadius)
+$labelBorder.Background = [System.Windows.Media.SolidColorBrush]::new(
+    [System.Windows.Media.Color]::FromRgb($r, $g, $b)
+)
+$labelBorder.Padding = [System.Windows.Thickness]::new($labelPadH, $labelPadV, $labelPadH, $labelPadV)
+
+$labelBlock = [System.Windows.Controls.TextBlock]::new()
+$labelBlock.Text = $labelText
+$labelBlock.FontSize = $labelFontSize
+$labelBlock.FontWeight = [System.Windows.FontWeights]::Medium
+$labelBlock.Foreground = [System.Windows.Media.Brushes]::Black
+
+$labelBorder.Child = $labelBlock
+$labelWindow.Content = $labelBorder
+
+$labelWindow.Add_SourceInitialized({
+    $helper = [System.Windows.Interop.WindowInteropHelper]::new($labelWindow)
+    [Win32Overlay]::MakeClickThrough($helper.Handle)
+})
+
 # ── Fade-in animation ────────────────────────────────────────
 
 function Start-FadeIn {
@@ -158,6 +197,7 @@ function Start-FadeIn {
 
     $borderWindow.BeginAnimation([System.Windows.Window]::OpacityProperty, $fadeIn)
     $cursorWindow.BeginAnimation([System.Windows.Window]::OpacityProperty, $fadeIn)
+    $labelWindow.BeginAnimation([System.Windows.Window]::OpacityProperty, $fadeIn)
 }
 
 # ── Cursor tracking timer ────────────────────────────────────
@@ -172,19 +212,24 @@ $timer.Add_Tick({
     if ($null -ne $source) {
         $dpiX = $source.CompositionTarget.TransformToDevice.M11
         $dpiY = $source.CompositionTarget.TransformToDevice.M22
-        $cursorWindow.Left = ($pt.X / $dpiX) - ($ringSize / 2)
-        $cursorWindow.Top = ($pt.Y / $dpiY) - ($ringSize / 2)
+        $cx = $pt.X / $dpiX
+        $cy = $pt.Y / $dpiY
     }
     else {
-        $cursorWindow.Left = $pt.X - ($ringSize / 2)
-        $cursorWindow.Top = $pt.Y - ($ringSize / 2)
+        $cx = $pt.X
+        $cy = $pt.Y
     }
+    $cursorWindow.Left = $cx - ($ringSize / 2)
+    $cursorWindow.Top = $cy - ($ringSize / 2)
+    $labelWindow.Left = $cx + 6
+    $labelWindow.Top = $cy + 8
 })
 
 # ── Launch ────────────────────────────────────────────────────
 
 $borderWindow.Show()
 $cursorWindow.Show()
+$labelWindow.Show()
 $timer.Start()
 Start-FadeIn
 
