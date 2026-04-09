@@ -21,6 +21,7 @@ import {
 } from "./actions.js";
 import { registerCleanupHandlers } from "./cleanup.js";
 import { saveDebugToolResultArtifact, setActiveDebugArtifactRunId } from "./debug-artifacts.js";
+import { showOverlay, scheduleHideOverlay } from "./overlay/index.js";
 import { tryAcquire, releaseLock } from "./session-lock.js";
 import {
   clearRecentTextEntry,
@@ -171,6 +172,8 @@ export function createComputerUseTool(): AnyAgentTool {
         };
       }
 
+      await showOverlay();
+
       const params = args as Record<string, unknown>;
       const action = params.action as string;
       setActiveDebugArtifactRunId(_toolCallId);
@@ -319,6 +322,7 @@ export function createComputerUseTool(): AnyAgentTool {
         return result;
       } finally {
         setActiveDebugArtifactRunId(undefined);
+        scheduleHideOverlay();
         await releaseLock();
       }
     },

@@ -14,7 +14,10 @@ import {
   saveDebugImageArtifact,
   saveDebugOcrArtifact,
 } from "./debug-artifacts.js";
+import { nativeDrag } from "./native-drag.js";
 import { buildOcrLayout, recognizeText, summarizeOcr } from "./ocr/index.js";
+import { playClickAnimation } from "./overlay/click-animation.js";
+import { showOverlay } from "./overlay/index.js";
 import type { ToolResult } from "./types.js";
 import { abortedResult } from "./types.js";
 import {
@@ -65,6 +68,7 @@ export async function executeScreenshot(params: {
   captureSource?: "screenshot" | "screenshot_full";
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   const result = await screenshot({
     display: params.displayIndex ?? null,
@@ -194,6 +198,7 @@ export async function executeClick(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (typeof params.x !== "number" || typeof params.y !== "number") {
     return {
@@ -210,6 +215,8 @@ export async function executeClick(params: {
     count: params.count ?? 1,
     modifiers: [],
   });
+
+  playClickAnimation(mapped.x, mapped.y);
 
   // Wait for cursor to settle before reading position
   await new Promise((r) => setTimeout(r, 50));
@@ -274,6 +281,7 @@ export async function executeType(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (!params.text) {
     return {
@@ -309,6 +317,7 @@ export async function executePress(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (!params.keys) {
     return {
@@ -327,6 +336,7 @@ export async function executePress(params: {
 
 export async function executeSubmitInput(params: { signal?: AbortSignal }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   await press({ key: "enter", count: 1, delayMs: null });
 
@@ -346,6 +356,7 @@ export async function executeScroll(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   const at =
     typeof params.x === "number" && typeof params.y === "number"
@@ -400,6 +411,7 @@ export async function executeMouseMove(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (typeof params.x !== "number" || typeof params.y !== "number") {
     return {
@@ -432,6 +444,7 @@ export async function executeWait(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   const seconds = Math.min(Math.max(params.duration ?? 1, 0.1), MAX_WAIT_SECONDS);
   const ms = Math.round(seconds * 1000);
@@ -472,6 +485,7 @@ export async function executeDrag(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (
     typeof params.x !== "number" ||
@@ -487,7 +501,12 @@ export async function executeDrag(params: {
 
   const from = mapToScreen(params.x, params.y);
   const to = mapToScreen(params.toX, params.toY);
-  await drag({ from, to, button: "left" });
+
+  if (process.platform === "darwin" || process.platform === "win32") {
+    await nativeDrag(from, to);
+  } else {
+    await drag({ from, to, button: "left" });
+  }
 
   return {
     content: [
@@ -508,6 +527,7 @@ export async function executeHoldKey(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (!params.keys) {
     return {
@@ -557,6 +577,7 @@ export async function executeOpenApp(params: {
   signal?: AbortSignal;
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+  await showOverlay();
 
   if (!params.appName) {
     return {
