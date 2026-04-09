@@ -128,7 +128,7 @@ const ComputerToolSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export function createComputerUseTool(options: { senderIsOwner?: boolean }): AnyAgentTool {
+export function createComputerUseTool(): AnyAgentTool {
   const sessionKey = randomUUID();
   registerCleanupHandlers();
 

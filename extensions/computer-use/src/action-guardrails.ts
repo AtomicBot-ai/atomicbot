@@ -1,10 +1,5 @@
+import type { ToolResult } from "./types.js";
 import { getLastCaptureContext, getRecentTextEntry } from "./visual-context.js";
-
-type TextContent = { type: "text"; text: string };
-type ToolResult = {
-  content: TextContent[];
-  details: Record<string, unknown>;
-};
 
 type ClickLikeAction = "click" | "double_click" | "triple_click" | "drag";
 

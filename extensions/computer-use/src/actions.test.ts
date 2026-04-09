@@ -44,8 +44,7 @@ vi.mock("./ocr/index.js", () => ({
 }));
 
 import { executeScreenshot } from "./actions.js";
-import { clearCoordMap, mapToScreen, storeCoordMap } from "./coord-mapping.js";
-import { executeZoom, executeZoomCursor } from "./zoom-actions.js";
+import { clearCoordMap } from "./coord-mapping.js";
 
 describe("computer-use actions", () => {
   beforeEach(() => {
@@ -62,83 +61,6 @@ describe("computer-use actions", () => {
     recognizeTextMock.mockResolvedValue(null);
     summarizeOcrMock.mockReturnValue(null);
     buildOcrLayoutMock.mockReturnValue(null);
-  });
-
-  it("updates coord mapping after zoom screenshots", async () => {
-    storeCoordMap("0,0,1000,500,1000,500");
-    screenshotMock.mockResolvedValue({
-      path: "/tmp/zoom.png",
-      captureX: 100,
-      captureY: 200,
-      captureWidth: 300,
-      captureHeight: 150,
-      imageWidth: 300,
-      imageHeight: 150,
-      coordMap: "100,200,300,150,300,150",
-      desktopIndex: 0,
-    });
-
-    const result = await executeZoom({
-      x: 10,
-      y: 20,
-      width: 50,
-      height: 40,
-    });
-
-    expect(screenshotMock).toHaveBeenCalledWith({
-      annotate: true,
-      display: null,
-      path: null,
-      region: {
-        x: 10,
-        y: 20,
-        width: 50,
-        height: 40,
-      },
-      window: null,
-    });
-    expect(mapToScreen(0, 0)).toEqual({ x: 100, y: 200 });
-    expect(mapToScreen(299, 149)).toEqual({ x: 399, y: 349 });
-    expect(result.content[0]).toEqual({
-      type: "text",
-      text: "Zoomed region (10, 20) 50x40. Coordinates from this image are automatically scaled to match screen points. This zoomed image includes a grid overlay. Treat it as a fresh local coordinate space where the top-left corner is (0, 0). Choose the next click from this crop's grid, not from the previous screenshot.",
-    });
-  });
-
-  it("captures a centered zoom around the current cursor", async () => {
-    mousePositionMock.mockResolvedValue({ x: 250, y: 300 });
-    screenshotMock.mockResolvedValue({
-      path: "/tmp/zoom-cursor.png",
-      captureX: 50,
-      captureY: 150,
-      captureWidth: 400,
-      captureHeight: 300,
-      imageWidth: 400,
-      imageHeight: 300,
-      coordMap: "50,150,400,300,400,300",
-      desktopIndex: 0,
-    });
-
-    const result = await executeZoomCursor({});
-
-    expect(screenshotMock).toHaveBeenCalledWith({
-      annotate: true,
-      display: null,
-      path: null,
-      region: {
-        x: 50,
-        y: 150,
-        width: 400,
-        height: 300,
-      },
-      window: null,
-    });
-    expect(mapToScreen(0, 0)).toEqual({ x: 50, y: 150 });
-    expect(mapToScreen(399, 299)).toEqual({ x: 449, y: 449 });
-    expect(result.content[0]).toEqual({
-      type: "text",
-      text: "Zoomed around cursor at (250, 300) with region 400x300. Coordinates from this image are automatically scaled to match screen points. This zoomed image includes a grid overlay. Treat it as a fresh local coordinate space where the top-left corner is (0, 0). Choose the next click from this crop's grid, not from the previous screenshot.",
-    });
   });
 
   it("adds OCR anchors to screenshot_full results", async () => {

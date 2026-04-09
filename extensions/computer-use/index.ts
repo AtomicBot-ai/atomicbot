@@ -1,6 +1,5 @@
 import {
   definePluginEntry,
-  type OpenClawPluginToolContext,
   type OpenClawPluginToolFactory,
 } from "openclaw/plugin-sdk/plugin-entry";
 import { createComputerUseTool } from "./src/computer-tool.js";
@@ -10,9 +9,6 @@ export default definePluginEntry({
   name: "Computer Use",
   description: "Desktop control: screenshot, mouse, keyboard via OS-level APIs",
   register(api) {
-    api.registerTool(((ctx: OpenClawPluginToolContext) =>
-      createComputerUseTool({
-        senderIsOwner: ctx.senderIsOwner,
-      })) as OpenClawPluginToolFactory);
+    api.registerTool((() => createComputerUseTool()) as OpenClawPluginToolFactory);
   },
 });

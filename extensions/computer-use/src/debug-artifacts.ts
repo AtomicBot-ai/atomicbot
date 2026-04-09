@@ -1,21 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { OcrResult } from "./ocr/ocr-adapter.js";
-
-type ToolResultContent =
-  | { type: "text"; text: string }
-  | { type: "image"; data: string; mimeType: string };
-
-type ToolResult = {
-  content: ToolResultContent[];
-  details: Record<string, unknown>;
-};
+import type { TextContent, ImageContent, ToolResult } from "./types.js";
 
 const DEBUG_ARTIFACTS_ENABLED = process.env.OPENCLAW_COMPUTER_USE_DEBUG_ARTIFACTS === "1";
 const DEBUG_ARTIFACTS_ROOT = path.join(process.cwd(), ".cursor", "computer-use-debug");
 let activeDebugArtifactRunId: string | undefined;
 
-function sanitizeContent(content: ToolResultContent[]): Array<Record<string, unknown>> {
+function sanitizeContent(
+  content: Array<TextContent | ImageContent>,
+): Array<Record<string, unknown>> {
   return content.map((item) => {
     if (item.type === "image") {
       return {
@@ -32,10 +26,6 @@ async function ensureRunDirectory(runId: string): Promise<string> {
   const runDirectory = path.join(DEBUG_ARTIFACTS_ROOT, runId);
   await fs.mkdir(runDirectory, { recursive: true });
   return runDirectory;
-}
-
-export function isDebugArtifactCaptureEnabled(): boolean {
-  return DEBUG_ARTIFACTS_ENABLED;
 }
 
 export function setActiveDebugArtifactRunId(runId?: string): void {

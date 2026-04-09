@@ -8,13 +8,15 @@ import {
   clipboardWrite,
   getPlatform,
 } from "./clipboard-type.js";
-import { getLastCoordMap, mapToScreen, storeCoordMap } from "./coord-mapping.js";
+import { mapToScreen, storeCoordMap } from "./coord-mapping.js";
 import {
   getActiveDebugArtifactRunId,
   saveDebugImageArtifact,
   saveDebugOcrArtifact,
 } from "./debug-artifacts.js";
 import { buildOcrLayout, recognizeText, summarizeOcr } from "./ocr/index.js";
+import type { ToolResult } from "./types.js";
+import { abortedResult } from "./types.js";
 import {
   screenshot,
   click,
@@ -26,20 +28,9 @@ import {
   mouseMove,
   drag,
 } from "./usecomputer-native.js";
-import { getLastCaptureContext, storeCaptureContext } from "./visual-context.js";
+import { storeCaptureContext } from "./visual-context.js";
 
 const execFileAsync = promisify(execFile);
-
-type TextContent = { type: "text"; text: string };
-type ImageContent = { type: "image"; data: string; mimeType: string };
-type ToolResult = {
-  content: Array<TextContent | ImageContent>;
-  details: Record<string, unknown>;
-};
-
-function abortedResult(): ToolResult {
-  return { content: [{ type: "text", text: "Aborted" }], details: { status: "aborted" } };
-}
 
 // Anthropic-recommended target resolutions for model accuracy.
 // Models perform best with images at these standard sizes.
@@ -212,8 +203,6 @@ export async function executeClick(params: {
   }
 
   const mapped = mapToScreen(params.x, params.y);
-  const capture = getLastCaptureContext();
-  const coordMap = getLastCoordMap();
 
   await click({
     point: mapped,
