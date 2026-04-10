@@ -160,6 +160,7 @@ export function createComputerUseTool(): AnyAgentTool {
       }
 
       const lockResult = await tryAcquire(sessionKey);
+
       if (lockResult.kind === "blocked") {
         return {
           content: [

@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
 import {
   shouldUseClipboard,
@@ -35,6 +36,32 @@ import { storeCaptureContext } from "./visual-context.js";
 
 const execFileAsync = promisify(execFile);
 
+// usecomputer natively caps the long edge at 1568px on macOS/Linux
+// but not on Windows. This constant mirrors that native behavior.
+const NATIVE_MAX_LONG_EDGE = 1568;
+
+async function resizeImageWindows(
+  imagePath: string,
+  targetWidth: number,
+  targetHeight: number,
+): Promise<boolean> {
+  const absPath = path.resolve(imagePath).replace(/'/g, "''");
+  await execFileAsync("powershell.exe", [
+    "-NoProfile",
+    "-Command",
+    `Add-Type -AssemblyName System.Drawing; ` +
+      `$src = [System.Drawing.Image]::FromFile('${absPath}'); ` +
+      `$dst = New-Object System.Drawing.Bitmap(${targetWidth}, ${targetHeight}); ` +
+      `$g = [System.Drawing.Graphics]::FromImage($dst); ` +
+      `$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; ` +
+      `$g.DrawImage($src, 0, 0, ${targetWidth}, ${targetHeight}); ` +
+      `$src.Dispose(); $g.Dispose(); ` +
+      `$dst.Save('${absPath}', [System.Drawing.Imaging.ImageFormat]::Png); ` +
+      `$dst.Dispose()`,
+  ]);
+  return true;
+}
+
 // Anthropic-recommended target resolutions for model accuracy.
 // Models perform best with images at these standard sizes.
 const SCALING_TARGETS = [
@@ -68,6 +95,7 @@ export async function executeScreenshot(params: {
   captureSource?: "screenshot" | "screenshot_full";
 }): Promise<ToolResult> {
   if (params.signal?.aborted) return abortedResult();
+
   await showOverlay();
 
   const result = await screenshot({
@@ -89,24 +117,54 @@ export async function executeScreenshot(params: {
   let finalHeight = result.imageHeight;
   let scaledDown = false;
 
+  // On Windows, usecomputer does not natively scale screenshots.
+  // macOS/Linux cap the long edge at 1568px in the Zig layer.
+  // Compensate here so all downstream code sees comparable sizes.
+  if (process.platform === "win32") {
+    const longEdge = Math.max(finalWidth, finalHeight);
+    if (longEdge > NATIVE_MAX_LONG_EDGE) {
+      const scale = NATIVE_MAX_LONG_EDGE / longEdge;
+      const w = Math.max(1, Math.round(finalWidth * scale));
+      const h = Math.max(1, Math.round(finalHeight * scale));
+      try {
+        await resizeImageWindows(result.path, w, h);
+        finalWidth = w;
+        finalHeight = h;
+      } catch {
+        // resize failed — continue with original size
+      }
+    }
+  }
+
   // Downscale to a model-friendly resolution (Anthropic approach).
   // Smaller, standard-sized images improve model coordinate accuracy.
-  const target = selectScalingTarget(screenW, screenH);
-  if (target && process.platform === "darwin" && !params.disableDownscale) {
-    try {
-      await execFileAsync("sips", [
-        "-z",
-        String(target.height),
-        String(target.width),
-        result.path,
-        "--out",
-        result.path,
-      ]);
-      finalWidth = target.width;
-      finalHeight = target.height;
-      scaledDown = true;
-    } catch {
-      // sips failed — fall back to native image
+  const target = selectScalingTarget(finalWidth, finalHeight);
+  if (target && !params.disableDownscale) {
+    if (process.platform === "darwin") {
+      try {
+        await execFileAsync("sips", [
+          "-z",
+          String(target.height),
+          String(target.width),
+          result.path,
+          "--out",
+          result.path,
+        ]);
+        finalWidth = target.width;
+        finalHeight = target.height;
+        scaledDown = true;
+      } catch {
+        // sips failed — fall back to native image
+      }
+    } else if (process.platform === "win32" && target.width < finalWidth) {
+      try {
+        await resizeImageWindows(result.path, target.width, target.height);
+        finalWidth = target.width;
+        finalHeight = target.height;
+        scaledDown = true;
+      } catch {
+        // PowerShell resize failed — fall back to native image
+      }
     }
   }
 
@@ -126,6 +184,7 @@ export async function executeScreenshot(params: {
   });
 
   const shouldRunOcr = params.captureSource === "screenshot_full";
+
   const ocrResult = shouldRunOcr
     ? await recognizeText({
         imagePath: result.path,
@@ -136,6 +195,7 @@ export async function executeScreenshot(params: {
     : null;
   const ocrSummary = summarizeOcr(ocrResult);
   const ocrLayout = buildOcrLayout(ocrResult);
+
   const screenshotAction =
     params.captureSource === "screenshot_full" ? "screenshot_full" : "screenshot";
 
@@ -587,6 +647,7 @@ export async function executeOpenApp(params: {
   }
 
   const platform = process.platform;
+
   switch (platform) {
     case "darwin":
       await execFileAsync("open", ["-a", params.appName]);
@@ -594,9 +655,19 @@ export async function executeOpenApp(params: {
     case "linux":
       await execFileAsync("xdg-open", [params.appName]);
       break;
-    case "win32":
-      await execFileAsync("cmd", ["/c", "start", "", params.appName]);
+    case "win32": {
+      const safeName = params.appName.replace(/'/g, "''");
+      await execFileAsync("powershell.exe", [
+        "-NoProfile",
+        "-Command",
+        // Use Get-StartApps to find installed apps (UWP + Win32) by name,
+        // then launch via shell:AppsFolder. Fall back to Start-Process.
+        `$app = Get-StartApps | Where-Object { $_.Name -like '*${safeName}*' } | Select-Object -First 1; ` +
+          `if ($app) { Start-Process "explorer.exe" "shell:AppsFolder\\$($app.AppID)" } ` +
+          `else { Start-Process '${safeName}' }`,
+      ]);
       break;
+    }
     default:
       return {
         content: [{ type: "text", text: `Unsupported platform: ${platform}` }],
