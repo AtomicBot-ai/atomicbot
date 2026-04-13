@@ -25,7 +25,6 @@ export {
   parseRole,
 } from "./parse-history-messages";
 
-
 const initialState: ChatSliceState = {
   messages: [],
   streamByRun: {},
@@ -86,56 +85,64 @@ const chatSlice = createSlice({
     },
     historyLoaded(state, action: PayloadAction<UiMessage[]>) {
       const fromHistory = action.payload;
-      const lastHistoryTs =
-        fromHistory.length > 0 ? Math.max(...fromHistory.map((m) => m.ts ?? 0)) : 0;
-      // Keep live messages (assistant stream finals + optimistic user messages)
-      // that are newer than the latest server history entry and not yet persisted.
-      // Deduplicate against history by text to avoid race-condition duplicates
-      // (e.g. a stream final arriving between sessionCleared and historyLoaded).
-      const historyTexts = new Set(fromHistory.map((m) => m.text));
-      // Suffix-based dedup: stream text and history text may differ slightly
-      // (whitespace, metadata stripping) but share the same tail.
-      // Use max(100, 2/3 of the message length) as suffix to compare.
-      const MIN_SUFFIX = 100;
-      const historyTrimmed = fromHistory.map((m) => m.text.trim());
-      const liveOnly: UiMessage[] = [];
-      for (const m of state.messages) {
-        if (m.ts == null || m.ts <= lastHistoryTs) {
-          continue;
-        }
-        // Compare trimmed: live texts keep trailing whitespace for cumulative
-        // prefix matching, while history texts are trimmed by parseHistoryMessages.
-        const trimmed = m.text.trim();
-        if (historyTexts.has(trimmed)) {
-          continue;
-        }
-        if (m.role === "assistant" && trimmed.length >= MIN_SUFFIX) {
-          const suffixLen = Math.max(MIN_SUFFIX, Math.floor((trimmed.length * 2) / 3));
-          const liveSuffix = trimmed.slice(-suffixLen);
-          if (
-            historyTrimmed.some(
-              (ht) => ht.length >= suffixLen && ht.slice(-suffixLen) === liveSuffix
-            )
-          ) {
-            continue;
+
+      // Pending optimistic user messages that are still not in history yet.
+      const pendingUsers = state.messages
+        .filter((m) => m.role === "user" && m.pending)
+        .sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
+
+      // Existing non-pending messages that may correspond to the same persisted
+      // history entries. We reuse their ids to avoid React remount flicker when
+      // history arrives after a streamed/live message.
+      const existingStable = state.messages.filter((m) => !m.pending);
+
+      const usedExistingIds = new Set<string>();
+
+      const reconciledHistory = fromHistory.map((hm) => {
+        const hmText = hm.text.trim();
+
+        const match = existingStable.find((em) => {
+          if (usedExistingIds.has(em.id)) {
+            return false;
           }
+          if (em.role !== hm.role) {
+            return false;
+          }
+
+          const emText = em.text.trim();
+          if (emText !== hmText) {
+            return false;
+          }
+
+          // Prefer close timestamps when available, but do not require them.
+          const emTs = em.ts ?? 0;
+          const hmTs = hm.ts ?? 0;
+          if (emTs && hmTs) {
+            const delta = Math.abs(emTs - hmTs);
+            if (delta > 15_000) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        if (!match) {
+          return hm;
         }
-        if (m.role === "assistant" && m.runId) {
-          liveOnly.push(m);
-        } else if (m.role === "user") {
-          liveOnly.push(m);
-        }
-      }
+
+        usedExistingIds.add(match.id);
+        return {
+          ...hm,
+          id: match.id,
+          runId: hm.runId ?? match.runId,
+        };
+      });
+
       state.messages =
-        liveOnly.length > 0
-          ? [
-              ...fromHistory,
-              ...[...liveOnly].sort((a: UiMessage, b: UiMessage) => (a.ts ?? 0) - (b.ts ?? 0)),
-            ]
-          : fromHistory;
-      // Selectively clean up completed streams instead of clearing all.
-      // Active streams for in-flight runs must persist so the UI keeps
-      // showing the typing indicator for pending responses.
+        pendingUsers.length > 0 ? [...reconciledHistory, ...pendingUsers] : reconciledHistory;
+
+      // Clear completed stream entries whose final assistant messages are now present.
       const finalizedRunIds = new Set<string>();
       for (const m of state.messages) {
         if (m.role === "assistant" && m.runId) {
@@ -148,14 +155,14 @@ const chatSlice = createSlice({
         }
       }
 
-      // Resolve approval-pending statuses and clear the loader when the
-      // closing continue/denied message has appeared in history.
+      // Resolve approval-pending statuses and clear loader when continue/denied appears.
       const allMsgs = state.messages;
       for (let i = 0; i < allMsgs.length; i++) {
         const msg = allMsgs[i];
         if (!msg.toolResults?.some((r) => r.status === "approval-pending")) {
           continue;
         }
+
         let resolvedAs: "approved" | "denied" | null = null;
         for (let j = i + 1; j < allMsgs.length; j++) {
           if (isApprovalContinueMessage(allMsgs[j].role, allMsgs[j].text)) {
@@ -164,6 +171,7 @@ const chatSlice = createSlice({
             break;
           }
         }
+
         if (resolvedAs && msg.toolResults) {
           for (const r of msg.toolResults) {
             if (r.status === "approval-pending") {

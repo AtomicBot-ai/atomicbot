@@ -41,7 +41,7 @@
   height: 28px;
   margin: -2px -4px -2px 0;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
