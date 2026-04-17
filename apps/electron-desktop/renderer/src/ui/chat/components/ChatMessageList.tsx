@@ -84,6 +84,7 @@ type DisplayMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  runId?: string;
   pending?: boolean;
   attachments?: UiMessageAttachment[];
   toolCalls?: UiToolCall[];
@@ -94,6 +95,7 @@ type StreamEntry = {
   id: string;
   role: string;
   text: string;
+  runId?: string;
 };
 
 export function ChatMessageList(props: {
@@ -161,9 +163,15 @@ export function ChatMessageList(props: {
     }
   }
 
-  const streamBubbles = Object.values(streamByRun).filter(
-    (m) => !isHeartbeatMessage(m.role, m.text)
+  const finalizedAssistantRunIds = new Set(
+    displayMessages.filter((m) => m.role === "assistant" && m.runId).map((m) => m.runId as string)
   );
+
+  const streamBubbles = Object.values(streamByRun).filter(
+    (m) =>
+      !isHeartbeatMessage(m.role, m.text) && !(m.runId && finalizedAssistantRunIds.has(m.runId))
+  );
+
   const hasStreamBubbles = streamBubbles.length > 0;
   const lastAssistantRenderIndex =
     renderItems.length > 0
