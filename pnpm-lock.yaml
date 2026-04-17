@@ -306,8 +306,8 @@ importers:
   extensions/computer-use:
     dependencies:
       '@atomicbotai/computer-use':
-        specifier: ^0.1.10
-        version: 0.1.10
+        specifier: ^0.1.11
+        version: 0.1.11
 
   extensions/copilot-proxy: {}
 
@@ -859,8 +859,8 @@ packages:
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
 
-  '@atomicbotai/computer-use@0.1.10':
-    resolution: {integrity: sha512-hpsiK5DH2EynCd+XrzznB4h47t2RsoCNPdv4Mbv+Lz+5PrAWplIyMnsP15PAfx30bvqkXrNZPiQfT5xgOGcaEA==}
+  '@atomicbotai/computer-use@0.1.11':
+    resolution: {integrity: sha512-AwSDSdJCytOvsGjRordEDnB2nlqoM44Ib+7xof8oSk2WJUs6eVZOAFSqcU1M1Ud27DM2F/zzw0TaPe417OqPzw==}
     engines: {node: '>=22'}
 
   '@aws-crypto/crc32@5.2.0':
@@ -6723,7 +6723,7 @@ snapshots:
 
   '@asamuzakjp/nwsapi@2.3.9': {}
 
-  '@atomicbotai/computer-use@0.1.10':
+  '@atomicbotai/computer-use@0.1.11':
     dependencies:
       '@sinclair/typebox': 0.34.49
       usecomputer: 0.1.10
