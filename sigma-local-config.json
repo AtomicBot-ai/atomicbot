@@ -1,0 +1,48 @@
+{
+  "models": {
+    "providers": {
+      "sigma-local": {
+        "baseUrl": "http://127.0.0.1:8787/v1",
+        "api": "openai-completions",
+        "apiKey": "no-key-needed",
+        "models": [
+          {
+            "id": "local-model",
+            "name": "gemma-4-26B-A4B-it-UD-Q4_K_M",
+            "contextWindow": 40960
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "sigma-local/local-model"
+      }
+    }
+  },
+  "browser": {
+    "defaultProfile": "user",
+    "executablePath": "/Users/nikitabogatyrev/Sigma-AI-Browser-2/src/out/Release_arm64/Sigma.app/Contents/MacOS/Sigma",
+    "profiles": {
+      "user": {
+        "driver": "extension",
+        "cdpUrl": "http://127.0.0.1:18792",
+        "color": "#00AA00"
+      }
+    }
+  },
+  "gateway": {
+    "port": 10500,
+    "bind": "loopback",
+    "controlUi": {
+      "allowedOrigins": ["*", "null"],
+      "dangerouslyDisableDeviceAuth": true
+    },
+    "auth": {
+      "mode": "none",
+      "token": "sigma-local"
+    }
+  }
+}

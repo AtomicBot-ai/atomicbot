@@ -1,0 +1,24 @@
+{
+  "name": "@sigma-eclipse/sigma-browser-host",
+  "version": "0.0.1",
+  "description": "Host environment for OpenClaw Gateway inside Sigma Browser (C++ supervisor spawns this launcher, which in turn spawns the Gateway).",
+  "private": true,
+  "type": "module",
+  "main": "dist/openclaw-launcher.mjs",
+  "bin": {
+    "openclaw-launcher": "dist/openclaw-launcher.mjs"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch"
+  },
+  "dependencies": {
+    "json5": "^2.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "tsdown": "^0.15.0",
+    "typescript": "^5.6.0"
+  }
+}

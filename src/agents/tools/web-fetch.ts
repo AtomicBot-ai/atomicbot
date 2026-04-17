@@ -749,7 +749,10 @@ export function createWebFetchTool(options?: {
     label: "Web Fetch",
     name: "web_fetch",
     description:
-      "Fetch and extract readable content from a URL (HTML → markdown/text). Use for lightweight page access without browser automation.",
+      "Fetch and extract readable content from a URL (HTML → markdown/text). Use ONLY for lightweight, one-shot content extraction when the user just wants to read/summarize a page's text. " +
+      "DO NOT use when the user asks to open a tab, navigate, go to a site, browse, or interact with a page in any way — including RU triggers like 'открой', 'открой вкладку', 'зайди на', 'перейди на', 'открой сайт', 'посмотри в браузере'. " +
+      "For any of those, use the `browser` tool (action=open_tab / navigate / snapshot / act). " +
+      "If the `browser` tool is available in this session, prefer it over `web_fetch` whenever the user intent involves a browser tab or interactive page behavior.",
     parameters: WebFetchSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

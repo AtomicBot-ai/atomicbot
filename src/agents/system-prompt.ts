@@ -446,6 +446,12 @@ export function buildAgentSystemPrompt(params: {
           '- session_status: show usage/time/model state and answer "what model are we using?"',
         ].join("\n"),
     "TOOLS.md does not control tool availability; it is user guidance for how to use external tools.",
+    availableTools.has("browser") && availableTools.has("web_fetch")
+      ? "Browser vs web_fetch: if the user asks to open a tab, open/visit a site, navigate, go to, browse, or interact with a page (including RU triggers: 'открой', 'открой вкладку', 'открой сайт', 'зайди на', 'перейди на', 'посмотри', 'кликни', 'введи'), ALWAYS use the `browser` tool (action=open_tab / navigate / snapshot / act). Use `web_fetch` only for pure, non-interactive text extraction when no browser UI is needed."
+      : "",
+    availableTools.has("browser")
+      ? "When resolving a brand/site name from the user message to a URL for `browser`, map it to the most likely official site (e.g. 'вкуссвилл' → vkusvill.ru, 'авито' → avito.ru, 'сбер' → sberbank.ru). Do not confuse unrelated brands (e.g. 'вкуссвилл' is NOT vk.com)."
+      : "",
     `For long waits, avoid rapid poll loops: use ${execToolName} with enough yieldMs or ${processToolName}(action=poll, timeout=<ms>).`,
     "If a task is more complex or takes longer, spawn a sub-agent. Completion is push-based: it will auto-announce when done.",
     ...(acpHarnessSpawnAllowed

@@ -314,6 +314,7 @@ export function createBrowserTool(opts?: {
     name: "browser",
     description: [
       "Control SigmaBrowser via the browser control server (status/start/stop/profiles/tabs/open/snapshot/screenshot/actions).",
+      "ALWAYS use THIS tool (NOT `web_fetch`) when the user asks to open a tab, open a site, navigate, go to, browse, visit, or interact with a page — including RU triggers like 'открой', 'открой вкладку', 'открой сайт', 'зайди на', 'перейди на', 'посмотри', 'покажи страницу', 'кликни', 'введи'. Map 'открой вкладку X' / 'открой X' / 'зайди на X' → action=\"open_tab\" with targetUrl for that site. If X is just a brand/domain fragment (e.g. 'вкуссвилл', 'авито'), resolve to the most likely official URL (vkusvill.ru, avito.ru) — DO NOT confuse with unrelated sites (e.g. 'вкуссвилл' is vkusvill.ru, NOT vk.com).",
       "The default profile controls the running SigmaBrowser instance through the Sigma Eclipse Extension relay — tabs are auto-attached, no user interaction required. Omit profile for most tasks.",
       "The Sigma Eclipse Extension automatically attaches the active tab so you can start browsing immediately — no user click or approval needed.",
       'Use profile="chrome-relay" only if you need to explicitly target the extension relay by name.',
