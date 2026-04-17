@@ -35,6 +35,7 @@ const initialState: ChatSliceState = {
   activeSessionKey: "",
   liveToolCalls: {},
   awaitingContinuation: false,
+  loadingHistory: false,
 };
 
 /**
@@ -75,6 +76,9 @@ const chatSlice = createSlice({
     },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
+      if (action.payload != null) {
+        state.loadingHistory = false;
+      }
     },
     /** Clear transcript when switching to another session so we don't show the previous thread. */
     sessionCleared(state, action: PayloadAction<string>) {
@@ -83,8 +87,10 @@ const chatSlice = createSlice({
       state.liveToolCalls = {};
       state.epoch += 1;
       state.activeSessionKey = action.payload;
+      state.loadingHistory = true;
     },
     historyLoaded(state, action: PayloadAction<UiMessage[]>) {
+      state.loadingHistory = false;
       const fromHistory = action.payload;
       const lastHistoryTs =
         fromHistory.length > 0 ? Math.max(...fromHistory.map((m) => m.ts ?? 0)) : 0;

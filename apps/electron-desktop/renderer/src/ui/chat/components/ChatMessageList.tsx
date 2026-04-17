@@ -104,6 +104,7 @@ export function ChatMessageList(props: {
   optimisticFirstAttachments: ChatAttachmentInput[] | null;
   matchingFirstUserFromHistory: DisplayMessage | null;
   waitingForFirstResponse: boolean;
+  loadingHistory?: boolean;
   markdownComponents: Components;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -115,9 +116,18 @@ export function ChatMessageList(props: {
     optimisticFirstAttachments,
     matchingFirstUserFromHistory,
     waitingForFirstResponse,
+    loadingHistory = false,
     markdownComponents,
     scrollRef,
   } = props;
+
+  const showHistoryLoader =
+    loadingHistory &&
+    displayMessages.length === 0 &&
+    optimisticFirstMessage == null &&
+    !waitingForFirstResponse &&
+    Object.keys(streamByRun).length === 0 &&
+    liveToolCalls.length === 0;
 
   /** Stable key for the first user message so React doesn't remount when switching from optimistic to history. */
   const getMessageKey = (m: DisplayMessage) =>
@@ -163,6 +173,22 @@ export function ChatMessageList(props: {
       : -1;
   const lastAssistantFromRenderItems =
     lastAssistantRenderIndex >= 0 ? renderItems.length - 1 - lastAssistantRenderIndex : -1;
+
+  if (showHistoryLoader) {
+    return (
+      <div className={ct.UiChatTranscript + " scrollable"} ref={scrollRef}>
+        <div
+          className={ct.UiChatHistoryLoading}
+          role="status"
+          aria-live="polite"
+          aria-label="Loading chat history"
+          data-testid="chat-history-loader"
+        >
+          <span className="UiButtonSpinner" aria-hidden="true" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={ct.UiChatTranscript + " scrollable"} ref={scrollRef}>

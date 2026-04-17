@@ -46,6 +46,8 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
   const liveToolCalls = activeSessionKey === sessionKey ? Object.values(rawLiveToolCalls) : [];
   const sending = useAppSelector((s) => s.chat.sending);
   const awaitingContinuation = useAppSelector((s) => s.chat.awaitingContinuation);
+  const rawLoadingHistory = useAppSelector((s) => s.chat.loadingHistory);
+  const loadingHistory = activeSessionKey === sessionKey ? rawLoadingHistory : true;
   const error = useAppSelector((s) => s.chat.error);
   const authMode = useAppSelector((s) => s.auth.mode);
   const subscription = useAppSelector((s) => s.auth.subscription);
@@ -215,6 +217,7 @@ export function ChatPage({ state: _state }: { state: Extract<GatewayState, { kin
           >["matchingFirstUserFromHistory"]
         }
         waitingForFirstResponse={waitingForFirstResponse}
+        loadingHistory={loadingHistory}
         markdownComponents={markdownComponents}
         scrollRef={scrollRef}
       />

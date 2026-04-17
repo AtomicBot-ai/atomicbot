@@ -201,6 +201,25 @@ export const ChatComposer = React.forwardRef<ChatComposerRef, ChatComposerProps>
                 onSend();
               }
             }}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData("text/plain");
+              if (!text || !/\n+$/.test(text)) {
+                return;
+              }
+              e.preventDefault();
+              const trimmed = text.replace(/\n+$/, "");
+              const target = e.currentTarget;
+              const start = target.selectionStart ?? target.value.length;
+              const end = target.selectionEnd ?? target.value.length;
+              const next = target.value.slice(0, start) + trimmed + target.value.slice(end);
+              onChange(next);
+              requestAnimationFrame(() => {
+                const el = textareaRef.current;
+                if (!el) return;
+                const caret = start + trimmed.length;
+                el.setSelectionRange(caret, caret);
+              });
+            }}
           />
 
           <div className={s.UiChatComposerButtonBlock}>
