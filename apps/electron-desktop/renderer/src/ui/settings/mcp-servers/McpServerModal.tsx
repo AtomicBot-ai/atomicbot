@@ -109,16 +109,18 @@ const MODE_TAB_STYLE: React.CSSProperties = {
   fontSize: 13,
   background: "none",
   border: "none",
-  borderBottom: "2px solid transparent",
+  borderBottom: 0,
   color: "rgba(230, 237, 243, 0.55)",
   cursor: "pointer",
+  outline: "none",
+  textDecoration: "none",
   transition: "color 120ms, border-color 120ms",
 };
 
 const MODE_TAB_ACTIVE: React.CSSProperties = {
   ...MODE_TAB_STYLE,
   color: "#fff",
-  borderBottomColor: "#0d6fff",
+  borderBottom: "2px solid #0d6fff",
 };
 
 export function McpServerModal(props: {
@@ -313,10 +315,11 @@ export function McpServerModal(props: {
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {/* Mode tabs */}
-        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(230, 237, 243, 0.1)" }}>
+        <div style={{ display: "flex", gap: 0 }}>
           <button
             type="button"
             style={mode === "form" ? MODE_TAB_ACTIVE : MODE_TAB_STYLE}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => setMode("form")}
           >
             Form
@@ -324,6 +327,7 @@ export function McpServerModal(props: {
           <button
             type="button"
             style={mode === "json" ? MODE_TAB_ACTIVE : MODE_TAB_STYLE}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => setMode("json")}
           >
             JSON
