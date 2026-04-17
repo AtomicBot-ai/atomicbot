@@ -305,9 +305,9 @@ importers:
 
   extensions/computer-use:
     dependencies:
-      usecomputer:
-        specifier: 0.1.10
-        version: 0.1.10
+      '@atomicbotai/computer-use':
+        specifier: ^0.1.8
+        version: 0.1.8
 
   extensions/copilot-proxy: {}
 
@@ -858,6 +858,10 @@ packages:
 
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
+
+  '@atomicbotai/computer-use@0.1.8':
+    resolution: {integrity: sha512-jSZtYGAgEhBcJZgExSveoq8l9ZW9AnFe8XCVSlarqK9K2zwG+8TgwqZHOTmPAjOuqutAvkw7po+vZ9nXGUaEPA==}
+    engines: {node: '>=22'}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -6398,8 +6402,8 @@ packages:
   url-parse@1.5.10:
     resolution: {integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==}
 
-  usecomputer@0.1.10:
-    resolution: {integrity: sha512-6xTSiPEtGbJXyEvJkacjpKqNhVEAzZpFt54MIf8IWqE0qygZjdv68DRlysIbwvCV/qSRdP835YHeYFO0Rl1bhQ==}
+  usecomputer@0.1.11:
+    resolution: {integrity: sha512-tx3C+NrAQ7Q4TWZDOuqWDnown4Adc9LSH3RVewDGndXcn4Lb07NvHNc0JiXqHIV9Vy4heFLXRABD6NhC84bl1w==}
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -6717,6 +6721,11 @@ snapshots:
       lru-cache: 11.2.7
 
   '@asamuzakjp/nwsapi@2.3.9': {}
+
+  '@atomicbotai/computer-use@0.1.8':
+    dependencies:
+      '@sinclair/typebox': 0.34.49
+      usecomputer: 0.1.11
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -13123,7 +13132,7 @@ snapshots:
       querystringify: 2.2.0
       requires-port: 1.0.0
 
-  usecomputer@0.1.10:
+  usecomputer@0.1.11:
     dependencies:
       zod: 4.3.6
 

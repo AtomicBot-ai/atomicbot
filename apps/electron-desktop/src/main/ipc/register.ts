@@ -27,6 +27,7 @@ import { registerSkillHandlers } from "./skills-ipc";
 import { registerBackupHandlers } from "./backup-ipc";
 import { registerClawHubHandlers } from "./clawhub-ipc";
 import { registerDefenderHandlers } from "./defender-ipc";
+import { registerNotificationHandlers } from "./notifications-ipc";
 import { IPC } from "../../shared/ipc-channels";
 
 export { type RegisterParams } from "./types";
@@ -46,6 +47,7 @@ export function registerIpcHandlers(params: RegisterParams) {
   registerBackupHandlers(params);
   registerClawHubHandlers();
   registerDefenderHandlers(params);
+  registerNotificationHandlers(params);
 
   registerGogIpcHandlers(params);
   registerWhisperIpcHandlers(params);

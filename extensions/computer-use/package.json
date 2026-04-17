@@ -5,11 +5,14 @@
   "description": "Desktop computer-use tool: screenshot, mouse, keyboard control via usecomputer",
   "type": "module",
   "dependencies": {
-    "usecomputer": "0.1.10"
+    "@atomicbotai/computer-use": "^0.1.8"
   },
   "openclaw": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "bundle": {
+      "stageRuntimeDependencies": true
+    }
   }
 }

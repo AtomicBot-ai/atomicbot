@@ -73,6 +73,7 @@ export type ResetHandlerParams = Pick<
   | "stopGatewayChild"
 >;
 export type AnalyticsHandlerParams = Pick<RegisterParams, "stateDir">;
+export type NotificationsHandlerParams = Pick<RegisterParams, "getMainWindow">;
 export type LlamacppHandlerParams = Pick<
   RegisterParams,
   "llamacppDataDir" | "getMainWindow" | "stateDir"

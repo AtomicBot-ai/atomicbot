@@ -9,8 +9,22 @@ import {
 import { loadChatHistory } from "@store/slices/chat/chat-thunks";
 import { HIDDEN_TOOL_NAMES } from "../components/ToolCallCard";
 import type { GatewayRpcLike } from "../../onboarding/hooks/types";
+import { notifyInBackground } from "../../app/background-notifications";
+import { markdownToPlainText } from "@lib/markdown-to-plain";
 
 const HISTORY_RELOAD_DELAY_MS = 500;
+const NOTIFICATION_PREVIEW_MAX_CHARS = 140;
+
+function buildAgentFinishedBody(text: string): string {
+  const plain = markdownToPlainText(text);
+  if (!plain) {
+    return "Agent finished.";
+  }
+  if (plain.length <= NOTIFICATION_PREVIEW_MAX_CHARS) {
+    return plain;
+  }
+  return `${plain.slice(0, NOTIFICATION_PREVIEW_MAX_CHARS - 1)}\u2026`;
+}
 
 type ChatGatewayRpc = GatewayRpcLike & {
   onEvent: (cb: (evt: { event: string; payload: unknown }) => void) => () => void;
@@ -63,6 +77,10 @@ export function useChatStream(gw: ChatGatewayRpc, dispatch: AppDispatch, session
               toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
             })
           );
+          notifyInBackground({
+            title: "Atomic Bot",
+            body: buildAgentFinishedBody(text),
+          });
           // Debounce history reload so rapid sequential finals (multi-turn agent
           // runs) coalesce into a single fetch, reducing visual re-layout churn.
           if (reloadTimer) {
@@ -81,10 +99,20 @@ export function useChatStream(gw: ChatGatewayRpc, dispatch: AppDispatch, session
               errorMessage: payload.errorMessage,
             })
           );
+          notifyInBackground({
+            title: "Atomic Bot",
+            body: payload.errorMessage
+              ? `Agent run failed: ${payload.errorMessage}`
+              : "Agent run failed.",
+          });
           return;
         }
         if (payload.state === "aborted") {
           dispatch(chatActions.streamAborted({ runId: payload.runId }));
+          notifyInBackground({
+            title: "Atomic Bot",
+            body: "Agent run was aborted.",
+          });
         }
         return;
       }

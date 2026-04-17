@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 import type {
   DesktopPlatform,
+  NotificationsShowParams,
   OpenclawDesktopApi,
   UpdateAvailablePayload,
   UpdateDownloadProgressPayload,
@@ -173,6 +174,8 @@ const api: OpenclawDesktopApi = {
   defenderStatus: async () => ipcRenderer.invoke(IPC.defenderStatus),
   defenderApplyExclusions: async () => ipcRenderer.invoke(IPC.defenderApplyExclusions),
   defenderDismiss: async () => ipcRenderer.invoke(IPC.defenderDismiss),
+  showNotification: async (params: NotificationsShowParams) =>
+    ipcRenderer.invoke(IPC.notificationsShow, params),
   onDeepLink: (
     cb: (payload: { host: string; pathname: string; params: Record<string, string> }) => void
   ) => onIpc(IPC_EVENTS.deepLink, cb),

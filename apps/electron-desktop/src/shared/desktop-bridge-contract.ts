@@ -459,6 +459,22 @@ export interface DesktopDefenderApi {
   defenderDismiss: () => Promise<{ ok: boolean }>;
 }
 
+export type NotificationsShowParams = {
+  title: string;
+  body: string;
+  /** When true, the notification is only shown if the main window is not focused or not visible. */
+  onlyIfBackgrounded?: boolean;
+};
+
+export type NotificationsShowResult = {
+  /** true if a system notification was actually shown, false if suppressed (window focused). */
+  shown: boolean;
+};
+
+export interface DesktopNotificationsApi {
+  showNotification: (params: NotificationsShowParams) => Promise<NotificationsShowResult>;
+}
+
 export type OpenclawDesktopApi = DesktopCoreApi &
   DesktopAuthApi &
   DesktopGogApi &
@@ -471,7 +487,8 @@ export type OpenclawDesktopApi = DesktopCoreApi &
   DesktopWhisperApi &
   DesktopTerminalApi &
   DesktopAnalyticsApi &
-  DesktopDefenderApi;
+  DesktopDefenderApi &
+  DesktopNotificationsApi;
 
 export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "platform",
@@ -579,6 +596,7 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "onTerminalExit",
   "analyticsGet",
   "analyticsSet",
+  "showNotification",
 ];
 
 type AssertExhaustive<T extends readonly (keyof OpenclawDesktopApi)[]> = Exclude<
