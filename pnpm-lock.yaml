@@ -303,6 +303,12 @@ importers:
 
   extensions/comfy: {}
 
+  extensions/computer-use:
+    dependencies:
+      '@atomicbotai/computer-use':
+        specifier: ^0.1.12
+        version: 0.1.12
+
   extensions/copilot-proxy: {}
 
   extensions/deepgram: {}
@@ -852,6 +858,10 @@ packages:
 
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
+
+  '@atomicbotai/computer-use@0.1.12':
+    resolution: {integrity: sha512-0uY0S0A4N9JU8buuTlFZ1gakoJLD8ANjyYJrkXMMU7GHA88Heckxyg/NmL4RhWw/np6zLbVlBypQh09ppEg+zQ==}
+    engines: {node: '>=22'}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -3833,6 +3843,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
@@ -6392,6 +6403,11 @@ packages:
   url-parse@1.5.10:
     resolution: {integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==}
 
+  usecomputer@0.1.10:
+    resolution: {integrity: sha512-6xTSiPEtGbJXyEvJkacjpKqNhVEAzZpFt54MIf8IWqE0qygZjdv68DRlysIbwvCV/qSRdP835YHeYFO0Rl1bhQ==}
+    os: [darwin, linux, win32]
+    hasBin: true
+
   utif2@4.1.0:
     resolution: {integrity: sha512-+oknB9FHrJ7oW7A2WZYajOcv4FcDR4CfoGB0dPNfxbi4GO05RRnFmt5oa23+9w32EanrYcSJWspUiJkLMs+37w==}
 
@@ -6706,6 +6722,11 @@ snapshots:
       lru-cache: 11.2.7
 
   '@asamuzakjp/nwsapi@2.3.9': {}
+
+  '@atomicbotai/computer-use@0.1.12':
+    dependencies:
+      '@sinclair/typebox': 0.34.49
+      usecomputer: 0.1.10
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -13111,6 +13132,10 @@ snapshots:
     dependencies:
       querystringify: 2.2.0
       requires-port: 1.0.0
+
+  usecomputer@0.1.10:
+    dependencies:
+      zod: 4.3.6
 
   utif2@4.1.0:
     dependencies:

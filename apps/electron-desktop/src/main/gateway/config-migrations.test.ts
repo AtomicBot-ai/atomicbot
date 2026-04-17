@@ -52,9 +52,32 @@ describe("runConfigMigrations", () => {
     expect(result.gateway.controlUi.allowInsecureAuth).toBe(true);
     expect(result.gateway.controlUi.dangerouslyDisableDeviceAuth).toBe(true);
     expect(result.browser.defaultProfile).toBe("openclaw");
+    expect(result.plugins.entries["computer-use"].enabled).toBe(true);
 
     const state = JSON.parse(fs.readFileSync(path.join(tmpDir, "desktop-state.json"), "utf-8"));
     expect(state.configVersion).toBe(DESKTOP_CONFIG_MIGRATIONS.length);
+  });
+
+  it("enables computer-use plugin when not previously configured", () => {
+    const cfg = { gateway: { mode: "local", bind: "loopback" } };
+    fs.writeFileSync(configPath, JSON.stringify(cfg));
+
+    runConfigMigrations({ configPath, stateDir: tmpDir });
+
+    const result = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    expect(result.plugins.entries["computer-use"].enabled).toBe(true);
+  });
+
+  it("does not re-enable computer-use if already enabled", () => {
+    const cfg = {
+      plugins: { entries: { "computer-use": { enabled: true } } },
+    };
+    fs.writeFileSync(configPath, JSON.stringify(cfg));
+
+    runConfigMigrations({ configPath, stateDir: tmpDir });
+
+    const result = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    expect(result.plugins.entries["computer-use"].enabled).toBe(true);
   });
 
   it("does not re-apply migrations on second run", () => {

@@ -1,6 +1,7 @@
 import * as path from "node:path";
 
 export type LlamacppModelId =
+  | "qwen-3.6-35b"
   | "qwen-3.5-4b"
   | "qwen-3.5-9b"
   | "qwen-3.5-35b"
@@ -79,6 +80,23 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
     recommendedRamGb: 32,
     icon: "google",
     tag: "High Performance",
+  },
+  {
+    id: "qwen-3.6-35b",
+    name: "Qwen 3.6 35B-A3B GGUF",
+    filename: "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+    fileSizeGb: 22.1,
+    sizeLabel: "22.1 GB",
+    description: "Next-gen agentic coding MoE",
+    maxContextLength: 262_144,
+    contextLabel: "256K",
+    minRamGb: 24,
+    recommendedRamGb: 36,
+    icon: "qwen",
+    chatTemplateAsset: "qwen3.5-chat-template.jinja",
+    tag: "New",
   },
   {
     id: "qwen-3.5-4b",

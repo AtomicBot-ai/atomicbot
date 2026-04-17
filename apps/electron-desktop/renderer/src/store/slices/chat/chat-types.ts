@@ -64,6 +64,9 @@ export type ChatSliceState = {
   liveToolCalls: Record<string, LiveToolCall>;
   /** True while waiting for the agent to respond after an exec approval auto-continue. */
   awaitingContinuation: boolean;
+  /** True while the session history RPC is in flight. Reset to true on sessionCleared
+   *  (so navigation re-triggers the loader) and to false on historyLoaded / setError. */
+  loadingHistory: boolean;
 };
 
 export type GatewayRequest = <T = unknown>(method: string, params?: unknown) => Promise<T>;

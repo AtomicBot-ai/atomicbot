@@ -1,0 +1,9 @@
+{
+  "id": "computer-use",
+  "enabledByDefault": true,
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

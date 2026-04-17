@@ -24,6 +24,7 @@ import type {
   GogHandlerParams,
   KeyHandlerParams,
   MemoHandlerParams,
+  NotificationsHandlerParams,
   ObsidianHandlerParams,
   OAuthHandlerParams,
   RemindctlHandlerParams,
@@ -43,6 +44,7 @@ import type { registerOAuthHandlers } from "./oauth-ipc";
 import type { registerSkillHandlers } from "./skills-ipc";
 import type { registerBackupHandlers } from "./backup-ipc";
 import type { registerDefenderHandlers } from "./defender-ipc";
+import type { registerNotificationHandlers } from "./notifications-ipc";
 import type { registerWhisperIpcHandlers } from "../whisper/ipc";
 import type { registerGogIpcHandlers } from "../gog/ipc";
 import type { registerResetAndCloseIpcHandler } from "../reset/ipc";
@@ -149,5 +151,8 @@ describe("IPC handler param narrowing", () => {
     expectTypeOf<
       Parameters<typeof registerResetAndCloseIpcHandler>[0]
     >().toEqualTypeOf<ResetHandlerParams>();
+    expectTypeOf<
+      Parameters<typeof registerNotificationHandlers>[0]
+    >().toEqualTypeOf<NotificationsHandlerParams>();
   });
 });

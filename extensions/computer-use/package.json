@@ -1,0 +1,18 @@
+{
+  "name": "@openclaw/computer-use",
+  "version": "2026.4.6",
+  "private": true,
+  "description": "Desktop computer-use tool: screenshot, mouse, keyboard control via usecomputer",
+  "type": "module",
+  "dependencies": {
+    "@atomicbotai/computer-use": "^0.1.12"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "bundle": {
+      "stageRuntimeDependencies": true
+    }
+  }
+}

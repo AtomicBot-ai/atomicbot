@@ -31,6 +31,7 @@ describe("chatSlice initial state", () => {
       activeSessionKey: "",
       liveToolCalls: {},
       awaitingContinuation: false,
+      loadingHistory: false,
     });
   });
 });
@@ -47,6 +48,7 @@ describe("chatSlice reducers", () => {
     activeSessionKey: "",
     liveToolCalls: {},
     awaitingContinuation: false,
+    loadingHistory: false,
   };
 
   it("setSending toggles sending flag", () => {
@@ -75,6 +77,39 @@ describe("chatSlice reducers", () => {
     expect(state.streamByRun).toEqual({});
     expect(state.epoch).toBe(6);
     expect(state.activeSessionKey).toBe("session-abc");
+  });
+
+  it("sessionCleared sets loadingHistory to true so the UI can show a loader", () => {
+    const state = chatReducer(base, chatActions.sessionCleared("session-xyz"));
+    expect(state.loadingHistory).toBe(true);
+  });
+
+  it("sessionCleared re-arms loadingHistory even if previously settled", () => {
+    const settled: ChatSliceState = { ...base, loadingHistory: false };
+    const state = chatReducer(settled, chatActions.sessionCleared("session-2"));
+    expect(state.loadingHistory).toBe(true);
+  });
+
+  it("historyLoaded clears loadingHistory", () => {
+    const loading: ChatSliceState = { ...base, loadingHistory: true };
+    const state = chatReducer(loading, chatActions.historyLoaded([]));
+    expect(state.loadingHistory).toBe(false);
+  });
+
+  it("setError with a message clears loadingHistory", () => {
+    const loading: ChatSliceState = { ...base, loadingHistory: true };
+    const state = chatReducer(loading, chatActions.setError("boom"));
+    expect(state.loadingHistory).toBe(false);
+    expect(state.error).toBe("boom");
+  });
+
+  it("setError(null) does not flip loadingHistory to false on its own", () => {
+    // loadChatHistory thunk calls setError(null) at the start; this must not
+    // race-clear the loader before historyLoaded arrives.
+    const loading: ChatSliceState = { ...base, loadingHistory: true };
+    const state = chatReducer(loading, chatActions.setError(null));
+    expect(state.loadingHistory).toBe(true);
+    expect(state.error).toBeNull();
   });
 
   it("historyLoaded replaces messages with parsed history", () => {
@@ -450,6 +485,34 @@ describe("loadChatHistory thunk", () => {
 
     // Messages should be empty because epoch changed
     expect(store.getState().chat.messages).toEqual([]);
+  });
+
+  it("clears loadingHistory after a successful fetch", async () => {
+    const store = createTestStore({ loadingHistory: true });
+    const mockRequest = vi.fn().mockResolvedValue({
+      sessionKey: "s1",
+      sessionId: "id1",
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    await store.dispatch(loadChatHistory({ request: mockRequest, sessionKey: "s1" }));
+
+    expect(store.getState().chat.loadingHistory).toBe(false);
+  });
+
+  it("keeps loadingHistory=true for the next session when a stale fetch is discarded", async () => {
+    // After sessionCleared bumps epoch mid-fetch, the stale result is dropped
+    // without dispatching historyLoaded. The new session's loader (also re-armed
+    // by sessionCleared) must therefore remain visible until its own fetch completes.
+    const store = createTestStore();
+    const mockRequest = vi.fn().mockImplementation(async () => {
+      store.dispatch(chatActions.sessionCleared("other-session"));
+      return { sessionKey: "s1", sessionId: "id1", messages: [] };
+    });
+
+    await store.dispatch(loadChatHistory({ request: mockRequest, sessionKey: "s1" }));
+
+    expect(store.getState().chat.loadingHistory).toBe(true);
   });
 });
 

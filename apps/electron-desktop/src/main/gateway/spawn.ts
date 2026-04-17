@@ -74,6 +74,7 @@ export function spawnGateway(
   const envPath = typeof process.env.PATH === "string" ? process.env.PATH : "";
   const ffmpegBin = whisperDataDir ? resolveFfmpegPath(whisperDataDir) : undefined;
   const extraBinDirs = [
+    nodeBin,
     jqBin,
     gogBin,
     memoBin,

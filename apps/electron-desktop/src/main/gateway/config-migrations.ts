@@ -313,6 +313,18 @@ export const DESKTOP_CONFIG_MIGRATIONS: ConfigMigration[] = [
       return changed;
     },
   },
+  {
+    version: 9,
+    description: "Enable the computer-use plugin by default for desktop users",
+    apply: (cfg) => {
+      const plugins = ensureObject(cfg, "plugins");
+      const entries = ensureObject(plugins, "entries");
+      const computerUse = ensureObject(entries, "computer-use");
+      if (computerUse.enabled === true) return false;
+      computerUse.enabled = true;
+      return true;
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------

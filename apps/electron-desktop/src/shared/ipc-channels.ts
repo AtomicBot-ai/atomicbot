@@ -129,6 +129,9 @@ export const IPC = {
   // Reset
   resetAndClose: "reset-and-close",
 
+  // System notifications (background alerts for agent events)
+  notificationsShow: "notifications:show",
+
   // Terminal (PTY)
   terminalCreate: "terminal:create",
   terminalWrite: "terminal:write",

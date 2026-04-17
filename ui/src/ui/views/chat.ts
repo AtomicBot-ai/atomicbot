@@ -361,37 +361,58 @@ function generateAttachmentId(): string {
 
 function handlePaste(e: ClipboardEvent, props: ChatProps) {
   const items = e.clipboardData?.items;
-  if (!items || !props.onAttachmentsChange) {
+  if (!items) {
     return;
   }
   const imageItems: DataTransferItem[] = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.type.startsWith("image/")) {
-      imageItems.push(item);
+  if (props.onAttachmentsChange) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        imageItems.push(item);
+      }
     }
   }
-  if (imageItems.length === 0) {
+
+  if (imageItems.length > 0) {
+    e.preventDefault();
+    for (const item of imageItems) {
+      const file = item.getAsFile();
+      if (!file) {
+        continue;
+      }
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        const dataUrl = reader.result as string;
+        const newAttachment: ChatAttachment = {
+          id: generateAttachmentId(),
+          dataUrl,
+          mimeType: file.type,
+        };
+        const current = props.attachments ?? [];
+        props.onAttachmentsChange?.([...current, newAttachment]);
+      });
+      reader.readAsDataURL(file);
+    }
     return;
   }
-  e.preventDefault();
-  for (const item of imageItems) {
-    const file = item.getAsFile();
-    if (!file) {
-      continue;
+
+  const text = e.clipboardData?.getData("text/plain");
+  if (text && /\n+$/.test(text)) {
+    e.preventDefault();
+    const trimmed = text.replace(/\n+$/, "");
+    const target = e.target as HTMLTextAreaElement | null;
+    if (!target) {
+      return;
     }
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const dataUrl = reader.result as string;
-      const newAttachment: ChatAttachment = {
-        id: generateAttachmentId(),
-        dataUrl,
-        mimeType: file.type,
-      };
-      const current = props.attachments ?? [];
-      props.onAttachmentsChange?.([...current, newAttachment]);
-    });
-    reader.readAsDataURL(file);
+    const start = target.selectionStart ?? target.value.length;
+    const end = target.selectionEnd ?? target.value.length;
+    const next = target.value.slice(0, start) + trimmed + target.value.slice(end);
+    target.value = next;
+    const caret = start + trimmed.length;
+    target.setSelectionRange(caret, caret);
+    adjustTextareaHeight(target);
+    props.onDraftChange(next);
   }
 }
 

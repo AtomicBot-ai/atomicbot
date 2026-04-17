@@ -17,6 +17,11 @@ export const app = {
   getLoginItemSettings: vi.fn(() => ({ openAtLogin: false })),
   setLoginItemSettings: vi.fn(),
   whenReady: vi.fn(() => Promise.resolve()),
+  dock: {
+    bounce: vi.fn(() => 0),
+    show: vi.fn(() => Promise.resolve()),
+    hide: vi.fn(),
+  },
 };
 
 export const ipcMain = {
@@ -45,12 +50,33 @@ export class BrowserWindow {
   };
   isDestroyed = vi.fn(() => false);
   isMinimized = vi.fn(() => false);
+  isVisible = vi.fn(() => true);
+  isFocused = vi.fn(() => true);
   loadFile = vi.fn(() => Promise.resolve());
   show = vi.fn();
   restore = vi.fn();
   focus = vi.fn();
+  blur = vi.fn();
+  flashFrame = vi.fn();
   on = vi.fn();
 }
+
+class NotificationMock {
+  static isSupported = vi.fn(() => true);
+  show = vi.fn();
+  close = vi.fn();
+  private listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
+  on(event: string, cb: (...args: unknown[]) => void): this {
+    (this.listeners[event] ??= []).push(cb);
+    return this;
+  }
+  emit(event: string, ...args: unknown[]): void {
+    (this.listeners[event] ?? []).forEach((cb) => cb(...args));
+  }
+  constructor(public options?: unknown) {}
+}
+
+export const Notification = NotificationMock;
 
 export const dialog = {
   showOpenDialog: vi.fn(() => Promise.resolve({ canceled: true, filePaths: [] })),

@@ -3,7 +3,22 @@ import { useGatewayRpc } from "@gateway/context";
 import { useAppDispatch } from "@store/hooks";
 import { errorToMessage } from "@shared/toast";
 import { chatActions } from "@store/slices/chat/chatSlice";
+import { notifyInBackground } from "./background-notifications";
 import s from "./ExecApprovalModal.module.css";
+
+const APPROVAL_COMMAND_PREVIEW_MAX_CHARS = 120;
+
+function buildApprovalNotificationBody(command: string): string {
+  const singleLine = command.replace(/\s+/g, " ").trim();
+  if (!singleLine) {
+    return "Approval needed to run a command.";
+  }
+  const preview =
+    singleLine.length <= APPROVAL_COMMAND_PREVIEW_MAX_CHARS
+      ? singleLine
+      : `${singleLine.slice(0, APPROVAL_COMMAND_PREVIEW_MAX_CHARS - 1)}\u2026`;
+  return `Approval needed: ${preview}`;
+}
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -155,6 +170,10 @@ export function ExecApprovalOverlay() {
         if (entry) {
           setQueue((prev) => addToQueue(prev, entry));
           setError(null);
+          notifyInBackground({
+            title: "Atomic Bot",
+            body: buildApprovalNotificationBody(entry.request.command),
+          });
           // Auto-remove when the request expires
           const delay = Math.max(0, entry.expiresAtMs - Date.now() + 500);
           window.setTimeout(() => {
