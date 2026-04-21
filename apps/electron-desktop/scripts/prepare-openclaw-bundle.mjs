@@ -77,6 +77,52 @@ function createVendorSrcToDistPlugin(vendorDir) {
   };
 }
 
+/**
+ * Post-process the bundled entry.js to guard the playwright-core `coreDir`
+ * resolution.
+ *
+ * Problem: when esbuild inlines playwright-core into our ESM entry, the
+ * relative `require.resolve("../../../package.json")` call in
+ * `nodePlatform.js` runs from the bundled file's directory and cannot find
+ * playwright-core's package.json — it throws `MODULE_NOT_FOUND`, which
+ * bubbles up through pw-ai-module loading as the generic
+ * "Playwright is not available in this gateway build" error.
+ *
+ * Fix: wrap the call in try/catch and fall back to `__dirname`. Every other
+ * code path inside playwright-core uses `coreDir` only to build further
+ * paths, and __dirname is an equally valid root when the module is embedded
+ * in our bundle.
+ *
+ * We apply the fix to the bundled file rather than to playwright-core
+ * sources so the patch is self-contained and survives pnpm/playwright
+ * upgrades. The regex tolerates whichever `import_pathN` alias esbuild
+ * picked this build.
+ */
+function applyPlaywrightCoreDirGuard(bundledPath) {
+  let content;
+  try {
+    content = fs.readFileSync(bundledPath, "utf8");
+  } catch {
+    return;
+  }
+  const pattern =
+    /var coreDir = (import_path\d+)\.default\.dirname\(__require\.resolve\("\.\.\/\.\.\/\.\.\/package\.json"\)\);/;
+  const match = content.match(pattern);
+  if (!match) {
+    console.log(
+      "[electron-desktop] playwright-core coreDir guard: target line not found (already patched or playwright-core changed)"
+    );
+    return;
+  }
+  const pathAlias = match[1];
+  const replacement =
+    `var coreDir = (() => { try { return ${pathAlias}.default.dirname(__require.resolve("../../../package.json")); } ` +
+    'catch { return typeof __dirname === "string" ? __dirname : ""; } })();';
+  const patched = content.replace(pattern, replacement);
+  fs.writeFileSync(bundledPath, patched);
+  console.log("[electron-desktop] Applied playwright-core coreDir guard");
+}
+
 async function buildEntryWithAdaptiveExternals(params) {
   const { esbuild, entryJs, bundledPath, initialExternals, plugins } = params;
   const adaptive = new Set();
@@ -98,9 +144,24 @@ async function buildEntryWithAdaptiveExternals(params) {
         external: [...effectiveExternals, "node:*", ...NODE_BUILTINS],
         plugins: plugins || [],
         banner: {
-          js: 'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);',
+          js:
+            // createRequire lets bundled CommonJS modules (playwright-core
+            // among them) continue calling `require(...)` at runtime under an
+            // ESM entry point.
+            'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);' +
+            // __filename / __dirname polyfills. When esbuild inlines CommonJS
+            // packages (notably playwright-core) into an ESM bundle, they keep
+            // references to __filename/__dirname. Without this shim those are
+            // `undefined` at runtime and the module throws a ReferenceError on
+            // load — which surfaces to users as the misleading
+            // "Playwright is not available in this gateway build" message.
+            'import { fileURLToPath as __sigmaFileURLToPath } from "node:url";' +
+            'import { dirname as __sigmaDirname } from "node:path";' +
+            "const __filename = __sigmaFileURLToPath(import.meta.url);" +
+            "const __dirname = __sigmaDirname(__filename);",
         },
       });
+      applyPlaywrightCoreDirGuard(bundledPath);
       return { mainBuild, adaptive, effectiveExternals };
     } catch (err) {
       const pkg = inferPackageFromEsbuildErrorMessage(

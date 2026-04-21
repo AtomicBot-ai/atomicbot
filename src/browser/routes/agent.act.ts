@@ -371,8 +371,9 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
         loadStateRaw === "networkidle"
           ? loadStateRaw
           : undefined;
+      const timeMsRaw = raw.timeMs ?? raw.delayMs ?? raw.waitMs ?? raw.durationMs ?? raw.ms;
       const timeMs = normalizeBoundedNonNegativeMs(
-        raw.timeMs,
+        timeMsRaw,
         "wait timeMs",
         MAX_BATCH_WAIT_TIME_MS,
       );
@@ -909,7 +910,9 @@ export function registerBrowserAgentActRoutes(
             return res.json({ ok: true, targetId: tab.targetId, url: tab.url });
           }
           case "wait": {
-            const timeMs = toNumber(body.timeMs);
+            const timeMs = toNumber(
+              body.timeMs ?? body.delayMs ?? body.waitMs ?? body.durationMs ?? body.ms,
+            );
             const text = toStringOrEmpty(body.text) || undefined;
             const textGone = toStringOrEmpty(body.textGone) || undefined;
             const selector = toStringOrEmpty(body.selector) || undefined;
