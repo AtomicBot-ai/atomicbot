@@ -251,6 +251,11 @@ export interface DesktopBackupApi {
     data: string,
     filename?: string
   ) => Promise<{ ok: boolean; error?: string; meta?: { mode?: string } }>;
+  restoreBackupFromFile: (
+    filePath: string,
+    filename?: string
+  ) => Promise<{ ok: boolean; error?: string; meta?: { mode?: string } }>;
+  getPathForFile: (file: File) => string;
   detectLocalOpenclaw: () => Promise<{ found: boolean; path: string }>;
   restoreFromDirectory: (
     dirPath: string
@@ -543,6 +548,8 @@ export const DESKTOP_BRIDGE_KEYS: ReadonlyArray<keyof OpenclawDesktopApi> = [
   "onUpdateError",
   "createBackup",
   "restoreBackup",
+  "restoreBackupFromFile",
+  "getPathForFile",
   "detectLocalOpenclaw",
   "restoreFromDirectory",
   "selectOpenclawFolder",

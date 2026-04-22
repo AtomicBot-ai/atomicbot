@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 
 import type {
   DesktopPlatform,
@@ -102,6 +102,15 @@ const api: OpenclawDesktopApi = {
   createBackup: async (mode?: string) => ipcRenderer.invoke(IPC.backupCreate, { mode }),
   restoreBackup: async (data: string, filename?: string) =>
     ipcRenderer.invoke(IPC.backupRestore, { data, filename }),
+  restoreBackupFromFile: async (filePath: string, filename?: string) =>
+    ipcRenderer.invoke(IPC.backupRestoreFromFile, { filePath, filename }),
+  getPathForFile: (file: File) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return "";
+    }
+  },
   detectLocalOpenclaw: async () => ipcRenderer.invoke(IPC.backupDetectLocal),
   restoreFromDirectory: async (dirPath: string) =>
     ipcRenderer.invoke(IPC.backupRestoreFromDir, { dirPath }),

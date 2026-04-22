@@ -67,6 +67,7 @@ export const IPC = {
   // Backup & restore
   backupCreate: "backup-create",
   backupRestore: "backup-restore",
+  backupRestoreFromFile: "backup-restore-from-file",
   backupDetectLocal: "backup-detect-local",
   backupRestoreFromDir: "backup-restore-from-dir",
   backupSelectFolder: "backup-select-folder",

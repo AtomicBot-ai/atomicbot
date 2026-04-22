@@ -108,6 +108,51 @@ export function registerBackupHandlers(params: BackupHandlerParams) {
     }
   });
 
+  // ── Restore from a file path (preferred for large archives) ───────────
+  ipcMain.handle(
+    IPC.backupRestoreFromFile,
+    async (_evt, p: { filePath?: unknown; filename?: unknown }) => {
+      const filePath = typeof p?.filePath === "string" ? p.filePath : "";
+      if (!filePath) {
+        return { ok: false, error: "No file path provided" };
+      }
+      const filenameHint =
+        typeof p?.filename === "string" ? p.filename : path.basename(filePath);
+
+      const tmpDir = path.join(
+        os.tmpdir(),
+        `openclaw-restore-${randomBytes(8).toString("hex")}`
+      );
+
+      try {
+        const buffer = await fsp.readFile(filePath);
+        await fsp.mkdir(tmpDir, { recursive: true });
+        await extractArchiveBuffer(buffer, tmpDir, filenameHint);
+        const backupRoot = await resolveBackupRoot(tmpDir);
+        const meta = await readBackupMeta(backupRoot);
+
+        await performRestoreFromSourceDir({
+          sourceDir: backupRoot,
+          stateDir,
+          stopGatewayChild,
+          startGateway,
+          setGatewayToken,
+          acceptConsent,
+        });
+        return { ok: true, meta };
+      } catch (err) {
+        console.error("[ipc/backup] backup-restore-from-file failed:", err);
+        return { ok: false, error: `Failed to restore backup: ${String(err)}` };
+      } finally {
+        try {
+          await fsp.rm(tmpDir, { recursive: true, force: true });
+        } catch {
+          // cleanup best-effort
+        }
+      }
+    }
+  );
+
   // ── Detect local OpenClaw instance at ~/.openclaw ─────────────────────
   ipcMain.handle(IPC.backupDetectLocal, async () => {
     try {

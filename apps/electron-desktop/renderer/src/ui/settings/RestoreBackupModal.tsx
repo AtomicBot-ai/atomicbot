@@ -43,14 +43,19 @@ export function RestoreBackupModal(props: {
       setError(null);
 
       try {
-        const base64 = await fileToBase64(file);
-
         const api = getDesktopApiOrNull();
         if (!api?.restoreBackup) {
           throw new Error("API not available");
         }
 
-        const result = await api.restoreBackup(base64, file.name);
+        const filePath = api.getPathForFile ? api.getPathForFile(file) : "";
+        let result: { ok: boolean; error?: string; meta?: { mode?: string } };
+        if (filePath && api.restoreBackupFromFile) {
+          result = await api.restoreBackupFromFile(filePath, file.name);
+        } else {
+          const base64 = await fileToBase64(file);
+          result = await api.restoreBackup(base64, file.name);
+        }
         if (!result.ok) {
           throw new Error(result.error || "Restore failed");
         }
