@@ -2,6 +2,7 @@ import * as path from "node:path";
 
 export type LlamacppModelId =
   | "qwen-3.6-35b"
+  | "qwen-3.6-27b"
   | "qwen-3.5-4b"
   | "qwen-3.5-9b"
   | "qwen-3.5-35b"
@@ -94,6 +95,23 @@ export const LLAMACPP_MODELS: LlamacppModelDef[] = [
     contextLabel: "256K",
     minRamGb: 24,
     recommendedRamGb: 36,
+    icon: "qwen",
+    chatTemplateAsset: "qwen3.5-chat-template.jinja",
+    tag: "New",
+  },
+  {
+    id: "qwen-3.6-27b",
+    name: "Qwen 3.6 27B GGUF",
+    filename: "Qwen3.6-27B-UD-Q4_K_XL.gguf",
+    huggingFaceUrl:
+      "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-UD-Q4_K_XL.gguf",
+    fileSizeGb: 17.6,
+    sizeLabel: "17.6 GB",
+    description: "Next-gen dense reasoning",
+    maxContextLength: 262_144,
+    contextLabel: "256K",
+    minRamGb: 22,
+    recommendedRamGb: 28,
     icon: "qwen",
     chatTemplateAsset: "qwen3.5-chat-template.jinja",
     tag: "New",
