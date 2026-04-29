@@ -1,7 +1,10 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: { "openclaw-launcher": "src/launcher.ts" },
+  entry: {
+    "openclaw-launcher": "src/launcher.ts",
+    "hermes-launcher": "src/hermes-launcher.ts",
+  },
   format: "esm",
   target: "node22",
   platform: "node",

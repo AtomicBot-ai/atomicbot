@@ -6,7 +6,8 @@
   "type": "module",
   "main": "dist/openclaw-launcher.mjs",
   "bin": {
-    "openclaw-launcher": "dist/openclaw-launcher.mjs"
+    "openclaw-launcher": "dist/openclaw-launcher.mjs",
+    "hermes-launcher": "dist/hermes-launcher.mjs"
   },
   "scripts": {
     "build": "tsdown",
@@ -14,10 +15,12 @@
     "dev": "tsdown --watch"
   },
   "dependencies": {
-    "json5": "^2.2.3"
+    "json5": "^2.2.3",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "@types/ws": "^8.5.13",
     "tsdown": "^0.15.0",
     "typescript": "^5.6.0"
   }
