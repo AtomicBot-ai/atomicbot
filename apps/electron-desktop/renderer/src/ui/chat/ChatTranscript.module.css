@@ -143,6 +143,8 @@
 .UiChatScrollToBottomWrap {
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
   position: relative;
   width: 100%;
@@ -150,6 +152,7 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   box-sizing: border-box;
+  padding: 0 24px 24px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,75 @@
+.UiQuickActions {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding: 0 24px 2px;
+  box-sizing: border-box;
+}
+
+.UiQuickActions::-webkit-scrollbar {
+  display: none;
+}
+
+.UiQuickActionCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 320px;
+  flex: 1 1 0;
+  padding: 14px 16px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 250ms ease,
+    background-color 250ms ease,
+    transform 250ms ease;
+}
+
+.UiQuickActionCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.UiQuickActionCard:active {
+  transform: translateY(1px);
+}
+
+.UiQuickActionIcon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  object-fit: contain;
+}
+
+.UiQuickActionBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.UiQuickActionTitle {
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.UiQuickActionSubtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 1100px) {
+  .UiQuickActionCard {
+    min-width: 280px;
+  }
+}

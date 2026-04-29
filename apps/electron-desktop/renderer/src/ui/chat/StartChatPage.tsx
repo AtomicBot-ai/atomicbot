@@ -14,6 +14,7 @@ import { routes } from "../app/routes";
 import { captureRenderer, ANALYTICS_EVENTS } from "@analytics";
 import { ActiveModelBadge } from "@shared/model-badge/ActiveModelBadge";
 import ct from "./ChatTranscript.module.css";
+import { ChatQuickActions } from "./components/ChatQuickActions";
 
 /** Persists New task composer text while switching sidebar routes (same app session). */
 const START_CHAT_DRAFT_KEY = "atomicbot:start-chat-draft";
@@ -157,6 +158,11 @@ export function StartChatPage({
     return new URL("../../assets/main-logo.png", document.baseURI).toString();
   }, []);
 
+  const handleQuickActionSelect = React.useCallback((prompt: string) => {
+    setInput(prompt);
+    requestAnimationFrame(() => composerRef.current?.focusInput());
+  }, []);
+
   const send = React.useCallback(async () => {
     const message = input.trim();
     const hasAttachments = attachments.length > 0;
@@ -239,6 +245,8 @@ export function StartChatPage({
       </div>
 
       <div className={ct.UiChatScrollToBottomWrap}>
+        <ChatQuickActions onSelect={handleQuickActionSelect} />
+
         <ChatComposer
           ref={composerRef}
           value={input}
