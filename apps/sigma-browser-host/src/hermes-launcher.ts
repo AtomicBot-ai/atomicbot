@@ -17,6 +17,7 @@
  * agent-discovery-client in the extension can poll both endpoints.
  */
 import * as fs from "node:fs";
+import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
@@ -34,7 +35,14 @@ import type { HermesState } from "./hermes/types";
 
 const DEFAULT_RELAY_PORT = 19897;
 const DEFAULT_DISCOVERY_PORT = 19998;
-const DEFAULT_HERMES_RPC_PORT = 10502;
+// Preferred RPC port for sigma_hermes_shim. We deliberately stay outside
+// OpenClaw's pool (10500/10502/10503) so a happy-path install lets `curl
+// 127.0.0.1:10602/` debug the shim without inspecting discovery first.
+// If the preferred port is busy (e.g. another Hermes instance, or OpenClaw
+// expanding its pool), `pickFreePort` falls back to an OS-picked ephemeral
+// port and we publish that via discovery — extension always learns the
+// real URL through `hermesRpcUrl`, so users never need to know the port.
+const DEFAULT_HERMES_RPC_PORT = 10602;
 const LOG_PREFIX = "[hermes-launcher]";
 
 async function main(): Promise<void> {
@@ -64,7 +72,10 @@ async function main(): Promise<void> {
   const modelId = values["model-id"];
   const preferredRelayPort = parseIntOr(values["relay-port"], DEFAULT_RELAY_PORT);
   const preferredDiscoveryPort = parseIntOr(values["discovery-port"], DEFAULT_DISCOVERY_PORT);
-  const hermesRpcPort = parseIntOr(values["hermes-rpc-port"], DEFAULT_HERMES_RPC_PORT);
+  const preferredHermesRpcPort = parseIntOr(
+    values["hermes-rpc-port"],
+    DEFAULT_HERMES_RPC_PORT,
+  );
 
   fs.mkdirSync(stateDir, { recursive: true });
   const logsDir = path.join(stateDir, "logs");
@@ -75,6 +86,21 @@ async function main(): Promise<void> {
   console.log(`${LOG_PREFIX} starting pid=${process.pid} node=${process.version}`);
   console.log(`${LOG_PREFIX} packDir=${packDir}`);
   console.log(`${LOG_PREFIX} stateDir=${stateDir}`);
+
+  // Resolve the actual RPC port now (before discovery / config writes /
+  // Python spawn) so every downstream consumer — health-check URL,
+  // config.yaml, child env, discovery payload — agrees on the same number.
+  // If the preferred port is busy (OpenClaw co-tenant, leftover Python from
+  // a crash), we silently fall back to an ephemeral one rather than fail
+  // the whole launcher: discovery publishes the chosen URL, so callers
+  // don't care which integer it ended up being.
+  const hermesRpcPort = await pickFreePort(preferredHermesRpcPort);
+  if (hermesRpcPort !== preferredHermesRpcPort) {
+    console.log(
+      `${LOG_PREFIX} preferred rpc port :${preferredHermesRpcPort} busy, ` +
+        `using :${hermesRpcPort} instead`,
+    );
+  }
 
   // 1. Discovery server up front so the extension can observe progress
   //    even while the pack download / spawn is in flight.
@@ -292,6 +318,53 @@ function parseIntOr(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
+/**
+ * Pick a free loopback TCP port, preferring `preferred` when possible.
+ *
+ * Mirrors the C++ TryBindLoopbackPort pattern in sigma_llama_server_manager.cc:
+ * try the well-known number first (gives users a stable curl target on a happy
+ * path) and fall back to OS-picked ephemeral if it's taken. Same TOCTOU
+ * caveat — the chosen port is "free right now", another process could grab
+ * it before our consumer (sigma_hermes_shim) calls bind(). In practice the
+ * collision space is just OpenClaw's pool and stale Hermes children, both
+ * stable, so this is not worth a port-grab handshake.
+ *
+ * Pass preferred=0 to skip straight to ephemeral.
+ */
+async function pickFreePort(preferred: number): Promise<number> {
+  const tryBind = (port: number): Promise<number> =>
+    new Promise<number>((resolve, reject) => {
+      const sock = net.createServer();
+      const onError = (err: NodeJS.ErrnoException) => {
+        sock.removeListener("listening", onListening);
+        reject(err);
+      };
+      const onListening = () => {
+        sock.removeListener("error", onError);
+        const addr = sock.address();
+        const bound = addr && typeof addr !== "string" ? addr.port : 0;
+        sock.close(() => {
+          if (bound > 0) {resolve(bound);}
+          else {reject(new Error("failed to resolve bound port"));}
+        });
+      };
+      sock.once("error", onError);
+      sock.once("listening", onListening);
+      sock.listen(port, "127.0.0.1");
+    });
+
+  if (preferred > 0) {
+    try {
+      return await tryBind(preferred);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException | null)?.code;
+      if (code !== "EADDRINUSE") {throw err;}
+      // fall through to ephemeral
+    }
+  }
+  return tryBind(0);
+}
+
 function printHelp(): void {
   process.stdout.write(
     [
@@ -303,7 +376,8 @@ function printHelp(): void {
       "  --model-id=ID          Active model id from sigma prefs (optional)",
       "  --relay-port=N         Preferred Side B relay port (default 19897)",
       "  --discovery-port=N     Discovery HTTP port (default 19998)",
-      "  --hermes-rpc-port=N    JSON-RPC port the Hermes child binds to (default 10502)",
+      "  --hermes-rpc-port=N    Preferred JSON-RPC port for the Hermes child",
+      "                         (default 10602; falls back to ephemeral if busy)",
       "  --help                 Print this help and exit",
       "",
     ].join(os.EOL),
