@@ -193,6 +193,11 @@ async function main(): Promise<void> {
   try {
     child = spawnHermesChild({
       paths: { packDir, stateDir, configPath },
+      config: {
+        hermesRpcPort,
+        llamaPort,
+        modelId,
+      },
     });
     console.log(`${LOG_PREFIX} spawned hermes child pid=${child.process.pid}`);
   } catch (err) {
