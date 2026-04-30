@@ -91,37 +91,39 @@ jobs:
         working-directory: apps/electron-desktop
         run: npm run prepare:openclaw:ci
 
-      - name: Prepare Node runtime
+      # Prepare per-arch runtimes for both arm64 (Apple Silicon) and x64 (Intel).
+      # Each prepare script keys its output by ${platform}-${arch}, so the two
+      # arch outputs coexist under vendor/<tool>/darwin-arm64 and darwin-x64.
+      # electron-builder picks the correct directory at pack time per arch.
+      - name: Prepare runtimes (arm64)
         working-directory: apps/electron-desktop
-        run: npm run prepare:node
+        env:
+          TARGET_PLATFORM: darwin
+          TARGET_ARCH: arm64
+        run: |
+          npm run prepare:node
+          npm run prepare:jq:all
+          npm run prepare:gh:all
+          npm run prepare:gog:all
+          npm run prepare:memo:all
+          npm run prepare:remindctl:all
+          npm run prepare:obsidian-cli:all
+          npm run prepare:whisper-cli:all
 
-      - name: Prepare jq runtime
+      - name: Prepare runtimes (x64)
         working-directory: apps/electron-desktop
-        run: npm run prepare:jq:all
-
-      - name: Prepare gh runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:gh:all
-
-      - name: Prepare GOG runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:gog:all
-
-      - name: Prepare memo runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:memo:all
-
-      - name: Prepare remindctl runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:remindctl:all
-
-      - name: Prepare obsidian-cli runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:obsidian-cli:all
-
-      - name: Prepare whisper-cli runtime
-        working-directory: apps/electron-desktop
-        run: npm run prepare:whisper-cli:all
+        env:
+          TARGET_PLATFORM: darwin
+          TARGET_ARCH: x64
+        run: |
+          npm run prepare:node
+          npm run prepare:jq:all
+          npm run prepare:gh:all
+          npm run prepare:gog:all
+          npm run prepare:memo:all
+          npm run prepare:remindctl:all
+          npm run prepare:obsidian-cli:all
+          npm run prepare:whisper-cli:all
 
       # Determine if we should publish to GitHub Releases.
       - name: Determine publish mode
@@ -165,7 +167,7 @@ jobs:
         working-directory: apps/electron-desktop
         run: |
           ulimit -n 524288
-          npx electron-builder --publish never
+          npx electron-builder --mac --arm64 --x64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -176,23 +178,41 @@ jobs:
           NOTARYTOOL_ISSUER: ${{ secrets.NOTARYTOOL_ISSUER }}
 
       # Generate latest-mac.yml for electron-updater (normally created by --publish always).
+      # Lists BOTH arm64 and x64 zips so electron-updater serves the right binary
+      # to Apple Silicon and Intel Macs respectively. The top-level path/sha512
+      # point to arm64 for backwards compatibility with older clients.
       - name: Generate latest-mac.yml
         working-directory: apps/electron-desktop/release
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('../package.json').version")
-          ZIP=$(ls -1 *-mac.zip | head -1)
-          SHA512=$(shasum -a 512 "$ZIP" | awk '{print $1}' | xxd -r -p | base64)
-          SIZE=$(stat -f%z "$ZIP")
           RELEASE_DATE=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
+          ARM_ZIP=$(ls -1 *-arm64-mac.zip 2>/dev/null | head -1 || true)
+          X64_ZIP=$(ls -1 *-x64-mac.zip 2>/dev/null | head -1 || true)
+
+          if [[ -z "$ARM_ZIP" || -z "$X64_ZIP" ]]; then
+            echo "ERROR: expected both arm64 and x64 zips, got: arm64='$ARM_ZIP' x64='$X64_ZIP'"
+            ls -la
+            exit 1
+          fi
+
+          ARM_SHA=$(shasum -a 512 "$ARM_ZIP" | awk '{print $1}' | xxd -r -p | base64)
+          ARM_SIZE=$(stat -f%z "$ARM_ZIP")
+          X64_SHA=$(shasum -a 512 "$X64_ZIP" | awk '{print $1}' | xxd -r -p | base64)
+          X64_SIZE=$(stat -f%z "$X64_ZIP")
+
           cat > latest-mac.yml <<EOF
           version: ${VERSION}
           files:
-            - url: ${ZIP}
-              sha512: ${SHA512}
-              size: ${SIZE}
-          path: ${ZIP}
-          sha512: ${SHA512}
+            - url: ${ARM_ZIP}
+              sha512: ${ARM_SHA}
+              size: ${ARM_SIZE}
+            - url: ${X64_ZIP}
+              sha512: ${X64_SHA}
+              size: ${X64_SIZE}
+          path: ${ARM_ZIP}
+          sha512: ${ARM_SHA}
           releaseDate: '${RELEASE_DATE}'
           EOF
           # Remove leading whitespace from heredoc indentation.
