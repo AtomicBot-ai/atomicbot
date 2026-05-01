@@ -23,8 +23,11 @@ if (mode !== "lint" && mode !== "format") {
 const lintExts = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 const formatExts = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".md", ".mdx"]);
 
-// Directories excluded from pre-commit lint/format checks
-const excludedPrefixes = ["apps/electron-desktop/"];
+// Directories excluded from pre-commit lint/format checks.
+// Keep in sync with the ignorePatterns in .oxfmtrc.json — when oxfmt is
+// invoked with a list that consists entirely of ignored paths it exits with
+// code 2 ("Expected at least one target file"), which fails the hook.
+const excludedPrefixes = ["apps/electron-desktop/", "apps/"];
 
 const shouldSelect = (filePath) => {
   if (excludedPrefixes.some((prefix) => filePath.startsWith(prefix))) {

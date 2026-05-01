@@ -22,9 +22,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
 
-import { startHermesBridge, type HermesBridge } from "./hermes/bridge";
 import { writeHermesConfig } from "./hermes/config";
 import { startHermesDiscoveryServer, type HermesDiscoveryServer } from "./hermes/discovery";
+import { startHermesRelayServer, type HermesRelayServer } from "./hermes/relay-server";
 import {
   isHermesPackInstalled,
   readHermesPackManifest,
@@ -125,7 +125,7 @@ async function main(): Promise<void> {
 
   // 2. SIGTERM/SIGINT handler — wired before any other resources so we
   //    always tear cleanly even if subsequent steps throw.
-  let bridge: HermesBridge | null = null;
+  let relay: HermesRelayServer | null = null;
   let child: HermesChildHandles | null = null;
   let stopping = false;
   const stop = async (reason: string) => {
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
     } catch (err) {
       console.warn(`${LOG_PREFIX} child stop failed:`, err);
     }
-    try {await bridge?.close();} catch {/* best effort */}
+    try {await relay?.close();} catch {/* best effort */}
     try {await discovery.close();} catch {/* best effort */}
     process.exit(0);
   };
@@ -159,14 +159,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  // 3. Bring up the bridge.
+  // 3. Bring up the unified relay (extension on /extension, Python CDP on /cdp).
   try {
-    bridge = await startHermesBridge({
-      preferredRelayPort,
+    relay = await startHermesRelayServer({
+      preferredPort: preferredRelayPort,
       logPrefix: LOG_PREFIX,
     });
   } catch (err) {
-    console.error(`${LOG_PREFIX} bridge failed to start:`, err);
+    console.error(`${LOG_PREFIX} relay failed to start:`, err);
     discovery.update({
       kind: "failed",
       relayPort: 0,
@@ -177,10 +177,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  const relayUrl = bridge.relay.publicUrl;
-  const relayPort = bridge.relay.port;
-  const relayToken = bridge.relay.token;
-  const cdpUrl = bridge.cdpMock.publicUrl;
+  const relayPort = relay.port;
+  const relayToken = relay.gatewayToken;
+  const relayUrl = `${relay.baseWsUrl}/extension`;
+  const cdpUrl = relay.cdpWsUrl;
 
   discovery.update({
     kind: "starting",
@@ -223,6 +223,7 @@ async function main(): Promise<void> {
         hermesRpcPort,
         llamaPort,
         modelId,
+        cdpWsUrl: cdpUrl,
       },
     });
     console.log(`${LOG_PREFIX} spawned hermes child pid=${child.process.pid}`);
@@ -263,8 +264,8 @@ async function main(): Promise<void> {
     relayPort,
     relayUrl,
     relayToken,
-    cdpMockPort: bridge.cdpMock.port,
-    cdpMockToken: bridge.cdpMock.token,
+    cdpMockPort: relayPort,
+    cdpMockToken: relayToken,
     hermesRpcPort,
     logsDir,
   });

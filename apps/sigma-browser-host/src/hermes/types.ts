@@ -78,15 +78,3 @@ export interface CdpMessage {
   sessionId?: string;
 }
 
-/** A single relay frame on Side B (launcher ↔ extension). */
-export interface RelayFrame {
-  /** Direction marker for diagnostics; the protocol works without it. */
-  dir?: "to-extension" | "from-extension";
-  /** Echoes the underlying CDP message verbatim. */
-  cdp: CdpMessage;
-  /**
-   * Optional transport-level routing hint. The extension uses sessionId from
-   * cdp.sessionId; this field is reserved for future per-tab routing.
-   */
-  targetId?: string;
-}

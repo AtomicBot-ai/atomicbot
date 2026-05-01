@@ -22,8 +22,9 @@ declare module "ws" {
     readonly readyState: 0 | 1 | 2 | 3;
     send(data: string | Buffer | ArrayBuffer | Uint8Array): void;
     close(code?: number, reason?: string): void;
+    terminate(): void;
     on(event: "message", listener: (data: WebSocket.RawData) => void): this;
-    on(event: "close", listener: () => void): this;
+    on(event: "close", listener: (code?: number, reason?: Buffer) => void): this;
     on(event: "error", listener: (err: Error) => void): this;
   }
 

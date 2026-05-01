@@ -40,6 +40,12 @@ export interface HermesSpawnConfig {
   llamaPort: number;
   /** Optional model id to pass through to llama-server. */
   modelId?: string;
+  /**
+   * ws:// URL the Python shim's browser_relay should connect to (the
+   * `/cdp?token=…` endpoint exposed by the Hermes relay server). The shim
+   * uses this to issue browser-control CDP commands during tool calls.
+   */
+  cdpWsUrl?: string;
 }
 
 export function isHermesPackInstalled(packDir: string): boolean {
@@ -110,6 +116,11 @@ export function spawnHermesChild(params: {
   };
   if (config.modelId && config.modelId.trim().length > 0) {
     env.SIGMA_LLAMA_MODEL = config.modelId.trim();
+  }
+  if (config.cdpWsUrl && config.cdpWsUrl.trim().length > 0) {
+    // sigma_hermes_shim.server reads this to know where to send browser-tool
+    // CDP commands during tool calls. Empty/unset disables browser tools.
+    env.SIGMA_HERMES_CDP_URL = config.cdpWsUrl.trim();
   }
 
   // Phase 1: launch our thin sigma_hermes_shim server, NOT
