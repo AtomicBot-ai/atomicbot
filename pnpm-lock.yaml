@@ -266,10 +266,16 @@ importers:
       json5:
         specifier: ^2.2.3
         version: 2.2.3
+      ws:
+        specifier: ^8.18.0
+        version: 8.19.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.0
         version: 25.5.0
+      '@types/ws':
+        specifier: ^8.5.13
+        version: 8.18.1
       tsdown:
         specifier: ^0.15.0
         version: 0.15.12(@typescript/native-preview@7.0.0-dev.20260313.1)(typescript@5.9.3)(unrun@0.2.32)
