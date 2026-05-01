@@ -1,19 +1,12 @@
+import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/account-id";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/config-types";
 import {
+  applySetupAccountConfigPatch,
   createStandardChannelSetupStatus,
   formatDocsLink,
   type ChannelSetupWizard,
 } from "openclaw/plugin-sdk/setup";
-import {
-  applySetupAccountConfigPatch,
-  DEFAULT_ACCOUNT_ID,
-  type OpenClawConfig,
-} from "./runtime-api.js";
-import {
-  isMattermostConfigured,
-  mattermostSetupAdapter,
-  resolveMattermostAccountWithSecrets,
-} from "./setup-core.js";
-import { listMattermostAccountIds } from "./setup.accounts.runtime.js";
+import { isMattermostConfigured, resolveMattermostAccountWithSecrets } from "./setup-core.js";
 import { normalizeMattermostBaseUrl } from "./setup.client.runtime.js";
 import { hasConfiguredSecretInput } from "./setup.secret-input.runtime.js";
 

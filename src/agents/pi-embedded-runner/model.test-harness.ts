@@ -58,6 +58,7 @@ export function buildOpenAICodexForwardCompatExpectation(
   baseUrl: string;
 } {
   const isGpt54 = id === "gpt-5.4";
+  const isGpt55 = id === "gpt-5.5";
   const isGpt54Mini = id === "gpt-5.4-mini";
   const isSpark = id === "gpt-5.3-codex-spark";
   return {
@@ -74,8 +75,8 @@ export function buildOpenAICodexForwardCompatExpectation(
         : isGpt54Mini
           ? { input: 0.75, output: 4.5, cacheRead: 0.075, cacheWrite: 0 }
           : OPENAI_CODEX_TEMPLATE_MODEL.cost,
-    contextWindow: isGpt54 ? 1_050_000 : isSpark ? 128_000 : 272000,
-    ...(isGpt54 ? { contextTokens: 272_000 } : {}),
+    contextWindow: isGpt54 ? 1_050_000 : isGpt55 ? 400_000 : isSpark ? 128_000 : 272000,
+    ...(isGpt54 || isGpt55 ? { contextTokens: 272_000 } : {}),
     maxTokens: 128000,
   };
 }
@@ -83,8 +84,8 @@ export function buildOpenAICodexForwardCompatExpectation(
 export const GOOGLE_GEMINI_CLI_PRO_TEMPLATE_MODEL = {
   id: "gemini-3-pro-preview",
   name: "Gemini 3 Pro Preview (Cloud Code Assist)",
-  provider: "google",
-  api: "google-generative-ai",
+  provider: "google-gemini-cli",
+  api: "google-gemini-cli",
   baseUrl: "https://cloudcode-pa.googleapis.com",
   reasoning: true,
   input: ["text", "image"] as const,
@@ -96,8 +97,8 @@ export const GOOGLE_GEMINI_CLI_PRO_TEMPLATE_MODEL = {
 export const GOOGLE_GEMINI_CLI_FLASH_TEMPLATE_MODEL = {
   id: "gemini-3-flash-preview",
   name: "Gemini 3 Flash Preview (Cloud Code Assist)",
-  provider: "google",
-  api: "google-generative-ai",
+  provider: "google-gemini-cli",
+  api: "google-gemini-cli",
   baseUrl: "https://cloudcode-pa.googleapis.com",
   reasoning: false,
   input: ["text", "image"] as const,
@@ -109,7 +110,7 @@ export const GOOGLE_GEMINI_CLI_FLASH_TEMPLATE_MODEL = {
 export function mockGoogleGeminiCliProTemplateModel(discoverModelsMock: DiscoverModelsMock): void {
   mockTemplateModel(
     discoverModelsMock,
-    "google",
+    "google-gemini-cli",
     "gemini-3-pro-preview",
     GOOGLE_GEMINI_CLI_PRO_TEMPLATE_MODEL,
   );
@@ -120,7 +121,7 @@ export function mockGoogleGeminiCliFlashTemplateModel(
 ): void {
   mockTemplateModel(
     discoverModelsMock,
-    "google",
+    "google-gemini-cli",
     "gemini-3-flash-preview",
     GOOGLE_GEMINI_CLI_FLASH_TEMPLATE_MODEL,
   );

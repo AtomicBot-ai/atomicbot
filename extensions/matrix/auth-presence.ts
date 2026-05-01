@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/config-types";
 import { resolveStateDir } from "openclaw/plugin-sdk/state-paths";
 import {
   resolveMatrixCredentialsDir,
@@ -43,10 +43,7 @@ export function hasAnyMatrixAuth(
   params: MatrixAuthPresenceParams,
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  const cfg =
-    params && typeof params === "object" && "cfg" in params
-      ? params.cfg
-      : (params as OpenClawConfig);
+  const cfg = params && typeof params === "object" && "cfg" in params ? params.cfg : params;
   const resolvedEnv =
     params && typeof params === "object" && "cfg" in params ? (params.env ?? env) : env;
   return listMatrixCredentialPaths(cfg, resolvedEnv).some((filePath) => {

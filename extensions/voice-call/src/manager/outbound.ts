@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { formatErrorMessage } from "openclaw/plugin-sdk/error-runtime";
 import type { CallMode } from "../config.js";
 import { resolvePreferredTtsVoice } from "../tts-provider-voice.js";
 import {
@@ -101,6 +102,12 @@ function requireConnectedCall(ctx: ConnectedCallContext, callId: CallId): Connec
   };
 }
 
+function validateDtmfDigits(digits: string): string | null {
+  return /^[0-9*#wWpP,]+$/.test(digits)
+    ? null
+    : "digits may only contain digits, *, #, comma, w, p";
+}
+
 export async function initiateCall(
   ctx: InitiateContext,
   to: string,
@@ -186,7 +193,7 @@ export async function initiateCall(
     return {
       callId,
       success: false,
-      error: err instanceof Error ? err.message : String(err),
+      error: formatErrorMessage(err),
     };
   }
 }
@@ -206,7 +213,7 @@ export async function speak(
     transitionState(call, "speaking");
     persistCallRecord(ctx.storePath, call);
 
-    const voice = provider.name === "twilio" ? resolvePreferredTtsVoice(ctx.config) : undefined;
+    const voice = resolvePreferredTtsVoice(ctx.config);
     await provider.playTts({
       callId,
       providerCallId,
@@ -222,7 +229,49 @@ export async function speak(
     // A failed playback should not leave the call stuck in speaking state.
     transitionState(call, "listening");
     persistCallRecord(ctx.storePath, call);
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
+    return { success: false, error: formatErrorMessage(err) };
+  }
+}
+
+function shouldStartListeningAfterInitialMessage(ctx: ConversationContext): boolean {
+  if (ctx.provider?.name !== "twilio") {
+    return true;
+  }
+  if (!ctx.config.streaming.enabled) {
+    return true;
+  }
+  const streamAwareProvider = ctx.provider as typeof ctx.provider & {
+    isConversationStreamConnectEnabled?: () => boolean;
+  };
+  return streamAwareProvider.isConversationStreamConnectEnabled?.() !== true;
+}
+
+export async function sendDtmf(
+  ctx: SpeakContext,
+  callId: CallId,
+  digits: string,
+): Promise<{ success: boolean; error?: string }> {
+  const validationError = validateDtmfDigits(digits);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+  const connected = requireConnectedCall(ctx, callId);
+  if (!connected.ok) {
+    return { success: false, error: connected.error };
+  }
+  if (!connected.provider.sendDtmf) {
+    return { success: false, error: `${connected.provider.name} does not support outbound DTMF` };
+  }
+
+  try {
+    await connected.provider.sendDtmf({
+      callId,
+      providerCallId: connected.providerCallId,
+      digits,
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: formatErrorMessage(err) };
   }
 }
 
@@ -280,6 +329,17 @@ export async function speakInitialMessage(
           await endCall(ctx, call.callId);
         }
       }, delaySec * 1000);
+    } else if (
+      mode === "conversation" &&
+      ctx.provider &&
+      shouldStartListeningAfterInitialMessage(ctx)
+    ) {
+      transitionState(call, "listening");
+      persistCallRecord(ctx.storePath, call);
+      await ctx.provider.startListening({
+        callId: call.callId,
+        providerCallId,
+      });
     }
   } finally {
     ctx.initialMessageInFlight.delete(call.callId);
@@ -328,7 +388,7 @@ export async function continueCall(
         : 1;
 
     call.metadata = {
-      ...(call.metadata ?? {}),
+      ...call.metadata,
       turnCount,
       lastTurnLatencyMs,
       lastTurnListenWaitMs,
@@ -347,7 +407,7 @@ export async function continueCall(
 
     return { success: true, transcript };
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
+    return { success: false, error: formatErrorMessage(err) };
   } finally {
     ctx.activeTurnCalls.delete(callId);
     clearTranscriptWaiter(ctx, callId);
@@ -384,6 +444,6 @@ export async function endCall(
 
     return { success: true };
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
+    return { success: false, error: formatErrorMessage(err) };
   }
 }

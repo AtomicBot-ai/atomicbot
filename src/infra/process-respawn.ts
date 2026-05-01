@@ -1,4 +1,6 @@
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
+import { normalizeOptionalLowercaseString } from "../shared/string-coerce.js";
+import { formatErrorMessage } from "./errors.js";
 import { triggerOpenClawRestart } from "./restart.js";
 import { detectRespawnSupervisor } from "./supervisor-markers.js";
 
@@ -10,12 +12,24 @@ export type GatewayRespawnResult = {
   detail?: string;
 };
 
+export type GatewayUpdateRespawnResult = GatewayRespawnResult & {
+  child?: ChildProcess;
+};
+
 function isTruthy(value: string | undefined): boolean {
-  if (!value) {
-    return false;
-  }
-  const normalized = value.trim().toLowerCase();
+  const normalized = normalizeOptionalLowercaseString(value);
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
+function spawnDetachedGatewayProcess(): { child: ChildProcess; pid?: number } {
+  const args = [...process.execArgv, ...process.argv.slice(1)];
+  const child = spawn(process.execPath, args, {
+    env: process.env,
+    detached: true,
+    stdio: "inherit",
+  });
+  child.unref();
+  return { child, pid: child.pid ?? undefined };
 }
 
 /**
@@ -54,16 +68,46 @@ export function restartGatewayProcessWithFreshPid(): GatewayRespawnResult {
   }
 
   try {
-    const args = [...process.execArgv, ...process.argv.slice(1)];
-    const child = spawn(process.execPath, args, {
-      env: process.env,
-      detached: true,
-      stdio: "inherit",
-    });
-    child.unref();
-    return { mode: "spawned", pid: child.pid ?? undefined };
+    const { pid } = spawnDetachedGatewayProcess();
+    return { mode: "spawned", pid };
   } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
+    const detail = formatErrorMessage(err);
     return { mode: "failed", detail };
+  }
+}
+
+/**
+ * Update restarts must replace the OS process so the new code runs from a
+ * fresh module graph after package files have changed on disk.
+ *
+ * Unlike the generic restart path, update mode allows detached respawn on
+ * unmanaged Windows installs because there is no safe in-process fallback once
+ * the installed package contents have been replaced.
+ */
+export function respawnGatewayProcessForUpdate(): GatewayUpdateRespawnResult {
+  if (isTruthy(process.env.OPENCLAW_NO_RESPAWN)) {
+    return { mode: "disabled", detail: "OPENCLAW_NO_RESPAWN" };
+  }
+  const supervisor = detectRespawnSupervisor(process.env);
+  if (supervisor) {
+    if (supervisor === "schtasks") {
+      const restart = triggerOpenClawRestart();
+      if (!restart.ok) {
+        return {
+          mode: "failed",
+          detail: restart.detail ?? `${restart.method} restart failed`,
+        };
+      }
+    }
+    return { mode: "supervised" };
+  }
+  try {
+    const { child, pid } = spawnDetachedGatewayProcess();
+    return { mode: "spawned", pid, child };
+  } catch (err) {
+    return {
+      mode: "failed",
+      detail: formatErrorMessage(err),
+    };
   }
 }

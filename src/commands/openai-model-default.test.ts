@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
-import type { WizardPrompter } from "../wizard/prompts.js";
-import { applyDefaultModelChoice } from "./auth-choice.default-model.js";
 import {
   applyOpencodeZenModelDefault,
   OPENCODE_ZEN_DEFAULT_MODEL,
-} from "./opencode-zen-model-default.js";
+} from "../plugin-sdk/opencode.js";
+import type { WizardPrompter } from "../wizard/prompts.js";
+import { applyDefaultModelChoice } from "./auth-choice.default-model.js";
 
 function makePrompter(): WizardPrompter {
   return {
@@ -73,7 +73,7 @@ describe("applyDefaultModelChoice", () => {
   });
 
   it("uses applyDefaultConfig path when setDefaultModel is true", async () => {
-    const defaultModel = "openai/gpt-5.4";
+    const defaultModel = "openai/gpt-5.5";
     const applied = await applyDefaultModelChoice({
       config: {},
       setDefaultModel: true,

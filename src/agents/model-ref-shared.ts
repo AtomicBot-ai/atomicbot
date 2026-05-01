@@ -1,7 +1,5 @@
-import {
-  normalizeGooglePreviewModelId,
-  normalizeNativeXaiModelId,
-} from "../plugin-sdk/provider-model-shared.js";
+import { normalizeProviderModelIdWithManifest } from "../plugins/manifest-model-id-normalization.js";
+import { normalizeLowercaseStringOrEmpty } from "../shared/string-coerce.js";
 import { normalizeProviderId } from "./provider-id.js";
 
 export type StaticModelRef = {
@@ -18,62 +16,23 @@ export function modelKey(provider: string, model: string): string {
   if (!modelId) {
     return providerId;
   }
-  return modelId.toLowerCase().startsWith(`${providerId.toLowerCase()}/`)
+  return normalizeLowercaseStringOrEmpty(modelId).startsWith(
+    `${normalizeLowercaseStringOrEmpty(providerId)}/`,
+  )
     ? modelId
     : `${providerId}/${modelId}`;
 }
 
-export function normalizeAnthropicModelId(model: string): string {
-  const trimmed = model.trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-  switch (trimmed.toLowerCase()) {
-    case "opus-4.6":
-      return "claude-opus-4-6";
-    case "opus-4.5":
-      return "claude-opus-4-5";
-    case "sonnet-4.6":
-      return "claude-sonnet-4-6";
-    case "sonnet-4.5":
-      return "claude-sonnet-4-5";
-    default:
-      return trimmed;
-  }
-}
-
-function normalizeHuggingfaceModelId(model: string): string {
-  const trimmed = model.trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-  const prefix = "huggingface/";
-  return trimmed.toLowerCase().startsWith(prefix) ? trimmed.slice(prefix.length) : trimmed;
-}
-
 export function normalizeStaticProviderModelId(provider: string, model: string): string {
-  if (provider === "anthropic") {
-    return normalizeAnthropicModelId(model);
-  }
-  if (provider === "huggingface") {
-    return normalizeHuggingfaceModelId(model);
-  }
-  if (provider === "google" || provider === "google-vertex") {
-    return normalizeGooglePreviewModelId(model);
-  }
-  if (provider === "openrouter" && !model.includes("/")) {
-    return `openrouter/${model}`;
-  }
-  if (provider === "xai") {
-    return normalizeNativeXaiModelId(model);
-  }
-  if (provider === "vercel-ai-gateway" && !model.includes("/")) {
-    const normalizedAnthropicModel = normalizeAnthropicModelId(model);
-    if (normalizedAnthropicModel.startsWith("claude-")) {
-      return `anthropic/${normalizedAnthropicModel}`;
-    }
-  }
-  return model;
+  return (
+    normalizeProviderModelIdWithManifest({
+      provider,
+      context: {
+        provider,
+        modelId: model,
+      },
+    }) ?? model
+  );
 }
 
 export function parseStaticModelRef(raw: string, defaultProvider: string): StaticModelRef | null {

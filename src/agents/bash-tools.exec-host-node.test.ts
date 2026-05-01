@@ -1,5 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+type StrictInlineEvalBoundary =
+  typeof import("./bash-tools.exec-host-shared.js").enforceStrictInlineEvalApprovalBoundary;
+
+const INLINE_EVAL_HIT = {
+  executable: "python3",
+  normalizedExecutable: "python3",
+  flag: "-c",
+  argv: ["python3", "-c", "print(1)"],
+};
+
 const preparedPlan = vi.hoisted(() => ({
   argv: ["bun", "./script.ts"],
   cwd: "/tmp/work",
@@ -27,17 +37,42 @@ const resolveExecHostApprovalContextMock = vi.hoisted(() =>
   })),
 );
 const createAndRegisterDefaultExecApprovalRequestMock = vi.hoisted(() => vi.fn());
-const resolveApprovalDecisionOrUndefinedMock = vi.hoisted(() => vi.fn(async () => "allow-once"));
+const resolveApprovalDecisionOrUndefinedMock = vi.hoisted(() =>
+  vi.fn(async (): Promise<string | null | undefined> => "allow-once"),
+);
 const createExecApprovalDecisionStateMock = vi.hoisted(() =>
-  vi.fn(() => ({
-    baseDecision: { timedOut: false },
-    approvedByAsk: false,
-    deniedReason: null,
-  })),
+  vi.fn(
+    (): {
+      baseDecision: { timedOut: boolean };
+      approvedByAsk: boolean;
+      deniedReason: string | null;
+    } => ({
+      baseDecision: { timedOut: false },
+      approvedByAsk: false,
+      deniedReason: null,
+    }),
+  ),
 );
 const buildExecApprovalPendingToolResultMock = vi.hoisted(() => vi.fn());
+const sendExecApprovalFollowupResultMock = vi.hoisted(() => vi.fn(async () => undefined));
+const enforceStrictInlineEvalApprovalBoundaryMock = vi.hoisted(() =>
+  vi.fn<StrictInlineEvalBoundary>((value) => ({
+    approvedByAsk: value.approvedByAsk,
+    deniedReason: value.deniedReason,
+  })),
+);
 const registerExecApprovalRequestForHostOrThrowMock = vi.hoisted(() =>
   vi.fn(async () => undefined),
+);
+const detectInterpreterInlineEvalArgvMock = vi.hoisted(() =>
+  vi.fn(
+    (): {
+      executable: string;
+      normalizedExecutable: string;
+      flag: string;
+      argv: string[];
+    } | null => null,
+  ),
 );
 
 vi.mock("../infra/exec-approvals.js", () => ({
@@ -59,7 +94,7 @@ vi.mock("../infra/exec-approvals.js", () => ({
 
 vi.mock("../infra/exec-inline-eval.js", () => ({
   describeInterpreterInlineEval: vi.fn(() => "inline-eval"),
-  detectInterpreterInlineEvalArgv: vi.fn(() => null),
+  detectInterpreterInlineEvalArgv: detectInterpreterInlineEvalArgvMock,
 }));
 
 vi.mock("../infra/node-shell.js", () => ({
@@ -84,7 +119,8 @@ vi.mock("./bash-tools.exec-host-shared.js", () => ({
   buildExecApprovalFollowupTarget: vi.fn(() => ({ approvalId: "approval-1" })),
   resolveApprovalDecisionOrUndefined: resolveApprovalDecisionOrUndefinedMock,
   createExecApprovalDecisionState: createExecApprovalDecisionStateMock,
-  sendExecApprovalFollowupResult: vi.fn(async () => undefined),
+  enforceStrictInlineEvalApprovalBoundary: enforceStrictInlineEvalApprovalBoundaryMock,
+  sendExecApprovalFollowupResult: sendExecApprovalFollowupResultMock,
   buildExecApprovalPendingToolResult: buildExecApprovalPendingToolResultMock,
   buildHeadlessExecApprovalDeniedMessage: vi.fn(() => "denied"),
 }));
@@ -112,7 +148,19 @@ let executeNodeHostCommand: typeof import("./bash-tools.exec-host-node.js").exec
 
 type MockNodeInvokeParams = {
   command?: string;
+  params?: Record<string, unknown>;
 };
+
+function expectSystemRunInvoke(params: { invokeTimeoutMs: number; runTimeoutMs: number }) {
+  expect(callGatewayToolMock).toHaveBeenCalledWith(
+    "node.invoke",
+    expect.objectContaining({ timeoutMs: params.invokeTimeoutMs }),
+    expect.objectContaining({
+      command: "system.run",
+      params: expect.objectContaining({ timeoutMs: params.runTimeoutMs }),
+    }),
+  );
+}
 
 describe("executeNodeHostCommand", () => {
   beforeAll(async () => {
@@ -145,7 +193,11 @@ describe("executeNodeHostCommand", () => {
     );
     listNodesMock.mockReset();
     listNodesMock.mockResolvedValue([
-      { nodeId: "node-1", commands: ["system.run"], platform: process.platform },
+      {
+        nodeId: "node-1",
+        commands: ["system.run", "system.run.prepare"],
+        platform: process.platform,
+      },
     ]);
     parsePreparedSystemRunPayloadMock.mockReset();
     parsePreparedSystemRunPayloadMock.mockReturnValue({ plan: preparedPlan });
@@ -189,10 +241,25 @@ describe("executeNodeHostCommand", () => {
       content: [],
       details: { status: "approval-pending" },
     });
+    sendExecApprovalFollowupResultMock.mockReset();
+    enforceStrictInlineEvalApprovalBoundaryMock.mockReset();
+    enforceStrictInlineEvalApprovalBoundaryMock.mockImplementation((value) => ({
+      approvedByAsk: value.approvedByAsk,
+      deniedReason: value.deniedReason,
+    }));
+    detectInterpreterInlineEvalArgvMock.mockReset();
+    detectInterpreterInlineEvalArgvMock.mockReturnValue(null);
     registerExecApprovalRequestForHostOrThrowMock.mockReset();
   });
 
   it("forwards prepared systemRunPlan on async node invoke after approval", async () => {
+    resolveExecHostApprovalContextMock.mockReturnValue({
+      approvals: { allowlist: [], file: { version: 1, agents: {} } },
+      hostSecurity: "full",
+      hostAsk: "always",
+      askFallback: "deny",
+    });
+
     const result = await executeNodeHostCommand({
       command: "bun ./script.ts",
       workdir: "/tmp/work",
@@ -214,21 +281,200 @@ describe("executeNodeHostCommand", () => {
     );
 
     await vi.waitFor(() => {
-      expect(callGatewayToolMock).toHaveBeenCalledTimes(2);
+      expect(callGatewayToolMock).toHaveBeenCalledTimes(3);
     });
 
     expect(callGatewayToolMock).toHaveBeenNthCalledWith(
-      2,
+      3,
       "node.invoke",
-      expect.anything(),
+      expect.objectContaining({ timeoutMs: 35_000 }),
       expect.objectContaining({
         command: "system.run",
         params: expect.objectContaining({
           approved: true,
           approvalDecision: "allow-once",
           systemRunPlan: preparedPlan,
+          timeoutMs: 30_000,
         }),
       }),
     );
+  });
+
+  it("builds a local systemRunPlan when approval is required and the node omits prepare", async () => {
+    listNodesMock.mockResolvedValueOnce([
+      {
+        nodeId: "node-1",
+        commands: ["system.run", "system.which", "system.notify"],
+        platform: "darwin",
+      },
+    ]);
+    resolveExecHostApprovalContextMock.mockReturnValue({
+      approvals: { allowlist: [], file: { version: 1, agents: {} } },
+      hostSecurity: "full",
+      hostAsk: "always",
+      askFallback: "deny",
+    });
+
+    const result = await executeNodeHostCommand({
+      command: "bun ./script.ts",
+      workdir: "/tmp/work",
+      env: {},
+      security: "full",
+      ask: "off",
+      defaultTimeoutSec: 30,
+      approvalRunningNoticeMs: 0,
+      warnings: [],
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+    });
+
+    expect(result.details?.status).toBe("approval-pending");
+    expect(parsePreparedSystemRunPayloadMock).not.toHaveBeenCalled();
+    const expectedPlan = {
+      argv: ["bash", "-lc", "bun ./script.ts"],
+      cwd: "/tmp/work",
+      commandText: 'bash -lc "bun ./script.ts"',
+      commandPreview: "bun ./script.ts",
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+    };
+    expect(registerExecApprovalRequestForHostOrThrowMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemRunPlan: expectedPlan,
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(callGatewayToolMock).toHaveBeenCalledWith(
+        "node.invoke",
+        expect.anything(),
+        expect.objectContaining({
+          command: "system.run",
+          params: expect.objectContaining({
+            rawCommand: expectedPlan.commandText,
+            systemRunPlan: expectedPlan,
+          }),
+        }),
+      );
+    });
+  });
+
+  it("skips approval prepare in full/off mode", async () => {
+    await executeNodeHostCommand({
+      command: "bun ./script.ts",
+      workdir: "/tmp/work",
+      env: {},
+      security: "full",
+      ask: "off",
+      defaultTimeoutSec: 30,
+      approvalRunningNoticeMs: 0,
+      warnings: [],
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+      notifyOnExit: false,
+    });
+
+    expect(callGatewayToolMock).toHaveBeenCalledTimes(1);
+    expect(callGatewayToolMock).toHaveBeenCalledWith(
+      "node.invoke",
+      expect.objectContaining({ timeoutMs: 35_000 }),
+      expect.objectContaining({
+        command: "system.run",
+        params: expect.objectContaining({
+          command: ["bash", "-lc", "bun ./script.ts"],
+          rawCommand: "bun ./script.ts",
+          suppressNotifyOnExit: true,
+          timeoutMs: 30_000,
+        }),
+      }),
+    );
+    expect(callGatewayToolMock).toHaveBeenCalledWith(
+      "node.invoke",
+      expect.anything(),
+      expect.objectContaining({
+        params: expect.not.objectContaining({
+          systemRunPlan: expect.anything(),
+        }),
+      }),
+    );
+  });
+
+  it("forwards explicit timeouts to node system.run", async () => {
+    await executeNodeHostCommand({
+      command: "bun ./script.ts",
+      workdir: "/tmp/work",
+      env: {},
+      security: "full",
+      ask: "off",
+      timeoutSec: 12,
+      defaultTimeoutSec: 30,
+      approvalRunningNoticeMs: 0,
+      warnings: [],
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+    });
+
+    expectSystemRunInvoke({ invokeTimeoutMs: 17_000, runTimeoutMs: 12_000 });
+  });
+
+  it("forwards timeout zero to node system.run and keeps the invoke wait bounded", async () => {
+    await executeNodeHostCommand({
+      command: "bun ./script.ts",
+      workdir: "/tmp/work",
+      env: {},
+      security: "full",
+      ask: "off",
+      timeoutSec: 0,
+      defaultTimeoutSec: 30,
+      approvalRunningNoticeMs: 0,
+      warnings: [],
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+    });
+
+    expectSystemRunInvoke({ invokeTimeoutMs: 35_000, runTimeoutMs: 0 });
+  });
+
+  it("denies timed-out inline-eval requests instead of invoking the node", async () => {
+    detectInterpreterInlineEvalArgvMock.mockReturnValue(INLINE_EVAL_HIT);
+    resolveApprovalDecisionOrUndefinedMock.mockResolvedValue(null);
+    createExecApprovalDecisionStateMock.mockReturnValue({
+      baseDecision: { timedOut: true },
+      approvedByAsk: true,
+      deniedReason: null,
+    });
+    enforceStrictInlineEvalApprovalBoundaryMock.mockReturnValue({
+      approvedByAsk: false,
+      deniedReason: "approval-timeout",
+    });
+    resolveExecHostApprovalContextMock.mockReturnValue({
+      approvals: { allowlist: [], file: { version: 1, agents: {} } },
+      hostSecurity: "full",
+      hostAsk: "off",
+      askFallback: "full",
+    });
+
+    const result = await executeNodeHostCommand({
+      command: "python3 -c 'print(1)'",
+      workdir: "/tmp/work",
+      env: {},
+      security: "full",
+      ask: "off",
+      strictInlineEval: true,
+      defaultTimeoutSec: 30,
+      approvalRunningNoticeMs: 0,
+      warnings: [],
+      agentId: "requested-agent",
+      sessionKey: "requested-session",
+    });
+
+    expect(result.details?.status).toBe("approval-pending");
+    await vi.waitFor(() => {
+      expect(sendExecApprovalFollowupResultMock).toHaveBeenCalledWith(
+        { approvalId: "approval-1" },
+        "Exec denied (node=node-1 id=approval-1, approval-timeout): python3 -c 'print(1)'",
+      );
+    });
+    expect(callGatewayToolMock).toHaveBeenCalledTimes(1);
   });
 });

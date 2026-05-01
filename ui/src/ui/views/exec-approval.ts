@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { formatApprovalDisplayPath } from "../../../../src/infra/approval-display-paths.ts";
 import type { AppViewState } from "../app-view-state.ts";
 import type {
   ExecApprovalRequest,
@@ -19,11 +20,14 @@ function formatRemaining(ms: number): string {
   return `${hours}h`;
 }
 
-function renderMetaRow(label: string, value?: string | null) {
+function renderMetaRow(label: string, value?: string | null, opts?: { path?: boolean }) {
   if (!value) {
     return nothing;
   }
-  return html`<div class="exec-approval-meta-row"><span>${label}</span><span>${value}</span></div>`;
+  const displayValue = opts?.path ? formatApprovalDisplayPath(value) : value;
+  return html`<div class="exec-approval-meta-row">
+    <span>${label}</span><span>${displayValue}</span>
+  </div>`;
 }
 
 function renderExecBody(request: ExecApprovalRequestPayload) {
@@ -31,8 +35,11 @@ function renderExecBody(request: ExecApprovalRequestPayload) {
     <div class="exec-approval-command mono">${request.command}</div>
     <div class="exec-approval-meta">
       ${renderMetaRow("Host", request.host)} ${renderMetaRow("Agent", request.agentId)}
-      ${renderMetaRow("Session", request.sessionKey)} ${renderMetaRow("CWD", request.cwd)}
-      ${renderMetaRow("Resolved", request.resolvedPath)}
+      ${renderMetaRow("Session", request.sessionKey)}
+      ${renderMetaRow("CWD", request.cwd, {
+        path: true,
+      })}
+      ${renderMetaRow("Resolved", request.resolvedPath, { path: true })}
       ${renderMetaRow("Security", request.security)} ${renderMetaRow("Ask", request.ask)}
     </div>
   `;
@@ -40,13 +47,11 @@ function renderExecBody(request: ExecApprovalRequestPayload) {
 
 function renderPluginBody(active: ExecApprovalRequest) {
   return html`
-    ${
-      active.pluginDescription
-        ? html`<pre class="exec-approval-command mono" style="white-space:pre-wrap">
+    ${active.pluginDescription
+      ? html`<pre class="exec-approval-command mono" style="white-space:pre-wrap">
 ${active.pluginDescription}</pre
         >`
-        : nothing
-    }
+      : nothing}
     <div class="exec-approval-meta">
       ${renderMetaRow("Severity", active.pluginSeverity)}
       ${renderMetaRow("Plugin", active.pluginId)} ${renderMetaRow("Agent", active.request.agentId)}
@@ -76,18 +81,14 @@ export function renderExecApprovalPrompt(state: AppViewState) {
             <div class="exec-approval-title">${title}</div>
             <div class="exec-approval-sub">${remaining}</div>
           </div>
-          ${
-            queueCount > 1
-              ? html`<div class="exec-approval-queue">${queueCount} pending</div>`
-              : nothing
-          }
+          ${queueCount > 1
+            ? html`<div class="exec-approval-queue">${queueCount} pending</div>`
+            : nothing}
         </div>
         ${isPlugin ? renderPluginBody(active) : renderExecBody(request)}
-        ${
-          state.execApprovalError
-            ? html`<div class="exec-approval-error">${state.execApprovalError}</div>`
-            : nothing
-        }
+        ${state.execApprovalError
+          ? html`<div class="exec-approval-error">${state.execApprovalError}</div>`
+          : nothing}
         <div class="exec-approval-actions">
           <button
             class="btn primary"

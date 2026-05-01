@@ -1,4 +1,8 @@
-import { diagnosticLogger as diag, logLaneDequeue, logLaneEnqueue } from "../logging/diagnostic.js";
+import {
+  diagnosticLogger as diag,
+  logLaneDequeue,
+  logLaneEnqueue,
+} from "../logging/diagnostic-runtime.js";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import { CommandLane } from "./lanes.js";
 /**
@@ -64,12 +68,22 @@ function isExpectedNonErrorLaneFailure(err: unknown): boolean {
 const COMMAND_QUEUE_STATE_KEY = Symbol.for("openclaw.commandQueueState");
 
 function getQueueState() {
-  return resolveGlobalSingleton(COMMAND_QUEUE_STATE_KEY, () => ({
+  const state = resolveGlobalSingleton(COMMAND_QUEUE_STATE_KEY, () => ({
     gatewayDraining: false,
     lanes: new Map<string, LaneState>(),
     activeTaskWaiters: new Set<ActiveTaskWaiter>(),
     nextTaskId: 1,
   }));
+  // Schema migration: the singleton may have been created by an older code
+  // version (e.g. v2026.4.2) that did not include `activeTaskWaiters`.  After
+  // a SIGUSR1 in-process restart the new code inherits the stale object via
+  // `resolveGlobalSingleton` because the Symbol key already exists on
+  // globalThis.  Patch the missing field so all downstream consumers see a
+  // valid Set instead of `undefined`.
+  if (!state.activeTaskWaiters) {
+    state.activeTaskWaiters = new Set<ActiveTaskWaiter>();
+  }
+  return state;
 }
 
 function normalizeLane(lane: string): string {
@@ -359,12 +373,13 @@ export function getActiveTaskCount(): number {
 /**
  * Wait for all currently active tasks across all lanes to finish.
  * Polls at a short interval; resolves when no tasks are active or
- * when `timeoutMs` elapses (whichever comes first).
+ * when `timeoutMs` elapses (whichever comes first). If no timeout is passed,
+ * waits indefinitely for the active set captured at call time.
  *
  * New tasks enqueued after this call are ignored — only tasks that are
  * already executing are waited on.
  */
-export function waitForActiveTasks(timeoutMs: number): Promise<{ drained: boolean }> {
+export function waitForActiveTasks(timeoutMs?: number): Promise<{ drained: boolean }> {
   const queueState = getQueueState();
   const activeAtStart = new Set<number>();
   for (const state of queueState.lanes.values()) {
@@ -376,7 +391,7 @@ export function waitForActiveTasks(timeoutMs: number): Promise<{ drained: boolea
   if (activeAtStart.size === 0) {
     return Promise.resolve({ drained: true });
   }
-  if (timeoutMs <= 0) {
+  if (timeoutMs !== undefined && timeoutMs <= 0) {
     return Promise.resolve({ drained: false });
   }
 
@@ -385,9 +400,11 @@ export function waitForActiveTasks(timeoutMs: number): Promise<{ drained: boolea
       activeTaskIds: activeAtStart,
       resolve,
     };
-    waiter.timeout = setTimeout(() => {
-      resolveActiveTaskWaiter(waiter, { drained: false });
-    }, timeoutMs);
+    if (timeoutMs !== undefined) {
+      waiter.timeout = setTimeout(() => {
+        resolveActiveTaskWaiter(waiter, { drained: false });
+      }, timeoutMs);
+    }
     queueState.activeTaskWaiters.add(waiter);
     notifyActiveTaskWaiters();
   });

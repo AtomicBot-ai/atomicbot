@@ -3,14 +3,14 @@ summary: "Zalo personal account support via native zca-js (QR login), capabiliti
 read_when:
   - Setting up Zalo Personal for OpenClaw
   - Debugging Zalo Personal login or message flow
-title: "Zalo Personal"
+title: "Zalo personal"
 ---
-
-# Zalo Personal (unofficial)
 
 Status: experimental. This integration automates a **personal Zalo account** via native `zca-js` inside OpenClaw.
 
-> **Warning:** This is an unofficial integration and may result in account suspension/ban. Use at your own risk.
+<Warning>
+This is an unofficial integration and may result in account suspension or ban. Use at your own risk.
+</Warning>
 
 ## Bundled plugin
 
@@ -124,6 +124,7 @@ Example:
 - `channels.zalouser.groups.<group>.requireMention` controls whether group replies require a mention.
 - Resolution order: exact group id/name -> normalized group slug -> `*` -> default (`true`).
 - This applies both to allowlisted groups and open group mode.
+- Quoting a bot message counts as an implicit mention for group activation.
 - Authorized control commands (for example `/new`) can bypass mention gating.
 - When a group message is skipped because mention is required, OpenClaw stores it as pending group history and includes it on the next processed group message.
 - Group history limit defaults to `messages.groupChat.historyLimit` (fallback `50`). You can override per account with `channels.zalouser.historyLimit`.

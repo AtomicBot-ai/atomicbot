@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../../config/config.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import {
   isCommandEnabled,
   maybeResolveTextAlias,
@@ -23,6 +23,18 @@ function resolveCommandCandidateText(ctx: FinalizedMsgContext): string {
   return resolveFirstContextText(ctx, ["CommandBody", "BodyForCommands", "RawBody", "Body"]).trim();
 }
 
+function isResetCommandCandidate(text: string): boolean {
+  return /^\/(?:new|reset)(?:\s|$)/i.test(text);
+}
+
+function isAcpCommandCandidate(text: string): boolean {
+  return /^\/acp(?:\s|$)/i.test(text);
+}
+
+function isLocalCommandCandidate(text: string): boolean {
+  return /^\/(?:status|unfocus)(?:\s|$)/i.test(text);
+}
+
 export function shouldBypassAcpDispatchForCommand(
   ctx: FinalizedMsgContext,
   cfg: OpenClawConfig,
@@ -38,6 +50,18 @@ export function shouldBypassAcpDispatchForCommand(
     commandSource: ctx.CommandSource,
   });
   if (!normalized.startsWith("/") && maybeResolveTextAlias(candidate, cfg) != null) {
+    return allowTextCommands;
+  }
+
+  if (isResetCommandCandidate(normalized)) {
+    return true;
+  }
+
+  if (isAcpCommandCandidate(normalized)) {
+    return true;
+  }
+
+  if (isLocalCommandCandidate(normalized)) {
     return allowTextCommands;
   }
 

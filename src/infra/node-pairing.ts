@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { resolveMissingRequestedScope } from "../shared/operator-scope-compat.js";
+import { normalizeArrayBackedTrimmedStringList } from "../shared/string-normalization.js";
 import { type NodeApprovalScope, resolveNodePairApprovalScopes } from "./node-pairing-authz.js";
 import {
   createAsyncLock,
   pruneExpiredPending,
-  readJsonFile,
+  readDurableJsonFile,
   reconcilePendingPairingRequests,
   resolvePairingPaths,
   writeJsonAtomic,
@@ -66,14 +67,6 @@ const OPERATOR_ROLE = "operator";
 
 const withLock = createAsyncLock();
 
-function normalizeStringList(values?: string[]): string[] | undefined {
-  if (!Array.isArray(values)) {
-    return undefined;
-  }
-  const normalized = values.map((value) => value.trim()).filter(Boolean);
-  return normalized.length > 0 ? normalized : [];
-}
-
 function buildPendingNodePairingRequest(params: {
   requestId?: string;
   req: NodePairingRequestInput;
@@ -88,8 +81,8 @@ function buildPendingNodePairingRequest(params: {
     uiVersion: params.req.uiVersion,
     deviceFamily: params.req.deviceFamily,
     modelIdentifier: params.req.modelIdentifier,
-    caps: normalizeStringList(params.req.caps),
-    commands: normalizeStringList(params.req.commands),
+    caps: normalizeArrayBackedTrimmedStringList(params.req.caps),
+    commands: normalizeArrayBackedTrimmedStringList(params.req.commands),
     permissions: params.req.permissions,
     remoteIp: params.req.remoteIp,
     silent: params.req.silent,
@@ -110,8 +103,8 @@ function refreshPendingNodePairingRequest(
     uiVersion: incoming.uiVersion ?? existing.uiVersion,
     deviceFamily: incoming.deviceFamily ?? existing.deviceFamily,
     modelIdentifier: incoming.modelIdentifier ?? existing.modelIdentifier,
-    caps: normalizeStringList(incoming.caps) ?? existing.caps,
-    commands: normalizeStringList(incoming.commands) ?? existing.commands,
+    caps: normalizeArrayBackedTrimmedStringList(incoming.caps) ?? existing.caps,
+    commands: normalizeArrayBackedTrimmedStringList(incoming.commands) ?? existing.commands,
     permissions: incoming.permissions ?? existing.permissions,
     remoteIp: incoming.remoteIp ?? existing.remoteIp,
     // Preserve interactive visibility if either request needs attention.
@@ -141,8 +134,8 @@ type ApproveNodePairingResult = ApprovedNodePairingResult | ForbiddenNodePairing
 async function loadState(baseDir?: string): Promise<NodePairingStateFile> {
   const { pendingPath, pairedPath } = resolvePairingPaths(baseDir, "nodes");
   const [pending, paired] = await Promise.all([
-    readJsonFile<Record<string, NodePairingPendingRequest>>(pendingPath),
-    readJsonFile<Record<string, NodePairingPairedNode>>(pairedPath),
+    readDurableJsonFile<Record<string, NodePairingPendingRequest>>(pendingPath),
+    readDurableJsonFile<Record<string, NodePairingPairedNode>>(pairedPath),
   ]);
   const state: NodePairingStateFile = {
     pendingById: pending ?? {},
@@ -291,6 +284,22 @@ export async function rejectNodePairing(
       persistState: (state) => persistState(state, baseDir),
       getId: (pending: NodePairingPendingRequest) => pending.nodeId,
     });
+  });
+}
+
+export async function removePairedNode(
+  nodeId: string,
+  baseDir?: string,
+): Promise<{ nodeId: string } | null> {
+  return await withLock(async () => {
+    const state = await loadState(baseDir);
+    const normalized = normalizeNodeId(nodeId);
+    if (!normalized || !state.pairedByNodeId[normalized]) {
+      return null;
+    }
+    delete state.pairedByNodeId[normalized];
+    await persistState(state, baseDir);
+    return { nodeId: normalized };
   });
 }
 

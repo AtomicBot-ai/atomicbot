@@ -7,9 +7,9 @@ import {
   attachChannelToResults,
 } from "openclaw/plugin-sdk/channel-send-result";
 import { PAIRING_APPROVED_MESSAGE } from "openclaw/plugin-sdk/channel-status";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/markdown-table-runtime";
 import { resolveChannelMediaMaxBytes } from "openclaw/plugin-sdk/media-runtime";
-import { resolveOutboundSendDep } from "openclaw/plugin-sdk/outbound-runtime";
+import { resolveOutboundSendDep } from "openclaw/plugin-sdk/outbound-send-deps";
 import { chunkText, resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-chunking";
 import { buildOutboundBaseSessionKey, type RoutePeer } from "openclaw/plugin-sdk/routing";
 import {
@@ -18,7 +18,7 @@ import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
 } from "openclaw/plugin-sdk/status-helpers";
-import { normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+import { normalizeLowercaseStringOrEmpty } from "openclaw/plugin-sdk/text-runtime";
 import { resolveSignalAccount, type ResolvedSignalAccount } from "./accounts.js";
 import { signalApprovalAuth } from "./approval-auth.js";
 import { markdownToSignalTextChunks } from "./format.js";
@@ -28,8 +28,8 @@ import { resolveSignalOutboundTarget } from "./outbound-session.js";
 import { resolveSignalReactionLevel } from "./reaction-level.js";
 import { signalSetupAdapter } from "./setup-core.js";
 import {
-  signalConfigAdapter,
   createSignalPluginBase,
+  signalConfigAdapter,
   signalSecurityAdapter,
   signalSetupWizard,
 } from "./shared.js";
@@ -104,7 +104,7 @@ function inferSignalTargetChatType(rawTo: string) {
   if (!to) {
     return undefined;
   }
-  const lower = to.toLowerCase();
+  const lower = normalizeLowercaseStringOrEmpty(to);
   if (lower.startsWith("group:")) {
     return "group" as const;
   }
@@ -249,7 +249,7 @@ export const signalPlugin: ChannelPlugin<ResolvedSignalAccount, SignalProbe> =
         setup: signalSetupAdapter,
       }),
       actions: signalMessageActions,
-      auth: signalApprovalAuth,
+      approvalCapability: signalApprovalAuth,
       allowlist: buildDmGroupAccountAllowlistAdapter({
         channelId: "signal",
         resolveAccount: resolveSignalAccount,
@@ -279,6 +279,25 @@ export const signalPlugin: ChannelPlugin<ResolvedSignalAccount, SignalProbe> =
           hint: "<E.164|uuid:ID|group:ID|signal:group:ID|signal:+E.164>",
         },
       },
+      heartbeat: {
+        sendTyping: async ({ cfg, to, accountId }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendTypingSignal(to, {
+            cfg,
+            ...(accountId ? { accountId } : {}),
+          });
+        },
+        clearTyping: async ({ cfg, to, accountId }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendTypingSignal(to, {
+            cfg,
+            ...(accountId ? { accountId } : {}),
+            stop: true,
+          });
+        },
+      },
       status: createComputedAccountStatusAdapter<ResolvedSignalAccount, SignalProbe>({
         defaultRuntime: createDefaultChannelRuntimeState(DEFAULT_ACCOUNT_ID),
         collectStatusIssues: (accounts) => collectStatusIssuesFromLastError("signal", accounts),
@@ -294,9 +313,7 @@ export const signalPlugin: ChannelPlugin<ResolvedSignalAccount, SignalProbe> =
           return await probeSignal(baseUrl, timeoutMs);
         },
         formatCapabilitiesProbe: ({ probe }) =>
-          (probe as SignalProbe | undefined)?.version
-            ? [{ text: `Signal daemon: ${(probe as SignalProbe).version}` }]
-            : [],
+          probe?.version ? [{ text: `Signal daemon: ${probe.version}` }] : [],
         resolveAccountSnapshot: ({ account }) => ({
           accountId: account.accountId,
           name: account.name,
@@ -331,8 +348,12 @@ export const signalPlugin: ChannelPlugin<ResolvedSignalAccount, SignalProbe> =
         idLabel: "signalNumber",
         message: PAIRING_APPROVED_MESSAGE,
         normalizeAllowEntry: createPairingPrefixStripper(/^signal:/i),
-        notify: async ({ id, message }) => {
-          await (await loadSignalSendRuntime()).sendMessageSignal(id, message);
+        notify: async ({ cfg, id, message }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendMessageSignal(id, message, {
+            cfg,
+          });
         },
       },
     },

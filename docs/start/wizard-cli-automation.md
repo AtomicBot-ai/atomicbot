@@ -3,11 +3,9 @@ summary: "Scripted onboarding and agent setup for the OpenClaw CLI"
 read_when:
   - You are automating onboarding in scripts or CI
   - You need non-interactive examples for specific providers
-title: "CLI Automation"
+title: "CLI automation"
 sidebarTitle: "CLI automation"
 ---
-
-# CLI Automation
 
 Use `--non-interactive` to automate `openclaw onboard`.
 
@@ -27,10 +25,13 @@ openclaw onboard --non-interactive \
   --gateway-bind loopback \
   --install-daemon \
   --daemon-runtime node \
+  --skip-bootstrap \
   --skip-skills
 ```
 
 Add `--json` for a machine-readable summary.
+
+Use `--skip-bootstrap` when your automation pre-seeds workspace files and does not want onboarding to create the default bootstrap files.
 
 Use `--secret-input-mode ref` to store env-backed refs in auth profiles instead of plaintext values.
 Interactive selection between env refs and configured provider refs (`file` or `exec`) is available in the onboarding flow.
@@ -192,10 +193,8 @@ openclaw onboard --non-interactive \
   </Accordion>
 </AccordionGroup>
 
-Anthropic setup-token is available again as a legacy/manual onboarding path.
-Use it with the expectation that Anthropic told OpenClaw users the OpenClaw
-Claude-login path requires **Extra Usage**. For production, prefer an
-Anthropic API key.
+Anthropic setup-token remains available as a supported onboarding token path, but OpenClaw now prefers Claude CLI reuse when available.
+For production, prefer an Anthropic API key.
 
 ## Add another agent
 
@@ -205,7 +204,7 @@ sessions, and auth profiles. Running without `--workspace` launches the wizard.
 ```bash
 openclaw agents add work \
   --workspace ~/.openclaw/workspace-work \
-  --model openai/gpt-5.4 \
+  --model openai/gpt-5.5 \
   --bind whatsapp:biz \
   --non-interactive \
   --json

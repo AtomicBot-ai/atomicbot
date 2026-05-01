@@ -8,16 +8,13 @@ read_when:
 title: "OAuth"
 ---
 
-# OAuth
-
 OpenClaw supports “subscription auth” via OAuth for providers that offer it
 (notably **OpenAI Codex (ChatGPT OAuth)**). For Anthropic, the practical split
 is now:
 
 - **Anthropic API key**: normal Anthropic API billing
-- **Anthropic subscription auth inside OpenClaw**: Anthropic notified OpenClaw
-  users on **April 4, 2026 at 12:00 PM PT / 8:00 PM BST** that this now
-  requires **Extra Usage**
+- **Anthropic Claude CLI / subscription auth inside OpenClaw**: Anthropic staff
+  told us this usage is allowed again
 
 OpenAI Codex OAuth is explicitly supported for use in external tools like
 OpenClaw. This page explains:
@@ -47,9 +44,10 @@ To reduce that, OpenClaw treats `auth-profiles.json` as a **token sink**:
 
 - the runtime reads credentials from **one place**
 - we can keep multiple profiles and route them deterministically
-- when credentials are reused from an external CLI like Codex CLI, OpenClaw
-  mirrors them with provenance and re-reads that external source instead of
-  rotating the refresh token itself
+- external CLI reuse is provider-specific: Codex CLI can bootstrap an empty
+  `openai-codex:default` profile, but once OpenClaw has a local OAuth profile,
+  the local refresh token is canonical; other integrations can remain
+  externally managed and re-read their CLI auth store
 
 ## Storage (where tokens live)
 
@@ -71,12 +69,10 @@ For static secret refs and runtime snapshot activation behavior, see [Secrets Ma
 
 <Warning>
 Anthropic's public Claude Code docs say direct Claude Code use stays within
-Claude subscription limits. Separately, Anthropic told OpenClaw users on
-**April 4, 2026 at 12:00 PM PT / 8:00 PM BST** that **OpenClaw counts as a
-third-party harness**. Existing Anthropic token profiles remain technically
-usable in OpenClaw, but Anthropic says the OpenClaw path now requires **Extra
-Usage** (pay-as-you-go billed separately from the subscription) for that
-traffic.
+Claude subscription limits, and Anthropic staff told us OpenClaw-style Claude
+CLI usage is allowed again. OpenClaw therefore treats Claude CLI reuse and
+`claude -p` usage as sanctioned for this integration unless Anthropic
+publishes a new policy.
 
 For Anthropic's current direct-Claude-Code plan docs, see [Using Claude Code
 with your Pro or Max
@@ -90,17 +86,12 @@ Plan](/providers/qwen), [MiniMax Coding Plan](/providers/minimax),
 and [Z.AI / GLM Coding Plan](/providers/glm).
 </Warning>
 
-OpenClaw now exposes Anthropic setup-token again as a legacy/manual path.
-Anthropic's OpenClaw-specific billing notice still applies to that path, so
-use it with the expectation that Anthropic requires **Extra Usage** for
-OpenClaw-driven Claude-login traffic.
+OpenClaw also exposes Anthropic setup-token as a supported token-auth path, but it now prefers Claude CLI reuse and `claude -p` when available.
 
 ## Anthropic Claude CLI migration
 
-Anthropic no longer has a supported local Claude CLI migration path in
-OpenClaw. Use Anthropic API keys for Anthropic traffic, or keep legacy
-token-based auth only where it is already configured and with the expectation
-that Anthropic treats that OpenClaw path as **Extra Usage**.
+OpenClaw supports Anthropic Claude CLI reuse again. If you already have a local
+Claude login on the host, onboarding/configure can reuse it directly.
 
 ## OAuth exchange (how login works)
 
@@ -138,8 +129,11 @@ At runtime:
 
 - if `expires` is in the future → use the stored access token
 - if expired → refresh (under a file lock) and overwrite the stored credentials
-- exception: reused external CLI credentials stay externally managed; OpenClaw
-  re-reads the CLI auth store and never spends the copied refresh token itself
+- exception: some external CLI credentials stay externally managed; OpenClaw
+  re-reads those CLI auth stores instead of spending copied refresh tokens.
+  Codex CLI bootstrap is intentionally narrower: it seeds an empty
+  `openai-codex:default` profile, then OpenClaw-owned refreshes keep the local
+  profile canonical.
 
 The refresh flow is automatic; you generally don't need to manage tokens manually.
 
@@ -177,8 +171,8 @@ How to see what profile IDs exist:
 
 Related docs:
 
-- [/concepts/model-failover](/concepts/model-failover) (rotation + cooldown rules)
-- [/tools/slash-commands](/tools/slash-commands) (command surface)
+- [Model failover](/concepts/model-failover) (rotation + cooldown rules)
+- [Slash commands](/tools/slash-commands) (command surface)
 
 ## Related
 

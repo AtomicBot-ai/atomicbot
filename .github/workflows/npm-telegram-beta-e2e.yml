@@ -1,0 +1,373 @@
+name: NPM Telegram Beta E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_spec:
+        description: Published OpenClaw package spec to test when no artifact is supplied
+        required: false
+        default: openclaw@beta
+        type: string
+      source:
+        description: Package candidate source when no package-under-test artifact is supplied
+        required: true
+        default: npm
+        type: choice
+        options:
+          - npm
+          - ref
+          - url
+          - artifact
+      package_ref:
+        description: Trusted package source ref when source=ref
+        required: false
+        default: main
+        type: string
+      package_url:
+        description: HTTPS .tgz URL when source=url
+        required: false
+        default: ""
+        type: string
+      package_sha256:
+        description: Expected package SHA-256 for source=url or source=artifact
+        required: false
+        default: ""
+        type: string
+      artifact_run_id:
+        description: GitHub Actions run id when source=artifact
+        required: false
+        default: ""
+        type: string
+      artifact_name:
+        description: Artifact name containing one .tgz when source=artifact
+        required: false
+        default: package-under-test
+        type: string
+      package_label:
+        description: Optional display label for an artifact-backed package candidate
+        required: false
+        default: ""
+        type: string
+      package_artifact_name:
+        description: Advanced package-under-test artifact name; leave blank for registry install
+        required: false
+        default: ""
+        type: string
+      harness_ref:
+        description: Source ref for the private QA harness; defaults to the dispatched workflow ref
+        required: false
+        default: ""
+        type: string
+      provider_mode:
+        description: QA provider mode
+        required: true
+        default: mock-openai
+        type: choice
+        options:
+          - mock-openai
+          - live-frontier
+      scenario:
+        description: Optional comma-separated Telegram scenario ids
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      package_spec:
+        description: Published OpenClaw package spec to test when no artifact is supplied
+        required: false
+        default: openclaw@beta
+        type: string
+      source:
+        description: "Package candidate source when no package-under-test artifact is supplied: npm, ref, url, or artifact"
+        required: false
+        default: npm
+        type: string
+      package_ref:
+        description: Trusted package source ref when source=ref
+        required: false
+        default: main
+        type: string
+      package_url:
+        description: HTTPS .tgz URL when source=url
+        required: false
+        default: ""
+        type: string
+      package_sha256:
+        description: Expected package SHA-256 for source=url or source=artifact
+        required: false
+        default: ""
+        type: string
+      artifact_run_id:
+        description: GitHub Actions run id when source=artifact
+        required: false
+        default: ""
+        type: string
+      artifact_name:
+        description: Artifact name containing one .tgz when source=artifact
+        required: false
+        default: package-under-test
+        type: string
+      package_artifact_name:
+        description: Optional package-under-test artifact from the current workflow run
+        required: false
+        default: ""
+        type: string
+      package_label:
+        description: Optional display label for an artifact-backed package candidate
+        required: false
+        default: ""
+        type: string
+      harness_ref:
+        description: Source ref for the private QA harness; defaults to the called workflow ref
+        required: false
+        default: ""
+        type: string
+      provider_mode:
+        description: QA provider mode
+        required: false
+        default: mock-openai
+        type: string
+      scenario:
+        description: Optional comma-separated Telegram scenario ids
+        required: false
+        default: ""
+        type: string
+    secrets:
+      OPENAI_API_KEY:
+        required: false
+      OPENCLAW_QA_CONVEX_SITE_URL:
+        required: false
+      OPENCLAW_QA_CONVEX_SECRET_CI:
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: npm-telegram-beta-e2e-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  NODE_VERSION: "24.x"
+  PNPM_VERSION: "10.33.0"
+
+jobs:
+  run_package_telegram_e2e:
+    name: Run package Telegram E2E
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 60
+    environment: qa-live-shared
+    permissions:
+      actions: read
+      contents: read
+    env:
+      DOCKER_BUILD_SUMMARY: "false"
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+    steps:
+      - name: Checkout dispatch ref
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.harness_ref || github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Blacksmith Docker Builder
+        uses: useblacksmith/setup-docker-builder@ac083cc84672d01c60d5e8561d0a939b697de542 # v1
+        with:
+          max-cache-size-mb: 800000
+
+      - name: Build Docker E2E image
+        uses: useblacksmith/build-push-action@cbd1f60d194a98cb3be5523b15134501eaf0fbf3 # v2
+        with:
+          context: .
+          file: ./scripts/e2e/Dockerfile
+          target: build
+          platforms: linux/amd64
+          tags: openclaw-docker-e2e:local
+          load: true
+          push: false
+          provenance: false
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          install-bun: "true"
+
+      - name: Validate inputs and secrets
+        env:
+          PACKAGE_SPEC: ${{ inputs.package_spec }}
+          SOURCE: ${{ inputs.source }}
+          PACKAGE_REF: ${{ inputs.package_ref }}
+          PACKAGE_URL: ${{ inputs.package_url }}
+          PACKAGE_SHA256: ${{ inputs.package_sha256 }}
+          ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+          ARTIFACT_NAME: ${{ inputs.artifact_name }}
+          PACKAGE_ARTIFACT_NAME: ${{ inputs.package_artifact_name || '' }}
+          PROVIDER_MODE: ${{ inputs.provider_mode }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENCLAW_QA_CONVEX_SITE_URL: ${{ secrets.OPENCLAW_QA_CONVEX_SITE_URL }}
+          OPENCLAW_QA_CONVEX_SECRET_CI: ${{ secrets.OPENCLAW_QA_CONVEX_SECRET_CI }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "${SOURCE}" in
+            npm | ref | url | artifact) ;;
+            *)
+              echo "source must be npm, ref, url, or artifact; got: ${SOURCE}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ -z "${PACKAGE_ARTIFACT_NAME// }" && "${SOURCE}" == "npm" ]]; then
+            if [[ ! "${PACKAGE_SPEC}" =~ ^openclaw@(beta|latest|[0-9]{4}\.[1-9][0-9]*\.[1-9][0-9]*(-[1-9][0-9]*|-beta\.[1-9][0-9]*)?)$ ]]; then
+              echo "package_spec must be openclaw@beta, openclaw@latest, or an exact OpenClaw release version; got: ${PACKAGE_SPEC}" >&2
+              exit 1
+            fi
+          fi
+          if [[ -z "${PACKAGE_ARTIFACT_NAME// }" && "${SOURCE}" == "ref" && -z "${PACKAGE_REF// }" ]]; then
+            echo "package_ref is required when source=ref." >&2
+            exit 1
+          fi
+          if [[ -z "${PACKAGE_ARTIFACT_NAME// }" && "${SOURCE}" == "url" ]]; then
+            if [[ -z "${PACKAGE_URL// }" || -z "${PACKAGE_SHA256// }" ]]; then
+              echo "package_url and package_sha256 are required when source=url." >&2
+              exit 1
+            fi
+          fi
+          if [[ -z "${PACKAGE_ARTIFACT_NAME// }" && "${SOURCE}" == "artifact" ]]; then
+            if [[ -z "${ARTIFACT_RUN_ID// }" || -z "${ARTIFACT_NAME// }" ]]; then
+              echo "artifact_run_id and artifact_name are required when source=artifact." >&2
+              exit 1
+            fi
+          fi
+          case "${PROVIDER_MODE}" in
+            mock-openai | live-frontier) ;;
+            *)
+              echo "provider_mode must be mock-openai or live-frontier; got: ${PROVIDER_MODE}" >&2
+              exit 1
+              ;;
+          esac
+
+          require_var() {
+            local key="$1"
+            if [[ -z "${!key:-}" ]]; then
+              echo "Missing required ${key}." >&2
+              exit 1
+            fi
+          }
+
+          require_var OPENCLAW_QA_CONVEX_SITE_URL
+          require_var OPENCLAW_QA_CONVEX_SECRET_CI
+          if [[ "${PROVIDER_MODE}" == "live-frontier" ]]; then
+            require_var OPENAI_API_KEY
+          fi
+
+      - name: Download package-under-test artifact
+        if: inputs.package_artifact_name != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.package_artifact_name }}
+          path: .artifacts/telegram-package-under-test
+
+      - name: Download package artifact input
+        if: inputs.package_artifact_name == '' && inputs.source == 'artifact'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+          ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/telegram-package-input
+          gh run download "$ARTIFACT_RUN_ID" -n "$ARTIFACT_NAME" -D .artifacts/telegram-package-input
+
+      - name: Resolve package-under-test candidate
+        if: inputs.package_artifact_name == '' && inputs.source != 'npm'
+        id: resolve_candidate
+        env:
+          SOURCE: ${{ inputs.source }}
+          PACKAGE_REF: ${{ inputs.package_ref }}
+          PACKAGE_SPEC: ${{ inputs.package_spec }}
+          PACKAGE_URL: ${{ inputs.package_url }}
+          PACKAGE_SHA256: ${{ inputs.package_sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="."
+          if [[ "${SOURCE}" == "artifact" ]]; then
+            artifact_dir=".artifacts/telegram-package-input"
+          fi
+          node scripts/resolve-openclaw-package-candidate.mjs \
+            --source "$SOURCE" \
+            --package-ref "$PACKAGE_REF" \
+            --package-spec "$PACKAGE_SPEC" \
+            --package-url "$PACKAGE_URL" \
+            --package-sha256 "$PACKAGE_SHA256" \
+            --artifact-dir "$artifact_dir" \
+            --output-dir .artifacts/telegram-package-under-test \
+            --output-name openclaw-current.tgz \
+            --metadata .artifacts/telegram-package-under-test/package-candidate.json \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Run package Telegram E2E
+        id: run_lane
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENCLAW_SKIP_DOCKER_BUILD: "1"
+          OPENCLAW_DOCKER_E2E_IMAGE: openclaw-docker-e2e:local
+          OPENCLAW_NPM_TELEGRAM_PACKAGE_SPEC: ${{ inputs.package_spec }}
+          OPENCLAW_NPM_TELEGRAM_PACKAGE_LABEL: ${{ inputs.package_label }}
+          OPENCLAW_NPM_TELEGRAM_PROVIDER_MODE: ${{ inputs.provider_mode }}
+          OPENCLAW_NPM_TELEGRAM_CREDENTIAL_SOURCE: convex
+          OPENCLAW_NPM_TELEGRAM_CREDENTIAL_ROLE: ci
+          OPENCLAW_QA_CONVEX_SITE_URL: ${{ secrets.OPENCLAW_QA_CONVEX_SITE_URL }}
+          OPENCLAW_QA_CONVEX_SECRET_CI: ${{ secrets.OPENCLAW_QA_CONVEX_SECRET_CI }}
+          OPENCLAW_QA_REDACT_PUBLIC_METADATA: "1"
+          OPENCLAW_QA_TELEGRAM_CAPTURE_CONTENT: "1"
+          INPUT_SCENARIO: ${{ inputs.scenario }}
+          PACKAGE_ARTIFACT_NAME: ${{ inputs.package_artifact_name || '' }}
+        run: |
+          set -euo pipefail
+
+          output_dir=".artifacts/qa-e2e/npm-telegram-beta-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "output_dir=${output_dir}" >> "$GITHUB_OUTPUT"
+          export OPENCLAW_NPM_TELEGRAM_OUTPUT_DIR="${output_dir}"
+
+          package_dir=".artifacts/telegram-package-under-test"
+          if [[ -d "${package_dir}" ]]; then
+            mapfile -t package_tgzs < <(find "${package_dir}" -type f -name "*.tgz" | sort)
+          else
+            package_tgzs=()
+          fi
+          if [[ "${#package_tgzs[@]}" -gt 0 ]]; then
+            if [[ "${#package_tgzs[@]}" -ne 1 ]]; then
+              echo "package-under-test candidate must contain exactly one .tgz; found ${#package_tgzs[@]}" >&2
+              exit 1
+            fi
+            export OPENCLAW_NPM_TELEGRAM_PACKAGE_TGZ="${package_tgzs[0]}"
+            if [[ -z "${OPENCLAW_NPM_TELEGRAM_PACKAGE_LABEL// }" ]]; then
+              export OPENCLAW_NPM_TELEGRAM_PACKAGE_LABEL="$(basename "${package_tgzs[0]}")"
+            fi
+          elif [[ -z "${OPENCLAW_NPM_TELEGRAM_PACKAGE_LABEL// }" ]]; then
+            export OPENCLAW_NPM_TELEGRAM_PACKAGE_LABEL="${OPENCLAW_NPM_TELEGRAM_PACKAGE_SPEC}"
+          fi
+
+          if [[ -n "${INPUT_SCENARIO// }" ]]; then
+            export OPENCLAW_NPM_TELEGRAM_SCENARIOS="${INPUT_SCENARIO}"
+          fi
+
+          pnpm test:docker:npm-telegram-live
+
+      - name: Upload npm Telegram E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-telegram-beta-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.run_lane.outputs.output_dir }}
+          retention-days: 14
+          if-no-files-found: warn

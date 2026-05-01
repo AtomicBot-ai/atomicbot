@@ -1,3 +1,5 @@
+import { DEFAULT_PROVIDER } from "../../agents/defaults.js";
+import { buildAllowedModelSet } from "../../agents/model-selection.js";
 import {
   ErrorCodes,
   errorShape,
@@ -21,7 +23,14 @@ export const modelsHandlers: GatewayRequestHandlers = {
     }
     try {
       const catalog = await context.loadGatewayModelCatalog();
-      respond(true, { models: catalog }, undefined);
+      const cfg = context.getRuntimeConfig();
+      const { allowedCatalog } = buildAllowedModelSet({
+        cfg,
+        catalog,
+        defaultProvider: DEFAULT_PROVIDER,
+      });
+      const models = allowedCatalog.length > 0 ? allowedCatalog : catalog;
+      respond(true, { models }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }

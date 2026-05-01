@@ -6,8 +6,9 @@ import {
   searchSkillsFromClawHub,
   updateSkillsFromClawHub,
 } from "../agents/skills-clawhub.js";
-import { loadConfig } from "../config/config.js";
+import { getRuntimeConfig } from "../config/config.js";
 import { defaultRuntime } from "../runtime.js";
+import { normalizeOptionalString } from "../shared/string-coerce.js";
 import { formatDocsLink } from "../terminal/links.js";
 import { theme } from "../terminal/theme.js";
 import { formatSkillInfo, formatSkillsCheck, formatSkillsList } from "./skills-cli.format.js";
@@ -24,7 +25,7 @@ type SkillStatusReport = Awaited<
 >;
 
 async function loadSkillsStatusReport(): Promise<SkillStatusReport> {
-  const config = loadConfig();
+  const config = getRuntimeConfig();
   const workspaceDir = resolveAgentWorkspaceDir(config, resolveDefaultAgentId(config));
   const { buildWorkspaceSkillStatus } = await import("../agents/skills-status.js");
   return buildWorkspaceSkillStatus(workspaceDir, { config });
@@ -41,7 +42,7 @@ async function runSkillsAction(render: (report: SkillStatusReport) => string): P
 }
 
 function resolveActiveWorkspaceDir(): string {
-  const config = loadConfig();
+  const config = getRuntimeConfig();
   return resolveAgentWorkspaceDir(config, resolveDefaultAgentId(config));
 }
 
@@ -67,7 +68,7 @@ export function registerSkillsCli(program: Command) {
     .action(async (queryParts: string[], opts: { limit?: number; json?: boolean }) => {
       try {
         const results = await searchSkillsFromClawHub({
-          query: queryParts.join(" ").trim() || undefined,
+          query: normalizeOptionalString(queryParts.join(" ")),
           limit: opts.limit,
         });
         if (opts.json) {

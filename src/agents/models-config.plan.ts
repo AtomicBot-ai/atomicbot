@@ -1,4 +1,5 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import type { PluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
 import { isRecord } from "../utils.js";
 import {
   mergeProviders,
@@ -14,6 +15,14 @@ import {
 } from "./models-config.providers.js";
 
 type ModelsConfig = NonNullable<OpenClawConfig["models"]>;
+export type ResolveImplicitProvidersForModelsJson = (params: {
+  agentDir: string;
+  config: OpenClawConfig;
+  env: NodeJS.ProcessEnv;
+  workspaceDir?: string;
+  explicitProviders: Record<string, ProviderConfig>;
+  pluginMetadataSnapshot?: Pick<PluginMetadataSnapshot, "index" | "manifestRegistry" | "owners">;
+}) => Promise<Record<string, ProviderConfig>>;
 
 export type ModelsJsonPlan =
   | {
@@ -27,18 +36,30 @@ export type ModelsJsonPlan =
       contents: string;
     };
 
-async function resolveProvidersForModelsJson(params: {
-  cfg: OpenClawConfig;
-  agentDir: string;
-  env: NodeJS.ProcessEnv;
-}): Promise<Record<string, ProviderConfig>> {
+export async function resolveProvidersForModelsJsonWithDeps(
+  params: {
+    cfg: OpenClawConfig;
+    agentDir: string;
+    env: NodeJS.ProcessEnv;
+    workspaceDir?: string;
+    pluginMetadataSnapshot?: Pick<PluginMetadataSnapshot, "index" | "manifestRegistry" | "owners">;
+  },
+  deps?: {
+    resolveImplicitProviders?: ResolveImplicitProvidersForModelsJson;
+  },
+): Promise<Record<string, ProviderConfig>> {
   const { cfg, agentDir, env } = params;
   const explicitProviders = cfg.models?.providers ?? {};
-  const implicitProviders = await resolveImplicitProviders({
+  const resolveImplicitProvidersImpl = deps?.resolveImplicitProviders ?? resolveImplicitProviders;
+  const implicitProviders = await resolveImplicitProvidersImpl({
     agentDir,
     config: cfg,
     env,
+    ...(params.workspaceDir ? { workspaceDir: params.workspaceDir } : {}),
     explicitProviders,
+    ...(params.pluginMetadataSnapshot
+      ? { pluginMetadataSnapshot: params.pluginMetadataSnapshot }
+      : {}),
   });
   return mergeProviders({
     implicit: implicitProviders,
@@ -46,26 +67,11 @@ async function resolveProvidersForModelsJson(params: {
   });
 }
 
-function resolveExplicitBaseUrlProviders(
-  providers: OpenClawConfig["models"] | undefined,
-): ReadonlySet<string> {
-  return new Set(
-    Object.entries(providers?.providers ?? {})
-      .map(([key, provider]) => [key.trim(), provider] as const)
-      .filter(
-        ([key, provider]) =>
-          Boolean(key) && typeof provider?.baseUrl === "string" && provider.baseUrl.trim(),
-      )
-      .map(([key]) => key),
-  );
-}
-
 function resolveProvidersForMode(params: {
   mode: NonNullable<ModelsConfig["mode"]>;
   existingParsed: unknown;
   providers: Record<string, ProviderConfig>;
   secretRefManagedProviders: ReadonlySet<string>;
-  explicitBaseUrlProviders: ReadonlySet<string>;
 }): Record<string, ProviderConfig> {
   if (params.mode !== "merge") {
     return params.providers;
@@ -82,20 +88,37 @@ function resolveProvidersForMode(params: {
     nextProviders: params.providers,
     existingProviders: existingProviders as Record<string, ExistingProviderConfig>,
     secretRefManagedProviders: params.secretRefManagedProviders,
-    explicitBaseUrlProviders: params.explicitBaseUrlProviders,
   });
 }
 
-export async function planOpenClawModelsJson(params: {
-  cfg: OpenClawConfig;
-  sourceConfigForSecrets?: OpenClawConfig;
-  agentDir: string;
-  env: NodeJS.ProcessEnv;
-  existingRaw: string;
-  existingParsed: unknown;
-}): Promise<ModelsJsonPlan> {
+export async function planOpenClawModelsJsonWithDeps(
+  params: {
+    cfg: OpenClawConfig;
+    sourceConfigForSecrets?: OpenClawConfig;
+    agentDir: string;
+    env: NodeJS.ProcessEnv;
+    workspaceDir?: string;
+    existingRaw: string;
+    existingParsed: unknown;
+    pluginMetadataSnapshot?: Pick<PluginMetadataSnapshot, "index" | "manifestRegistry" | "owners">;
+  },
+  deps?: {
+    resolveImplicitProviders?: ResolveImplicitProvidersForModelsJson;
+  },
+): Promise<ModelsJsonPlan> {
   const { cfg, agentDir, env } = params;
-  const providers = await resolveProvidersForModelsJson({ cfg, agentDir, env });
+  const providers = await resolveProvidersForModelsJsonWithDeps(
+    {
+      cfg,
+      agentDir,
+      env,
+      ...(params.workspaceDir ? { workspaceDir: params.workspaceDir } : {}),
+      ...(params.pluginMetadataSnapshot
+        ? { pluginMetadataSnapshot: params.pluginMetadataSnapshot }
+        : {}),
+    },
+    deps,
+  );
 
   if (Object.keys(providers).length === 0) {
     return { action: "skip" };
@@ -118,7 +141,6 @@ export async function planOpenClawModelsJson(params: {
     existingParsed: params.existingParsed,
     providers: normalizedProviders,
     secretRefManagedProviders,
-    explicitBaseUrlProviders: resolveExplicitBaseUrlProviders(cfg.models),
   });
   const secretEnforcedProviders =
     enforceSourceManagedProviderSecrets({
@@ -138,4 +160,10 @@ export async function planOpenClawModelsJson(params: {
     action: "write",
     contents: nextContents,
   };
+}
+
+export async function planOpenClawModelsJson(
+  params: Parameters<typeof planOpenClawModelsJsonWithDeps>[0],
+): Promise<ModelsJsonPlan> {
+  return planOpenClawModelsJsonWithDeps(params);
 }

@@ -1,5 +1,11 @@
 import type { ReplyPayload } from "../auto-reply/types.js";
 import type { InteractiveReply, InteractiveReplyButton } from "../interactive/payload.js";
+import { formatHumanList } from "../shared/human-list.js";
+import {
+  normalizeOptionalLowercaseString,
+  normalizeOptionalString,
+} from "../shared/string-coerce.js";
+import { formatApprovalDisplayPath } from "./approval-display-paths.js";
 import {
   describeNativeExecApprovalClientSetup,
   listNativeExecApprovalClientLabels,
@@ -58,19 +64,6 @@ export type ExecApprovalUnavailableReplyParams = {
   reason: ExecApprovalUnavailableReason;
   sentApproverDms?: boolean;
 };
-
-function formatHumanList(values: readonly string[]): string {
-  if (values.length === 0) {
-    return "";
-  }
-  if (values.length === 1) {
-    return values[0];
-  }
-  if (values.length === 2) {
-    return `${values[0]} or ${values[1]}`;
-  }
-  return `${values.slice(0, -1).join(", ")}, or ${values.at(-1)}`;
-}
 
 function resolveNativeExecApprovalClientList(params?: { excludeChannel?: string }): string {
   return formatHumanList(
@@ -160,17 +153,20 @@ export function buildExecApprovalActionDescriptors(params: {
 }
 
 function buildApprovalInteractiveButtons(
-  allowedDecisions: readonly ExecApprovalReplyDecision[],
-  approvalId: string,
+  descriptors: readonly ExecApprovalActionDescriptor[],
 ): InteractiveReplyButton[] {
-  return buildExecApprovalActionDescriptors({
-    approvalCommandId: approvalId,
-    allowedDecisions,
-  }).map((descriptor) => ({
+  return descriptors.map((descriptor) => ({
     label: descriptor.label,
     value: descriptor.command,
     style: descriptor.style,
   }));
+}
+
+export function buildApprovalInteractiveReplyFromActionDescriptors(
+  actions: readonly ExecApprovalActionDescriptor[],
+): InteractiveReply | undefined {
+  const buttons = buildApprovalInteractiveButtons(actions);
+  return buttons.length > 0 ? { blocks: [{ type: "buttons", buttons }] } : undefined;
 }
 
 export function buildApprovalInteractiveReply(params: {
@@ -178,11 +174,13 @@ export function buildApprovalInteractiveReply(params: {
   ask?: string | null;
   allowedDecisions?: readonly ExecApprovalReplyDecision[];
 }): InteractiveReply | undefined {
-  const buttons = buildApprovalInteractiveButtons(
-    resolveAllowedDecisions(params),
-    params.approvalId,
+  return buildApprovalInteractiveReplyFromActionDescriptors(
+    buildExecApprovalActionDescriptors({
+      approvalCommandId: params.approvalId,
+      ask: params.ask,
+      allowedDecisions: params.allowedDecisions,
+    }),
   );
-  return buttons.length > 0 ? { blocks: [{ type: "buttons", buttons }] } : undefined;
 }
 
 export function buildExecApprovalInteractiveReply(params: {
@@ -211,7 +209,7 @@ export function parseExecApprovalCommandText(
   if (!match) {
     return null;
   }
-  const rawDecision = match[2].toLowerCase();
+  const rawDecision = normalizeOptionalLowercaseString(match[2]) ?? "";
   return {
     approvalId: match[1],
     decision:
@@ -262,8 +260,8 @@ export function getExecApprovalReplyMetadata(
     return null;
   }
   const record = execApproval as Record<string, unknown>;
-  const approvalId = typeof record.approvalId === "string" ? record.approvalId.trim() : "";
-  const approvalSlug = typeof record.approvalSlug === "string" ? record.approvalSlug.trim() : "";
+  const approvalId = normalizeOptionalString(record.approvalId) ?? "";
+  const approvalSlug = normalizeOptionalString(record.approvalSlug) ?? "";
   if (!approvalId || !approvalSlug) {
     return null;
   }
@@ -274,10 +272,8 @@ export function getExecApprovalReplyMetadata(
           value === "allow-once" || value === "allow-always" || value === "deny",
       )
     : undefined;
-  const agentId =
-    typeof record.agentId === "string" ? record.agentId.trim() || undefined : undefined;
-  const sessionKey =
-    typeof record.sessionKey === "string" ? record.sessionKey.trim() || undefined : undefined;
+  const agentId = normalizeOptionalString(record.agentId);
+  const sessionKey = normalizeOptionalString(record.sessionKey);
   return {
     approvalId,
     approvalSlug,
@@ -327,7 +323,7 @@ export function buildExecApprovalPendingReplyPayload(
     info.push(`Node: ${params.nodeId}`);
   }
   if (params.cwd) {
-    info.push(`CWD: ${params.cwd}`);
+    info.push(`CWD: ${formatApprovalDisplayPath(params.cwd)}`);
   }
   if (typeof params.expiresAtMs === "number" && Number.isFinite(params.expiresAtMs)) {
     info.push(
@@ -348,9 +344,9 @@ export function buildExecApprovalPendingReplyPayload(
         approvalId: params.approvalId,
         approvalSlug: params.approvalSlug,
         approvalKind: "exec",
-        agentId: params.agentId?.trim() || undefined,
+        agentId: normalizeOptionalString(params.agentId),
         allowedDecisions,
-        sessionKey: params.sessionKey?.trim() || undefined,
+        sessionKey: normalizeOptionalString(params.sessionKey),
       },
     },
   };
@@ -376,7 +372,7 @@ export function buildExecApprovalUnavailableReplyPayload(
     lines.push(
       `Exec approval is required, but native chat exec approvals are not configured on ${params.channelLabel ?? "this platform"}.`,
     );
-    const channel = params.channel?.trim().toLowerCase();
+    const channel = normalizeOptionalLowercaseString(params.channel);
     const setupText =
       channel && params.channelLabel && supportsNativeExecApprovalClient(channel)
         ? describeNativeExecApprovalClientSetup({

@@ -16,7 +16,7 @@ const readLatestAssistantReplyMock = vi.fn(async (_params?: unknown) => "raw sub
 const isEmbeddedPiRunActiveMock = vi.fn((_sessionId: string) => false);
 const queueEmbeddedPiMessageMock = vi.fn((_sessionId: string, _text: string) => false);
 const waitForEmbeddedPiRunEndMock = vi.fn(async (_sessionId: string, _timeoutMs?: number) => true);
-let mockConfig: ReturnType<(typeof import("../config/config.js"))["loadConfig"]> = {
+let mockConfig: ReturnType<(typeof import("../config/config.js"))["getRuntimeConfig"]> = {
   session: {
     mainKey: "main",
     scope: "per-sender",
@@ -39,7 +39,7 @@ const { subagentRegistryRuntimeMock } = vi.hoisted(() => ({
 vi.mock("./subagent-announce.runtime.js", () => ({
   callGateway: (request: unknown) => callGatewayMock(request),
   isEmbeddedPiRunActive: (sessionId: string) => isEmbeddedPiRunActiveMock(sessionId),
-  loadConfig: () => mockConfig,
+  getRuntimeConfig: () => mockConfig,
   loadSessionStore: (storePath: string) => loadSessionStoreMock(storePath),
   queueEmbeddedPiMessage: (sessionId: string, text: string) =>
     queueEmbeddedPiMessageMock(sessionId, text),
@@ -58,7 +58,7 @@ vi.mock("./tools/agent-step.js", () => ({
 vi.mock("./subagent-announce-delivery.runtime.js", () =>
   createSubagentAnnounceDeliveryRuntimeMock({
     callGateway: (request: unknown) => callGatewayMock(request),
-    loadConfig: () => mockConfig,
+    getRuntimeConfig: () => mockConfig,
     loadSessionStore: (storePath: string) => loadSessionStoreMock(storePath),
     resolveAgentIdFromSessionKey: (sessionKey: string) =>
       resolveAgentIdFromSessionKeyMock(sessionKey),
@@ -76,6 +76,13 @@ vi.mock("./subagent-announce-delivery.js", () => ({
     triggerMessage: string;
     requesterIsSubagent?: boolean;
     requesterOrigin?: { channel?: string; to?: string; accountId?: string; threadId?: string };
+    completionDirectOrigin?: {
+      channel?: string;
+      to?: string;
+      accountId?: string;
+      threadId?: string;
+    };
+    directOrigin?: { channel?: string; to?: string; accountId?: string; threadId?: string };
     requesterSessionOrigin?: { provider?: string; channel?: string };
     bestEffortDeliver?: boolean;
   }) => {
@@ -98,6 +105,9 @@ vi.mock("./subagent-announce-delivery.js", () => ({
       return { delivered: true, path: "queue" };
     }
 
+    const effectiveOrigin =
+      params.completionDirectOrigin ?? params.requesterOrigin ?? params.directOrigin;
+
     await callGatewayMock({
       method: "agent",
       params: {
@@ -105,16 +115,16 @@ vi.mock("./subagent-announce-delivery.js", () => ({
         message: params.triggerMessage,
         deliver:
           !params.requesterIsSubagent &&
-          params.requesterOrigin?.channel !== "webchat" &&
-          Boolean(params.requesterOrigin?.channel && params.requesterOrigin?.to),
+          effectiveOrigin?.channel !== "webchat" &&
+          Boolean(effectiveOrigin?.channel && effectiveOrigin?.to),
         bestEffortDeliver: params.bestEffortDeliver,
         ...(params.requesterIsSubagent
           ? {}
           : {
-              channel: params.requesterOrigin?.channel,
-              to: params.requesterOrigin?.to,
-              accountId: params.requesterOrigin?.accountId,
-              threadId: params.requesterOrigin?.threadId,
+              channel: effectiveOrigin?.channel,
+              to: effectiveOrigin?.to,
+              accountId: effectiveOrigin?.accountId,
+              threadId: effectiveOrigin?.threadId,
             }),
       },
     });
@@ -158,7 +168,33 @@ vi.mock("./subagent-announce-delivery.js", () => ({
 }));
 
 vi.mock("./subagent-announce.registry.runtime.js", () => subagentRegistryRuntimeMock);
+import { applySubagentWaitOutcome } from "./subagent-announce-output.js";
 import { runSubagentAnnounceFlow } from "./subagent-announce.js";
+
+describe("subagent wait outcome timing", () => {
+  it.each([
+    { wait: { status: "ok" }, expected: { status: "ok" } },
+    { wait: { status: "timeout" }, expected: { status: "timeout" } },
+    {
+      wait: { status: "error", error: "boom" },
+      expected: { status: "error", error: "boom" },
+    },
+  ] as const)("adds timing to $wait.status outcomes", ({ wait, expected }) => {
+    const result = applySubagentWaitOutcome({
+      wait,
+      outcome: undefined,
+      startedAt: 1_000,
+      endedAt: 1_250,
+    });
+
+    expect(result.outcome).toEqual({
+      ...expected,
+      startedAt: 1_000,
+      endedAt: 1_250,
+      elapsedMs: 250,
+    });
+  });
+});
 
 describe("subagent announce seam flow", () => {
   beforeEach(() => {
@@ -355,8 +391,6 @@ describe("subagent announce seam flow", () => {
           sessionKey: "agent:main:main",
           deliver: false,
           bestEffortDeliver: true,
-          channel: "webchat",
-          to: "chat:123",
           accountId: "default",
         }),
       }),

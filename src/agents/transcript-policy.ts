@@ -1,8 +1,14 @@
-import type { OpenClawConfig } from "../config/config.js";
-import { resolveProviderRuntimePlugin } from "../plugins/provider-runtime.js";
-import type { ProviderReplayPolicy, ProviderRuntimeModel } from "../plugins/types.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { resolveProviderRuntimePlugin } from "../plugins/provider-hook-runtime.js";
+import { shouldPreserveThinkingBlocks } from "../plugins/provider-replay-helpers.js";
+import type { ProviderRuntimeModel } from "../plugins/provider-runtime-model.types.js";
+import type { ProviderReplayPolicy } from "../plugins/types.js";
+import { normalizeLowercaseStringOrEmpty } from "../shared/string-coerce.js";
 import { normalizeProviderId } from "./model-selection.js";
-import { isGoogleModelApi } from "./pi-embedded-helpers/google.js";
+import {
+  isGemma4ModelRequiringReasoningStrip,
+  isGoogleModelApi,
+} from "./pi-embedded-helpers/google.js";
 import type { ToolCallIdMode } from "./tool-call-id.js";
 
 export type TranscriptSanitizeMode = "full" | "images-only";
@@ -20,11 +26,27 @@ export type TranscriptPolicy = {
   };
   sanitizeThinkingSignatures: boolean;
   dropThinkingBlocks: boolean;
+  dropReasoningFromHistory?: boolean;
   applyGoogleTurnOrdering: boolean;
   validateGeminiTurns: boolean;
   validateAnthropicTurns: boolean;
   allowSyntheticToolResults: boolean;
 };
+
+export function shouldAllowProviderOwnedThinkingReplay(params: {
+  modelApi?: string | null;
+  policy: Pick<
+    TranscriptPolicy,
+    "validateAnthropicTurns" | "preserveSignatures" | "dropThinkingBlocks"
+  >;
+}): boolean {
+  return (
+    isAnthropicApi(params.modelApi) &&
+    params.policy.validateAnthropicTurns &&
+    params.policy.preserveSignatures &&
+    !params.policy.dropThinkingBlocks
+  );
+}
 
 const DEFAULT_TRANSCRIPT_POLICY: TranscriptPolicy = {
   sanitizeMode: "images-only",
@@ -36,6 +58,7 @@ const DEFAULT_TRANSCRIPT_POLICY: TranscriptPolicy = {
   sanitizeThoughtSignatures: undefined,
   sanitizeThinkingSignatures: false,
   dropThinkingBlocks: false,
+  dropReasoningFromHistory: false,
   applyGoogleTurnOrdering: false,
   validateGeminiTurns: false,
   validateAnthropicTurns: false,
@@ -75,7 +98,7 @@ function buildUnownedProviderTransportReplayFallback(params: {
     return undefined;
   }
 
-  const modelId = params.modelId?.toLowerCase() ?? "";
+  const modelId = normalizeLowercaseStringOrEmpty(params.modelId);
   return {
     ...(isGoogle || isAnthropic ? { sanitizeMode: "full" as const } : {}),
     ...(isGoogle || isAnthropic || requiresOpenAiCompatibleToolIdSanitization
@@ -93,7 +116,12 @@ function buildUnownedProviderTransportReplayFallback(params: {
           },
         }
       : {}),
-    ...(isAnthropic && modelId.includes("claude") ? { dropThinkingBlocks: true } : {}),
+    ...(isAnthropic && modelId.includes("claude")
+      ? { dropThinkingBlocks: !shouldPreserveThinkingBlocks(modelId) }
+      : {}),
+    ...(isStrictOpenAiCompatible && isGemma4ModelRequiringReasoningStrip(modelId)
+      ? { dropReasoningFromHistory: true }
+      : {}),
     ...(isGoogle || isStrictOpenAiCompatible ? { applyAssistantFirstOrderingFix: true } : {}),
     ...(isGoogle || isStrictOpenAiCompatible ? { validateGeminiTurns: true } : {}),
     ...(isAnthropic || isStrictOpenAiCompatible ? { validateAnthropicTurns: true } : {}),
@@ -130,6 +158,9 @@ function mergeTranscriptPolicy(
       : {}),
     ...(typeof policy.dropThinkingBlocks === "boolean"
       ? { dropThinkingBlocks: policy.dropThinkingBlocks }
+      : {}),
+    ...(typeof policy.dropReasoningFromHistory === "boolean"
+      ? { dropReasoningFromHistory: policy.dropReasoningFromHistory }
       : {}),
     ...(typeof policy.applyAssistantFirstOrderingFix === "boolean"
       ? { applyGoogleTurnOrdering: policy.applyAssistantFirstOrderingFix }

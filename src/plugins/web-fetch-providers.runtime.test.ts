@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPluginRegistry } from "./registry.js";
+import { createEmptyPluginRegistry } from "./registry-empty.js";
 
 type LoaderModule = typeof import("./loader.js");
 type ManifestRegistryModule = typeof import("./manifest-registry.js");
@@ -43,6 +43,9 @@ function createManifestRegistryFixture() {
         manifestPath: "/tmp/firecrawl/openclaw.plugin.json",
         channels: [],
         providers: [],
+        cliBackends: [],
+        syntheticAuthRefs: [],
+        nonSecretAuthMarkers: [],
         skills: [],
         hooks: [],
         configUiHints: { "webFetch.apiKey": { label: "key" } },
@@ -55,6 +58,9 @@ function createManifestRegistryFixture() {
         manifestPath: "/tmp/noise/openclaw.plugin.json",
         channels: [],
         providers: [],
+        cliBackends: [],
+        syntheticAuthRefs: [],
+        nonSecretAuthMarkers: [],
         skills: [],
         hooks: [],
         configUiHints: { unrelated: { label: "nope" } },
@@ -131,6 +137,45 @@ describe("resolvePluginWebFetchProviders", () => {
       "firecrawl:firecrawl",
     ]);
     expect(loadOpenClawPluginsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads manifest-declared web-fetch providers in setup mode without the plugin loader", () => {
+    const providers = resolvePluginWebFetchProviders({
+      config: createFirecrawlAllowConfig(),
+      mode: "setup",
+    });
+
+    expect(providers.map((provider) => `${provider.pluginId}:${provider.id}`)).toEqual([
+      "firecrawl:firecrawl",
+    ]);
+    expect(loadOpenClawPluginsMock).not.toHaveBeenCalled();
+  });
+
+  it("does not force a fresh snapshot load when the same web-provider load is already in flight", () => {
+    const inFlightSpy = vi
+      .spyOn(loaderModule, "isPluginRegistryLoadInFlight")
+      .mockReturnValue(true);
+    loadOpenClawPluginsMock.mockImplementation(() => {
+      throw new Error("resolvePluginWebFetchProviders should not bypass the in-flight guard");
+    });
+
+    const providers = resolvePluginWebFetchProviders({
+      config: createFirecrawlAllowConfig(),
+      bundledAllowlistCompat: true,
+      workspaceDir: DEFAULT_WORKSPACE,
+      env: createWebFetchEnv(),
+    });
+
+    expect(providers).toEqual([]);
+    expect(inFlightSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activate: false,
+        cache: false,
+        onlyPluginIds: ["firecrawl"],
+        workspaceDir: DEFAULT_WORKSPACE,
+      }),
+    );
+    expect(loadOpenClawPluginsMock).not.toHaveBeenCalled();
   });
 
   it("reuses a compatible active registry for snapshot resolution when config is provided", () => {

@@ -1,26 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { GUARDED_EXTENSION_PUBLIC_SURFACE_BASENAMES } from "../src/plugins/public-artifacts.js";
 import { BUNDLED_PLUGIN_PATH_PREFIX } from "./helpers/bundled-plugin-paths.js";
+import { GUARDED_EXTENSION_PUBLIC_SURFACE_BASENAMES } from "./helpers/plugins/public-artifacts.js";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const ALLOWED_EXTENSION_PUBLIC_SURFACE_BASENAMES = new Set(
   GUARDED_EXTENSION_PUBLIC_SURFACE_BASENAMES,
 );
-
-const allowedNonExtensionTests = new Set<string>([
-  "src/agents/pi-embedded-runner-extraparams.test.ts",
-  "src/channels/plugins/contracts/dm-policy.contract.test.ts",
-  "src/channels/plugins/contracts/group-policy.contract.test.ts",
-  "src/commands/channels.surfaces-signal-runtime-errors-channels-status-output.test.ts",
-  "src/commands/onboard-channels.e2e.test.ts",
-  "src/gateway/hooks.test.ts",
-  "src/infra/outbound/deliver.test.ts",
-  "src/plugins/interactive.test.ts",
-  "src/plugins/contracts/discovery.contract.test.ts",
-  "src/plugin-sdk/telegram-command-config.test.ts",
-]);
+const ROOTDIR_BOUNDARY_CANARY_RE =
+  /(^|\/)__rootdir_boundary_canary__\.(?:[cm]?ts|[cm]?js|tsx|jsx)$/u;
 
 function walk(dir: string, entries: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -53,7 +42,11 @@ function walkCode(dir: string, entries: string[] = []): string[] {
     if (!entry.name.endsWith(".ts") && !entry.name.endsWith(".tsx")) {
       continue;
     }
-    entries.push(path.relative(repoRoot, fullPath).replaceAll(path.sep, "/"));
+    const relativePath = path.relative(repoRoot, fullPath).replaceAll(path.sep, "/");
+    if (ROOTDIR_BOUNDARY_CANARY_RE.test(relativePath)) {
+      continue;
+    }
+    entries.push(relativePath);
   }
   return entries;
 }
@@ -123,7 +116,7 @@ describe("non-extension test boundaries", () => {
         if (imports.length === 0) {
           return null;
         }
-        if (allowedNonExtensionTests.has(file) || isAllowedCoreContractSuite(file, imports)) {
+        if (isAllowedCoreContractSuite(file, imports)) {
           return null;
         }
         return {
@@ -157,17 +150,12 @@ describe("non-extension test boundaries", () => {
     expect(imports).toEqual([]);
   });
 
-  it("keeps bundled plugin public-surface imports on an explicit core allowlist", () => {
-    const allowed = new Set([
-      "src/auto-reply/reply.triggers.trigger-handling.test-harness.ts",
-      "src/commands/channel-test-registry.ts",
-      "src/plugin-sdk/testing.ts",
-    ]);
+  it("keeps bundled plugin public-surface imports out of core source", () => {
     const files = walkCode(path.join(repoRoot, "src"));
 
     const offenders = files.filter((file) => {
       const source = fs.readFileSync(path.join(repoRoot, file), "utf8");
-      return findBundledPluginPublicSurfaceImports(source).length > 0 && !allowed.has(file);
+      return findBundledPluginPublicSurfaceImports(source).length > 0;
     });
 
     expect(offenders).toEqual([]);
@@ -185,6 +173,31 @@ describe("non-extension test boundaries", () => {
     const offenders = files.filter((file) => {
       const source = fs.readFileSync(path.join(repoRoot, file), "utf8");
       return source.includes("loadBundledPluginTestApiSync(");
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps bundled channel security collector coverage under extension tests", () => {
+    const files = [...walk(path.join(repoRoot, "src")), ...walk(path.join(repoRoot, "test"))]
+      .filter((file) => !file.startsWith(BUNDLED_PLUGIN_PATH_PREFIX))
+      .filter((file) => !file.startsWith("test/helpers/"))
+      .filter((file) => file !== "test/extension-test-boundary.test.ts");
+
+    const offenders = files.filter((file) => {
+      const source = fs.readFileSync(path.join(repoRoot, file), "utf8");
+      return source.includes("test/helpers/channels/security-audit-contract.js");
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps extension channel contract helpers on the public testing surface", () => {
+    const files = walkCode(path.join(repoRoot, "extensions"));
+
+    const offenders = files.filter((file) => {
+      const source = fs.readFileSync(path.join(repoRoot, file), "utf8");
+      return source.includes("src/channels/plugins/contracts/test-helpers.js");
     });
 
     expect(offenders).toEqual([]);

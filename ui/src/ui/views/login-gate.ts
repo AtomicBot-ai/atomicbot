@@ -52,8 +52,8 @@ export function renderLoginGate(state: AppViewState) {
               <button
                 type="button"
                 class="btn btn--icon ${state.loginShowGatewayToken ? "active" : ""}"
-                title=${state.loginShowGatewayToken ? "Hide token" : "Show token"}
-                aria-label="Toggle token visibility"
+                title=${state.loginShowGatewayToken ? t("login.hideToken") : t("login.showToken")}
+                aria-label=${t("login.toggleTokenVisibility")}
                 aria-pressed=${state.loginShowGatewayToken}
                 @click=${() => {
                   state.loginShowGatewayToken = !state.loginShowGatewayToken;
@@ -85,8 +85,10 @@ export function renderLoginGate(state: AppViewState) {
               <button
                 type="button"
                 class="btn btn--icon ${state.loginShowGatewayPassword ? "active" : ""}"
-                title=${state.loginShowGatewayPassword ? "Hide password" : "Show password"}
-                aria-label="Toggle password visibility"
+                title=${state.loginShowGatewayPassword
+                  ? t("login.hidePassword")
+                  : t("login.showPassword")}
+                aria-label=${t("login.togglePasswordVisibility")}
                 aria-pressed=${state.loginShowGatewayPassword}
                 @click=${() => {
                   state.loginShowGatewayPassword = !state.loginShowGatewayPassword;
@@ -100,13 +102,11 @@ export function renderLoginGate(state: AppViewState) {
             ${t("common.connect")}
           </button>
         </div>
-        ${
-          state.lastError
-            ? html`<div class="callout danger" style="margin-top: 14px;">
+        ${state.lastError
+          ? html`<div class="callout danger" style="margin-top: 14px;">
               <div>${state.lastError}</div>
             </div>`
-            : ""
-        }
+          : ""}
         <div class="login-gate__help">
           <div class="login-gate__help-title">${t("overview.connection.title")}</div>
           <ol class="login-gate__steps">

@@ -6,6 +6,7 @@ import {
   normalizeAssistantPhase,
   parseAssistantTextSignature,
 } from "../shared/chat-message-content.js";
+import { normalizeOptionalString } from "../shared/string-coerce.js";
 import {
   normalizeOpenAIStrictToolParameters,
   resolveOpenAIStrictToolFlagForInventory,
@@ -22,7 +23,7 @@ import { normalizeUsage } from "./usage.js";
 
 type AnyMessage = Message & { role: string; content: unknown };
 type AssistantMessageWithPhase = AssistantMessage & { phase?: OpenAIResponsesAssistantPhase };
-export type ReplayModelInfo = { input?: ReadonlyArray<string> };
+export type ReplayModelInfo = { input?: ReadonlyArray<string>; api?: string };
 type ReplayableReasoningItem = Extract<InputItem, { type: "reasoning" }>;
 type ReplayableReasoningSignature = {
   type: "reasoning" | `reasoning.${string}`;
@@ -39,12 +40,20 @@ function toNonEmptyString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
-  const trimmed = value.trim();
+  const trimmed = normalizeOptionalString(value) ?? "";
   return trimmed.length > 0 ? trimmed : null;
 }
 
 function supportsImageInput(modelOverride?: ReplayModelInfo): boolean {
   return !Array.isArray(modelOverride?.input) || modelOverride.input.includes("image");
+}
+
+function usesOpenAICompletionsImageParts(modelOverride?: ReplayModelInfo): boolean {
+  return modelOverride?.api === "openai-completions";
+}
+
+function toImageUrlFromBase64(params: { mediaType?: string; data: string }): string {
+  return `data:${params.mediaType ?? "image/jpeg"};base64,${params.data}`;
 }
 
 function contentToText(content: unknown): string {
@@ -76,6 +85,7 @@ function contentToOpenAIParts(content: unknown, modelOverride?: ReplayModelInfo)
   }
 
   const includeImages = supportsImageInput(modelOverride);
+  const useImageUrl = usesOpenAICompletionsImageParts(modelOverride);
   const parts: ContentPart[] = [];
   for (const part of content as Array<{
     type?: string;
@@ -97,6 +107,15 @@ function contentToOpenAIParts(content: unknown, modelOverride?: ReplayModelInfo)
     }
 
     if (part.type === "image" && typeof part.data === "string") {
+      if (useImageUrl) {
+        parts.push({
+          type: "image_url",
+          image_url: {
+            url: toImageUrlFromBase64({ mediaType: part.mimeType, data: part.data }),
+          },
+        });
+        continue;
+      }
       parts.push({
         type: "input_image",
         source: {
@@ -114,11 +133,24 @@ function contentToOpenAIParts(content: unknown, modelOverride?: ReplayModelInfo)
       typeof part.source === "object" &&
       typeof (part.source as { type?: unknown }).type === "string"
     ) {
+      const source = part.source as
+        | { type: "url"; url: string }
+        | { type: "base64"; media_type: string; data: string };
+      if (useImageUrl) {
+        parts.push({
+          type: "image_url",
+          image_url: {
+            url:
+              source.type === "url"
+                ? source.url
+                : toImageUrlFromBase64({ mediaType: source.media_type, data: source.data }),
+          },
+        });
+        continue;
+      }
       parts.push({
         type: "input_image",
-        source: part.source as
-          | { type: "url"; url: string }
-          | { type: "base64"; media_type: string; data: string },
+        source,
       });
     }
   }
@@ -223,7 +255,7 @@ function extractReasoningSummaryText(value: unknown): string {
         return "";
       }
       const record = item as { text?: unknown };
-      return typeof record.text === "string" ? record.text.trim() : "";
+      return normalizeOptionalString(record.text) ?? "";
     })
     .filter(Boolean)
     .join("\n")
@@ -239,7 +271,7 @@ function extractResponseReasoningText(item: unknown): string {
   if (summaryText) {
     return summaryText;
   }
-  return typeof record.content === "string" ? record.content.trim() : "";
+  return normalizeOptionalString(record.content) ?? "";
 }
 
 export function convertTools(
@@ -339,7 +371,6 @@ export function convertMessagesToInputItems(
             Boolean(parseAssistantTextSignature(record.textSignature)?.phase)
           );
         });
-
         const pushAssistantText = (phase?: OpenAIResponsesAssistantPhase) => {
           if (textParts.length === 0) {
             return;
@@ -365,7 +396,12 @@ export function convertMessagesToInputItems(
           if (block.type === "text" && typeof block.text === "string") {
             const parsedSignature = parseAssistantTextSignature(block.textSignature);
             const blockPhase =
-              parsedSignature?.phase ?? (hasExplicitBlockPhase ? undefined : assistantMessagePhase);
+              parsedSignature?.phase ??
+              (parsedSignature?.id
+                ? assistantMessagePhase
+                : hasExplicitBlockPhase
+                  ? undefined
+                  : assistantMessagePhase);
             if (textParts.length > 0 && blockPhase !== currentTextPhase) {
               pushAssistantText(currentTextPhase);
             }
@@ -436,7 +472,9 @@ export function convertMessagesToInputItems(
     }
     const parts = Array.isArray(m.content) ? contentToOpenAIParts(m.content, modelOverride) : [];
     const textOutput = contentToText(m.content);
-    const imageParts = parts.filter((part) => part.type === "input_image");
+    const imageParts = parts.filter(
+      (part) => part.type === "input_image" || part.type === "image_url",
+    );
     items.push({
       type: "function_call_output",
       call_id: replayId.callId,
@@ -527,7 +565,7 @@ export function buildAssistantMessageFromResponse(
           try {
             return JSON.parse(item.arguments) as Record<string, unknown>;
           } catch {
-            return {} as Record<string, unknown>;
+            return item.arguments as unknown as Record<string, unknown>;
           }
         })(),
       });
@@ -559,6 +597,13 @@ export function buildAssistantMessageFromResponse(
   const stopReason: StopReason = hasToolCalls ? "toolUse" : "stop";
   const normalizedUsage = normalizeUsage(response.usage);
   const rawTotalTokens = normalizedUsage?.total;
+  const resolvedTotalTokens =
+    rawTotalTokens && rawTotalTokens > 0
+      ? rawTotalTokens
+      : (normalizedUsage?.input ?? 0) +
+        (normalizedUsage?.output ?? 0) +
+        (normalizedUsage?.cacheRead ?? 0) +
+        (normalizedUsage?.cacheWrite ?? 0);
 
   const message = buildAssistantMessage({
     model: modelInfo,
@@ -567,7 +612,9 @@ export function buildAssistantMessageFromResponse(
     usage: buildUsageWithNoCost({
       input: normalizedUsage?.input ?? 0,
       output: normalizedUsage?.output ?? 0,
-      totalTokens: rawTotalTokens && rawTotalTokens > 0 ? rawTotalTokens : undefined,
+      cacheRead: normalizedUsage?.cacheRead ?? 0,
+      cacheWrite: normalizedUsage?.cacheWrite ?? 0,
+      totalTokens: resolvedTotalTokens > 0 ? resolvedTotalTokens : undefined,
     }),
   });
 
@@ -579,4 +626,14 @@ export function buildAssistantMessageFromResponse(
   return finalAssistantPhase
     ? ({ ...message, phase: finalAssistantPhase } as AssistantMessageWithPhase)
     : message;
+}
+
+export function convertResponseToInputItems(
+  response: ResponseObject,
+  modelInfo: { api: string; provider: string; id: string; input?: ReadonlyArray<string> },
+): InputItem[] {
+  return convertMessagesToInputItems(
+    [buildAssistantMessageFromResponse(response, modelInfo)] as Message[],
+    modelInfo,
+  );
 }

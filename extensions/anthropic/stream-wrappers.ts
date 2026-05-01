@@ -8,6 +8,11 @@ import {
   streamWithPayloadPatch,
 } from "openclaw/plugin-sdk/provider-stream-shared";
 import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
+import {
+  normalizeFastMode,
+  normalizeLowercaseStringOrEmpty,
+  readStringValue,
+} from "openclaw/plugin-sdk/text-runtime";
 
 const log = createSubsystemLogger("anthropic-stream");
 
@@ -25,8 +30,53 @@ const PI_AI_OAUTH_ANTHROPIC_BETAS = [
 
 type AnthropicServiceTier = "auto" | "standard_only";
 
+function isAnthropicThinkingEnabled(payloadObj: Record<string, unknown>): boolean {
+  const thinking = payloadObj.thinking;
+  if (!thinking || typeof thinking !== "object") {
+    return false;
+  }
+  return (thinking as { type?: unknown }).type !== "disabled";
+}
+
+function assistantMessageHasToolUse(message: Record<string, unknown>): boolean {
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    return true;
+  }
+  const content = message.content;
+  if (!Array.isArray(content)) {
+    return false;
+  }
+  return content.some(
+    (block) =>
+      block &&
+      typeof block === "object" &&
+      ((block as { type?: unknown }).type === "tool_use" ||
+        (block as { type?: unknown }).type === "toolCall"),
+  );
+}
+
+function stripTrailingAssistantPrefillWhenThinking(payloadObj: Record<string, unknown>): number {
+  if (!isAnthropicThinkingEnabled(payloadObj) || !Array.isArray(payloadObj.messages)) {
+    return 0;
+  }
+  let stripped = 0;
+  while (payloadObj.messages.length > 0) {
+    const last = payloadObj.messages[payloadObj.messages.length - 1];
+    if (!last || typeof last !== "object") {
+      break;
+    }
+    const message = last as Record<string, unknown>;
+    if (message.role !== "assistant" || assistantMessageHasToolUse(message)) {
+      break;
+    }
+    payloadObj.messages.pop();
+    stripped += 1;
+  }
+  return stripped;
+}
+
 function isAnthropic1MModel(modelId: string): boolean {
-  const normalized = modelId.trim().toLowerCase();
+  const normalized = normalizeLowercaseStringOrEmpty(modelId);
   return ANTHROPIC_1M_MODEL_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 
@@ -45,7 +95,9 @@ function mergeAnthropicBetaHeader(
   betas: string[],
 ): Record<string, string> {
   const merged = { ...headers };
-  const existingKey = Object.keys(merged).find((key) => key.toLowerCase() === "anthropic-beta");
+  const existingKey = Object.keys(merged).find(
+    (key) => normalizeLowercaseStringOrEmpty(key) === "anthropic-beta",
+  );
   const existing = existingKey ? parseHeaderList(merged[existingKey]) : [];
   const values = Array.from(new Set([...existing, ...betas]));
   const key = existingKey ?? "anthropic-beta";
@@ -61,28 +113,11 @@ function resolveAnthropicFastServiceTier(enabled: boolean): AnthropicServiceTier
   return enabled ? "auto" : "standard_only";
 }
 
-function normalizeFastMode(raw?: string | boolean | null): boolean | undefined {
-  if (typeof raw === "boolean") {
-    return raw;
-  }
-  if (!raw) {
-    return undefined;
-  }
-  const key = raw.toLowerCase();
-  if (["off", "false", "no", "0", "disable", "disabled", "normal"].includes(key)) {
-    return false;
-  }
-  if (["on", "true", "yes", "1", "enable", "enabled", "fast"].includes(key)) {
-    return true;
-  }
-  return undefined;
-}
-
 function normalizeAnthropicServiceTier(value: unknown): AnthropicServiceTier | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
-  const normalized = value.trim().toLowerCase();
+  const normalized = normalizeLowercaseStringOrEmpty(value);
   if (normalized === "auto" || normalized === "standard_only") {
     return normalized;
   }
@@ -149,13 +184,23 @@ export function createAnthropicFastModeWrapper(
   baseStreamFn: StreamFn | undefined,
   enabled: boolean,
 ): StreamFn {
+  return createAnthropicServiceTierWrapper(baseStreamFn, resolveAnthropicFastServiceTier(enabled));
+}
+
+export function createAnthropicServiceTierWrapper(
+  baseStreamFn: StreamFn | undefined,
+  serviceTier: AnthropicServiceTier,
+): StreamFn {
   const underlying = baseStreamFn ?? streamSimple;
-  const serviceTier = resolveAnthropicFastServiceTier(enabled);
   return (model, context, options) => {
+    if (isAnthropicOAuthApiKey(options?.apiKey)) {
+      return underlying(model, context, options);
+    }
+
     const payloadPolicy = resolveAnthropicPayloadPolicy({
-      provider: typeof model.provider === "string" ? model.provider : undefined,
-      api: typeof model.api === "string" ? model.api : undefined,
-      baseUrl: typeof model.baseUrl === "string" ? model.baseUrl : undefined,
+      provider: readStringValue(model.provider),
+      api: readStringValue(model.api),
+      baseUrl: readStringValue(model.baseUrl),
       serviceTier,
     });
     if (!payloadPolicy.allowsServiceTier) {
@@ -168,26 +213,19 @@ export function createAnthropicFastModeWrapper(
   };
 }
 
-export function createAnthropicServiceTierWrapper(
+export function createAnthropicThinkingPrefillWrapper(
   baseStreamFn: StreamFn | undefined,
-  serviceTier: AnthropicServiceTier,
 ): StreamFn {
   const underlying = baseStreamFn ?? streamSimple;
-  return (model, context, options) => {
-    const payloadPolicy = resolveAnthropicPayloadPolicy({
-      provider: typeof model.provider === "string" ? model.provider : undefined,
-      api: typeof model.api === "string" ? model.api : undefined,
-      baseUrl: typeof model.baseUrl === "string" ? model.baseUrl : undefined,
-      serviceTier,
+  return (model, context, options) =>
+    streamWithPayloadPatch(underlying, model, context, options, (payloadObj) => {
+      const stripped = stripTrailingAssistantPrefillWhenThinking(payloadObj);
+      if (stripped > 0) {
+        log.warn(
+          `removed ${stripped} trailing assistant prefill message${stripped === 1 ? "" : "s"} because Anthropic extended thinking requires conversations to end with a user turn`,
+        );
+      }
     });
-    if (!payloadPolicy.allowsServiceTier) {
-      return underlying(model, context, options);
-    }
-
-    return streamWithPayloadPatch(underlying, model, context, options, (payloadObj) =>
-      applyAnthropicPayloadPolicyToParams(payloadObj, payloadPolicy),
-    );
-  };
 }
 
 export function resolveAnthropicFastMode(
@@ -227,7 +265,8 @@ export function wrapAnthropicProviderStream(
     fastMode !== undefined
       ? (streamFn) => createAnthropicFastModeWrapper(streamFn, fastMode)
       : undefined,
+    (streamFn) => createAnthropicThinkingPrefillWrapper(streamFn),
   );
 }
 
-export const __testing = { log };
+export const __testing = { log, stripTrailingAssistantPrefillWhenThinking };

@@ -151,7 +151,7 @@ function createBasePreflightParams(overrides?: Record<string, unknown>) {
       discordConfig: {
         allowBots: true,
       } as NonNullable<
-        import("openclaw/plugin-sdk/config-runtime").OpenClawConfig["channels"]
+        import("openclaw/plugin-sdk/config-types").OpenClawConfig["channels"]
       >["discord"],
       data: createGuildEvent({
         channelId: CHANNEL_ID,
@@ -165,7 +165,7 @@ function createBasePreflightParams(overrides?: Record<string, unknown>) {
     discordConfig: {
       allowBots: true,
     } as NonNullable<
-      import("openclaw/plugin-sdk/config-runtime").OpenClawConfig["channels"]
+      import("openclaw/plugin-sdk/config-types").OpenClawConfig["channels"]
     >["discord"],
     ...overrides,
   } satisfies Parameters<typeof preflightDiscordMessage>[0];
@@ -187,12 +187,11 @@ function createAllowedGuildEntries(requireMention = false) {
 
 function createHydratedGuildClient(restPayload: Record<string, unknown>) {
   const restGet = vi.fn(async () => restPayload);
-  const client = {
-    ...createGuildTextClient(CHANNEL_ID),
+  const client = Object.assign(createGuildTextClient(CHANNEL_ID), {
     rest: {
       get: restGet,
     },
-  } as unknown as Parameters<typeof preflightDiscordMessage>[0]["client"];
+  }) as unknown as Parameters<typeof preflightDiscordMessage>[0]["client"];
   return { client, restGet };
 }
 

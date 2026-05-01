@@ -11,7 +11,10 @@ import { coreGatewayHandlers } from "./server-methods.js";
 
 const RESERVED_ADMIN_PLUGIN_METHOD = "config.plugin.inspect";
 
-function setPluginGatewayMethodScope(method: string, scope: "operator.read" | "operator.write") {
+function setPluginGatewayMethodScope(
+  method: string,
+  scope: "operator.read" | "operator.write" | "operator.admin",
+) {
   const registry = createEmptyPluginRegistry();
   registry.gatewayMethodScopes = {
     [method]: scope,
@@ -32,9 +35,12 @@ describe("method scope resolution", () => {
     ["sessions.abort", ["operator.write"]],
     ["sessions.messages.subscribe", ["operator.read"]],
     ["sessions.messages.unsubscribe", ["operator.read"]],
+    ["diagnostics.stability", ["operator.read"]],
     ["node.pair.approve", ["operator.pairing"]],
     ["poll", ["operator.write"]],
+    ["update.status", ["operator.admin"]],
     ["config.patch", ["operator.admin"]],
+    ["nativeHook.invoke", ["operator.admin"]],
     ["wizard.start", ["operator.admin"]],
     ["update.run", ["operator.admin"]],
   ])("resolves least-privilege scopes for %s", (method, expected) => {
@@ -52,12 +58,12 @@ describe("method scope resolution", () => {
   it("reads plugin-registered gateway method scopes from the active plugin registry", () => {
     const registry = createEmptyPluginRegistry();
     registry.gatewayMethodScopes = {
-      "browser.request": "operator.write",
+      "browser.request": "operator.admin",
     };
     setActivePluginRegistry(registry);
 
     expect(resolveLeastPrivilegeOperatorScopesForMethod("browser.request")).toEqual([
-      "operator.write",
+      "operator.admin",
     ]);
   });
 
@@ -87,6 +93,18 @@ describe("operator scope authorization", () => {
     });
   });
 
+  it("requires admin for browser.request", () => {
+    setPluginGatewayMethodScope("browser.request", "operator.admin");
+
+    expect(authorizeOperatorScopesForMethod("browser.request", ["operator.write"])).toEqual({
+      allowed: false,
+      missingScope: "operator.admin",
+    });
+    expect(authorizeOperatorScopesForMethod("browser.request", ["operator.admin"])).toEqual({
+      allowed: true,
+    });
+  });
+
   it("requires pairing scope for node pairing approvals", () => {
     expect(authorizeOperatorScopesForMethod("node.pair.approve", ["operator.pairing"])).toEqual({
       allowed: true,
@@ -97,7 +115,7 @@ describe("operator scope authorization", () => {
     });
   });
 
-  it.each(["exec.approval.get", "exec.approval.resolve"])(
+  it.each(["exec.approval.get", "exec.approval.list", "exec.approval.resolve"])(
     "requires approvals scope for %s",
     (method) => {
       expect(authorizeOperatorScopesForMethod(method, ["operator.write"])).toEqual({
@@ -110,18 +128,20 @@ describe("operator scope authorization", () => {
     },
   );
 
-  it.each(["plugin.approval.request", "plugin.approval.waitDecision", "plugin.approval.resolve"])(
-    "requires approvals scope for %s",
-    (method) => {
-      expect(authorizeOperatorScopesForMethod(method, ["operator.write"])).toEqual({
-        allowed: false,
-        missingScope: "operator.approvals",
-      });
-      expect(authorizeOperatorScopesForMethod(method, ["operator.approvals"])).toEqual({
-        allowed: true,
-      });
-    },
-  );
+  it.each([
+    "plugin.approval.list",
+    "plugin.approval.request",
+    "plugin.approval.waitDecision",
+    "plugin.approval.resolve",
+  ])("requires approvals scope for %s", (method) => {
+    expect(authorizeOperatorScopesForMethod(method, ["operator.write"])).toEqual({
+      allowed: false,
+      missingScope: "operator.approvals",
+    });
+    expect(authorizeOperatorScopesForMethod(method, ["operator.approvals"])).toEqual({
+      allowed: true,
+    });
+  });
 
   it("requires admin for unknown methods", () => {
     expect(authorizeOperatorScopesForMethod("unknown.method", ["operator.read"])).toEqual({
@@ -145,12 +165,14 @@ describe("operator scope authorization", () => {
 describe("plugin approval method registration", () => {
   it("lists all plugin approval methods", () => {
     const methods = listGatewayMethods();
+    expect(methods).toContain("plugin.approval.list");
     expect(methods).toContain("plugin.approval.request");
     expect(methods).toContain("plugin.approval.waitDecision");
     expect(methods).toContain("plugin.approval.resolve");
   });
 
   it("classifies plugin approval methods", () => {
+    expect(isGatewayMethodClassified("plugin.approval.list")).toBe(true);
     expect(isGatewayMethodClassified("plugin.approval.request")).toBe(true);
     expect(isGatewayMethodClassified("plugin.approval.waitDecision")).toBe(true);
     expect(isGatewayMethodClassified("plugin.approval.resolve")).toBe(true);

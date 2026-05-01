@@ -2,6 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const requestHeartbeatNowMock = vi.hoisted(() => vi.fn());
 const enqueueSystemEventMock = vi.hoisted(() => vi.fn());
+const supervisorMock = vi.hoisted(() => ({
+  spawn: vi.fn(),
+}));
 
 vi.mock("../infra/heartbeat-wake.js", () => ({
   requestHeartbeatNow: requestHeartbeatNowMock,
@@ -11,20 +14,36 @@ vi.mock("../infra/system-events.js", () => ({
   enqueueSystemEvent: enqueueSystemEventMock,
 }));
 
+vi.mock("../process/supervisor/index.js", () => ({
+  getProcessSupervisor: () => ({
+    spawn: supervisorMock.spawn,
+  }),
+}));
+
+let markBackgrounded: typeof import("./bash-process-registry.js").markBackgrounded;
 let buildExecExitOutcome: typeof import("./bash-tools.exec-runtime.js").buildExecExitOutcome;
 let detectCursorKeyMode: typeof import("./bash-tools.exec-runtime.js").detectCursorKeyMode;
 let emitExecSystemEvent: typeof import("./bash-tools.exec-runtime.js").emitExecSystemEvent;
 let formatExecFailureReason: typeof import("./bash-tools.exec-runtime.js").formatExecFailureReason;
 let resolveExecTarget: typeof import("./bash-tools.exec-runtime.js").resolveExecTarget;
+let runExecProcess: typeof import("./bash-tools.exec-runtime.js").runExecProcess;
 
 beforeAll(async () => {
+  ({ markBackgrounded } = await import("./bash-process-registry.js"));
   ({
     buildExecExitOutcome,
     detectCursorKeyMode,
     emitExecSystemEvent,
     formatExecFailureReason,
     resolveExecTarget,
+    runExecProcess,
   } = await import("./bash-tools.exec-runtime.js"));
+});
+
+beforeEach(() => {
+  requestHeartbeatNowMock.mockClear();
+  enqueueSystemEventMock.mockClear();
+  supervisorMock.spawn.mockReset();
 });
 
 describe("detectCursorKeyMode", () => {
@@ -127,7 +146,20 @@ describe("resolveExecTarget", () => {
         sandboxAvailable: true,
       }),
     ).toThrow(
-      "exec host not allowed (requested gateway; configured host is auto; set tools.exec.host=gateway or auto to allow this override).",
+      "exec host not allowed (requested gateway; configured host is auto; set tools.exec.host=gateway to allow this override).",
+    );
+  });
+
+  it("rejects per-call host=node override from auto when sandbox is available", () => {
+    expect(() =>
+      resolveExecTarget({
+        configuredTarget: "auto",
+        requestedTarget: "node",
+        elevatedRequested: false,
+        sandboxAvailable: true,
+      }),
+    ).toThrow(
+      "exec host not allowed (requested node; configured host is auto; set tools.exec.host=node to allow this override).",
     );
   });
 
@@ -221,6 +253,22 @@ describe("resolveExecTarget", () => {
     });
   });
 
+  it("keeps explicit node override under elevated requests when configured target is auto", () => {
+    expect(
+      resolveExecTarget({
+        configuredTarget: "auto",
+        requestedTarget: "node",
+        elevatedRequested: true,
+        sandboxAvailable: false,
+      }),
+    ).toMatchObject({
+      configuredTarget: "auto",
+      requestedTarget: "node",
+      selectedTarget: "node",
+      effectiveHost: "node",
+    });
+  });
+
   it("honours node target for elevated requests when configured target is node", () => {
     expect(
       resolveExecTarget({
@@ -252,20 +300,95 @@ describe("resolveExecTarget", () => {
     });
   });
 
-  it("silently discards mismatched requestedTarget under elevated+node", () => {
-    expect(
+  it("rejects mismatched requestedTarget under elevated+node", () => {
+    expect(() =>
       resolveExecTarget({
         configuredTarget: "node",
         requestedTarget: "gateway",
         elevatedRequested: true,
         sandboxAvailable: false,
       }),
-    ).toMatchObject({
-      configuredTarget: "node",
-      requestedTarget: "gateway",
-      selectedTarget: "node",
-      effectiveHost: "node",
+    ).toThrow(
+      "exec host not allowed (requested gateway; configured host is node; set tools.exec.host=gateway or auto to allow this override).",
+    );
+  });
+});
+
+describe("exec notifyOnExit suppression", () => {
+  async function runBackgroundedExit(params: {
+    reason: "manual-cancel" | "overall-timeout";
+    stdout?: string;
+  }) {
+    supervisorMock.spawn.mockImplementationOnce(
+      async (input: { onStdout?: (chunk: string) => void }) => {
+        if (params.stdout) {
+          input.onStdout?.(params.stdout);
+        }
+        return {
+          runId: "run-1",
+          startedAtMs: Date.now(),
+          pid: 123,
+          wait: async () => {
+            await new Promise((resolve) => setImmediate(resolve));
+            return {
+              reason: params.reason,
+              exitCode: null,
+              exitSignal: "SIGKILL",
+              durationMs: 10,
+              stdout: "",
+              stderr: "",
+              timedOut: params.reason === "overall-timeout",
+              noOutputTimedOut: false,
+            };
+          },
+          cancel: vi.fn(),
+        };
+      },
+    );
+
+    const run = await runExecProcess({
+      command: "sleep 999",
+      workdir: "/tmp",
+      env: {},
+      usePty: false,
+      warnings: [],
+      maxOutput: 1000,
+      pendingMaxOutput: 1000,
+      notifyOnExit: true,
+      notifyOnExitEmptySuccess: false,
+      sessionKey: "agent:main:main",
+      timeoutSec: null,
     });
+    markBackgrounded(run.session);
+    return await run.promise;
+  }
+
+  it("keeps manual-cancelled no-output background execs silent", async () => {
+    const outcome = await runBackgroundedExit({ reason: "manual-cancel" });
+
+    expect(outcome.status).toBe("failed");
+    expect(enqueueSystemEventMock).not.toHaveBeenCalled();
+    expect(requestHeartbeatNowMock).not.toHaveBeenCalled();
+  });
+
+  it("notifies for manual-cancelled background execs with output", async () => {
+    await runBackgroundedExit({ reason: "manual-cancel", stdout: "partial output\n" });
+
+    expect(enqueueSystemEventMock).toHaveBeenCalledWith(
+      expect.stringContaining("partial output"),
+      expect.objectContaining({ sessionKey: "agent:main:main" }),
+    );
+    expect(requestHeartbeatNowMock).toHaveBeenCalled();
+  });
+
+  it("still notifies for no-output background exec timeouts", async () => {
+    await runBackgroundedExit({ reason: "overall-timeout" });
+
+    expect(enqueueSystemEventMock).toHaveBeenCalledWith(
+      expect.stringContaining("Exec failed"),
+      expect.objectContaining({ sessionKey: "agent:main:main" }),
+    );
+    expect(requestHeartbeatNowMock).toHaveBeenCalled();
   });
 });
 
@@ -279,16 +402,29 @@ describe("emitExecSystemEvent", () => {
     emitExecSystemEvent("Exec finished", {
       sessionKey: "agent:ops:main",
       contextKey: "exec:run-1",
+      deliveryContext: {
+        channel: "telegram",
+        to: "telegram:-100123:topic:47",
+        threadId: 47,
+      },
     });
 
     expect(enqueueSystemEventMock).toHaveBeenCalledWith("Exec finished", {
       sessionKey: "agent:ops:main",
       contextKey: "exec:run-1",
+      deliveryContext: {
+        channel: "telegram",
+        to: "telegram:-100123:topic:47",
+        threadId: 47,
+      },
     });
-    expect(requestHeartbeatNowMock).toHaveBeenCalledWith({
-      reason: "exec-event",
-      sessionKey: "agent:ops:main",
-    });
+    expect(requestHeartbeatNowMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coalesceMs: 0,
+        reason: "exec-event",
+        sessionKey: "agent:ops:main",
+      }),
+    );
   });
 
   it("keeps wake unscoped for non-agent session keys", () => {
@@ -301,9 +437,12 @@ describe("emitExecSystemEvent", () => {
       sessionKey: "global",
       contextKey: "exec:run-global",
     });
-    expect(requestHeartbeatNowMock).toHaveBeenCalledWith({
-      reason: "exec-event",
-    });
+    expect(requestHeartbeatNowMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coalesceMs: 0,
+        reason: "exec-event",
+      }),
+    );
   });
 
   it("ignores events without a session key", () => {
@@ -326,6 +465,18 @@ describe("formatExecFailureReason", () => {
         timeoutSec: 45,
       }),
     ).toContain("45 seconds");
+  });
+
+  it("points long-running work to registered exec backgrounding", () => {
+    const reason = formatExecFailureReason({
+      failureKind: "overall-timeout",
+      exitSignal: "SIGKILL",
+      timeoutSec: 45,
+    });
+
+    expect(reason).toContain("background=true");
+    expect(reason).toContain("yieldMs");
+    expect(reason).toContain("Do not rely on shell backgrounding");
   });
 
   it("formats shell failures without timeout-specific guidance", () => {
@@ -387,5 +538,30 @@ describe("buildExecExitOutcome", () => {
       timedOut: true,
       reason: expect.stringContaining("30 seconds"),
     });
+  });
+
+  it("keeps timed out shell-backgrounded commands on the failed path", () => {
+    const outcome = buildExecExitOutcome({
+      exit: {
+        reason: "overall-timeout",
+        exitCode: null,
+        exitSignal: "SIGKILL",
+        durationMs: 123,
+        stdout: "",
+        stderr: "",
+        timedOut: true,
+        noOutputTimedOut: false,
+      },
+      aggregated: "started worker",
+      durationMs: 123,
+      timeoutSec: 30,
+    });
+
+    if (outcome.status !== "failed") {
+      throw new Error(`Expected timeout to fail, got ${outcome.status}`);
+    }
+    expect(outcome).toMatchObject({ failureKind: "overall-timeout", timedOut: true });
+    expect(outcome.reason).toContain("background=true");
+    expect(outcome.reason).toContain("Do not rely on shell backgrounding");
   });
 });
