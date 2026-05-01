@@ -1,6 +1,54 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+
+/**
+ * Pre-spawn macOS sanity-fixups.  Strips any quarantine xattr that survived
+ * the C++ downloader's pass (we've seen Gatekeeper re-stamp it after the
+ * downloader finishes), and logs the codesign / xattr state so a SIGKILL
+ * from the kernel security policy is at least diagnosable.  Best-effort —
+ * any failure here is just logged, never fatal.
+ */
+function macosPreSpawnFixup(packDir: string): void {
+  if (process.platform !== "darwin") {
+    return;
+  }
+  try {
+    const xattrCheck = spawnSync("xattr", ["-l", path.join(packDir, "python", "bin", "python3.11")], {
+      encoding: "utf8",
+    });
+    const beforeOut = (xattrCheck.stdout ?? "") + (xattrCheck.stderr ?? "");
+    const wasQuarantined = /com\.apple\.quarantine/.test(beforeOut);
+    console.log(
+      `[hermes-spawn] pre-spawn xattr (python3.11): ${beforeOut.trim() || "<none>"}`,
+    );
+    if (wasQuarantined) {
+      console.warn(
+        `[hermes-spawn] python3.11 has com.apple.quarantine — Gatekeeper will SIGKILL it.  Stripping recursively from packDir.`,
+      );
+      const strip = spawnSync("xattr", ["-dr", "com.apple.quarantine", packDir], {
+        encoding: "utf8",
+      });
+      if (strip.status !== 0) {
+        console.warn(
+          `[hermes-spawn] xattr -dr failed code=${strip.status} stderr=${strip.stderr}`,
+        );
+      } else {
+        console.log(`[hermes-spawn] stripped com.apple.quarantine from ${packDir}`);
+      }
+    }
+    const codesignCheck = spawnSync(
+      "codesign",
+      ["-dvvv", path.join(packDir, "python", "bin", "python3.11")],
+      { encoding: "utf8" },
+    );
+    const csOut = ((codesignCheck.stdout ?? "") + (codesignCheck.stderr ?? "")).trim();
+    const flagsLine = csOut.split("\n").find((l) => l.includes("flags=")) ?? "<no flags>";
+    console.log(`[hermes-spawn] pre-spawn codesign (python3.11): ${flagsLine}`);
+  } catch (err) {
+    console.warn(`[hermes-spawn] pre-spawn fixup failed: ${err}`);
+  }
+}
 
 /**
  * Spawn the Python Hermes Agent process from the bundled CPython pack.
@@ -91,6 +139,7 @@ export function spawnHermesChild(params: {
   if (!fs.existsSync(pythonBin)) {
     throw new Error(`hermes pack not installed: missing ${pythonBin}`);
   }
+  macosPreSpawnFixup(paths.packDir);
   const logsDir = path.join(paths.stateDir, "logs");
   fs.mkdirSync(logsDir, { recursive: true });
   const logFile = params.logFile ?? path.join(logsDir, "hermes.log");
@@ -170,9 +219,34 @@ export function spawnHermesChild(params: {
     console.warn(`[hermes-spawn] failed to spawn python: ${err}`);
   });
   child.once("exit", (code, signal) => {
+    let tail = "";
+    try {
+      const stat = fs.statSync(logFile);
+      const fd = fs.openSync(logFile, "r");
+      const readLen = Math.min(stat.size, 4096);
+      const buf = Buffer.alloc(readLen);
+      fs.readSync(fd, buf, 0, readLen, Math.max(0, stat.size - readLen));
+      fs.closeSync(fd);
+      tail = buf.toString("utf8").trim();
+    } catch (err) {
+      tail = `<could not read ${logFile}: ${err}>`;
+    }
+    const reason =
+      signal === "SIGKILL"
+        ? " (SIGKILL — likely macOS Gatekeeper quarantine; check `xattr -l <python>` and code signature)"
+        : "";
     console.log(
-      `[hermes-spawn] python exited code=${code} signal=${signal} (see ${logFile} for output)`,
+      `[hermes-spawn] python exited code=${code} signal=${signal}${reason}`,
     );
+    if (tail.length === 0) {
+      console.log(
+        `[hermes-spawn] hermes.log is empty — child was killed before any output. ` +
+          `On macOS this is almost always Gatekeeper / unsigned-library policy.`,
+      );
+    } else {
+      const tailLines = tail.split("\n").slice(-20).join("\n");
+      console.log(`[hermes-spawn] last lines of ${logFile}:\n${tailLines}`);
+    }
   });
 
   const exited = new Promise<number | null>((resolve) => {
