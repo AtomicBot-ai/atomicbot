@@ -94,11 +94,11 @@ function SignUpPrompt(props: { onContinueWithGoogle: () => void }) {
     <div className={s.root}>
       <div className={s.signUpCard}>
         <div className={s.signUpIcon}>
-          <SplashLogo iconAlt="Atomic Bot" size={28} />
+          <SplashLogo iconAlt="Atomic Claw" size={28} />
         </div>
 
         <div className={s.signUpBody}>
-          <h3 className={s.signUpTitle}>Atomic Bot Subscription</h3>
+          <h3 className={s.signUpTitle}>Atomic Claw Subscription</h3>
           <p className={s.signUpHint}>
             No API keys needed · Auto credit management · Billed monthly
           </p>

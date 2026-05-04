@@ -87,7 +87,7 @@ test.describe("Settings — extended tabs", () => {
     const tabNav = page.locator('[aria-label="Settings sections"]');
     await tabNav.getByText("Other").click();
 
-    await expect(page.getByText(/Atomic Bot v\d/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Atomic Claw v\d/)).toBeVisible({ timeout: 10_000 });
   });
 
   test("other tab shows launch at startup toggle", async () => {

@@ -87,7 +87,7 @@ export function registerNotificationHandlers(params: NotificationsHandlerParams)
     IPC.notificationsShow,
     async (_evt, raw: unknown): Promise<NotificationsShowResult> => {
       const payload = (raw ?? {}) as Partial<NotificationsShowParams>;
-      const title = sanitizeString(payload.title, "Atomic Bot");
+      const title = sanitizeString(payload.title, "Atomic Claw");
       const body = sanitizeString(payload.body, "");
       const onlyIfBackgrounded = payload.onlyIfBackgrounded !== false;
 

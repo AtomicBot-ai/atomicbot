@@ -97,7 +97,7 @@ function run(argv) {
   ));
 
   cv.addSubview(makeLabel(
-    'Updating Atomic Bot\\u2026',
+    'Updating Atomic Claw\\u2026',
     $.NSFont.systemFontOfSizeWeight(16, 0.5),
     $.NSColor.colorWithSRGBRedGreenBlueAlpha(0.9, 0.93, 0.95, 1.0),
     baseY + subtitleH + gapTitleSubtitle, titleH

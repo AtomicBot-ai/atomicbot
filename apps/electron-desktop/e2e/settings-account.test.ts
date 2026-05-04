@@ -143,7 +143,7 @@ test.describe("Settings account tab (paid mode)", () => {
       .isVisible()
       .catch(() => false);
     const hasSubscribe = await page
-      .getByText("Atomic Bot Subscription")
+      .getByText("Atomic Claw Subscription")
       .isVisible()
       .catch(() => false);
     const hasContinueGoogle = await page

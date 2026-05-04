@@ -78,7 +78,7 @@ export function useChatStream(gw: ChatGatewayRpc, dispatch: AppDispatch, session
             })
           );
           notifyInBackground({
-            title: "Atomic Bot",
+            title: "Atomic Claw",
             body: buildAgentFinishedBody(text),
           });
           // Debounce history reload so rapid sequential finals (multi-turn agent
@@ -100,7 +100,7 @@ export function useChatStream(gw: ChatGatewayRpc, dispatch: AppDispatch, session
             })
           );
           notifyInBackground({
-            title: "Atomic Bot",
+            title: "Atomic Claw",
             body: payload.errorMessage
               ? `Agent run failed: ${payload.errorMessage}`
               : "Agent run failed.",
@@ -110,7 +110,7 @@ export function useChatStream(gw: ChatGatewayRpc, dispatch: AppDispatch, session
         if (payload.state === "aborted") {
           dispatch(chatActions.streamAborted({ runId: payload.runId }));
           notifyInBackground({
-            title: "Atomic Bot",
+            title: "Atomic Claw",
             body: "Agent run was aborted.",
           });
         }

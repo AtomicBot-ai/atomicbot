@@ -63,8 +63,8 @@ export function ConsentScreen({
     >
       <div className={s.UiConsentStage}>
         <div className={s.UiConsentCenter}>
-          <SplashLogo size={72} iconAlt="Atomic Bot" />
-          <div className={s.UiConsentTitle}>Welcome to Atomic Bot</div>
+          <SplashLogo size={72} iconAlt="Atomic Claw" />
+          <div className={s.UiConsentTitle}>Welcome to Atomic Claw</div>
 
           <PrimaryButton
             className={s.UiConsentButton}

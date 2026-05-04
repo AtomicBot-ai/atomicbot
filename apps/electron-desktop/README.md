@@ -1,6 +1,6 @@
-# Atomic Bot Desktop
+# Atomic Claw Desktop
 
-Cross-platform Electron desktop app for [Atomic Bot](https://atomicbot.ai) — an AI assistant that makes things for you.
+Cross-platform Electron desktop app for [Atomic Claw](https://atomicbot.ai) — an AI assistant that makes things for you.
 
 **Platforms:** macOS (arm64 / x64) · Windows (x64)
 

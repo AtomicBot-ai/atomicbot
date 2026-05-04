@@ -12,6 +12,7 @@
   user-select: none;
   transition: background 0.3s ease;
   position: absolute;
+  left: calc(50% - 16px);
   bottom: calc(100% + 8px);
   animation: fadeIn ease 1s;
 }

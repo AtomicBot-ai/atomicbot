@@ -1,6 +1,6 @@
 /**
  * Helper for triggering OS-level notifications when the user is away
- * from the Atomic Bot window (minimized, hidden, or window not focused).
+ * from the Atomic Claw window (minimized, hidden, or window not focused).
  *
  * The preference is stored in localStorage under NOTIFICATIONS_ENABLED_LS_KEY
  * and defaults to enabled. The actual focused/minimized check happens in the

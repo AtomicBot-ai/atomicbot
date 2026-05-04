@@ -2,7 +2,7 @@
   "name": "atomicbot-desktop",
   "private": true,
   "version": "1.0.116",
-  "description": "Atomic Bot makes things for you",
+  "description": "Atomic Claw makes things for you",
   "type": "commonjs",
   "main": "dist/main.js",
   "author": "",
@@ -125,10 +125,10 @@
   },
   "build": {
     "appId": "ai.atomicbot.desktop",
-    "productName": "Atomic Bot",
+    "productName": "Atomic Claw",
     "protocols": [
       {
-        "name": "Atomic Bot",
+        "name": "Atomic Claw",
         "schemes": [
           "atomicbot"
         ]
@@ -221,7 +221,7 @@
       "releaseType": "draft"
     },
     "mac": {
-      "artifactName": "Atomic-Bot-${version}-${arch}-mac.${ext}",
+      "artifactName": "Atomic-Claw-${version}-${arch}-mac.${ext}",
       "icon": "assets/icon.icns",
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
@@ -231,18 +231,18 @@
         "zip"
       ],
       "extendInfo": {
-        "NSRemindersUsageDescription": "Atomic Bot needs access to Reminders to create, list, and complete reminders on your behalf.",
-        "NSMicrophoneUsageDescription": "Atomic Bot needs microphone access for voice input and speech-to-text transcription."
+        "NSRemindersUsageDescription": "Atomic Claw needs access to Reminders to create, list, and complete reminders on your behalf.",
+        "NSMicrophoneUsageDescription": "Atomic Claw needs microphone access for voice input and speech-to-text transcription."
       }
     },
     "win": {
-      "artifactName": "Atomic-Bot-${version}-${arch}-win.${ext}",
+      "artifactName": "Atomic-Claw-${version}-${arch}-win.${ext}",
       "icon": "assets/icon.ico",
       "target": [
         "nsis"
       ],
       "requestedExecutionLevel": "asInvoker",
-      "executableName": "AtomicBot"
+      "executableName": "AtomicClaw"
     },
     "nsis": {
       "oneClick": true,

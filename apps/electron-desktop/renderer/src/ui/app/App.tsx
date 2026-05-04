@@ -124,7 +124,7 @@ function Topbar() {
   return (
     <div className={a.UiAppTopbar}>
       <NavLink to={routes.chat} className={a.UiAppNavLink}>
-        <Brand text="ATOMIC BOT" iconSrc={brandIconUrl} iconAlt="" />
+        <Brand text="ATOMIC CLAW" iconSrc={brandIconUrl} iconAlt="" />
       </NavLink>
 
       <div className={a.UiAppTopbarActions}>
@@ -141,7 +141,7 @@ function Topbar() {
               fill="#121212"
             />
           </svg>
-          <span>Back to Atomic Bot</span>
+          <span>Back to Atomic Claw</span>
         </NavLink>
       </div>
     </div>

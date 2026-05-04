@@ -59,7 +59,7 @@ export function SubscriptionPromoBannerSource() {
       variant: "info",
       icon: <SparkleIcon />,
       title: "100+ AI Models. One Subscription.",
-      subtitle: "Access all major models with Atomic Bot.",
+      subtitle: "Access all major models with Atomic Claw.",
       action: { label: "Try now", onClick: () => void handleTryNow() },
       dismissible: "persistent",
     };

@@ -50,7 +50,7 @@ export function SetupModePage(props: {
               <div className={s.UiSetupModeCardBody}>
                 <div className={s.UiSetupModeIconRow}>
                   <div className={s.UiSetupModeIcon}>
-                    <SplashLogo iconAlt="Atomic Bot" size={35} />
+                    <SplashLogo iconAlt="Atomic Claw" size={35} />
                   </div>
                   <span className={s.UiSetupModeBadge}>Popular 🔥</span>
                 </div>

@@ -57,7 +57,7 @@ describe("createTray", () => {
       onQuit,
     });
     expect(tray).toBeInstanceOf(Tray);
-    expect(tray.setToolTip).toHaveBeenCalledWith("Atomic Bot");
+    expect(tray.setToolTip).toHaveBeenCalledWith("Atomic Claw");
   });
 
   it("sets template image when trayIconIsTemplate is true", () => {
@@ -96,7 +96,7 @@ describe("createTray", () => {
     });
     expect(Menu.buildFromTemplate).toHaveBeenCalledWith(
       expect.arrayContaining([
-        expect.objectContaining({ label: "Show Atomic Bot" }),
+        expect.objectContaining({ label: "Show Atomic Claw" }),
         expect.objectContaining({ label: "Quit" }),
       ])
     );

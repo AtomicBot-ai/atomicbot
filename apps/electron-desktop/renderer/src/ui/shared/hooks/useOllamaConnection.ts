@@ -9,13 +9,13 @@ export const OLLAMA_SETUP_STEPS: Record<OllamaMode, string[]> = {
   local: [
     "Download Ollama from ollama.com",
     "Launch it and download an AI model",
-    "Test the connection and start using it in Atomic Bot",
+    "Test the connection and start using it in Atomic Claw",
   ],
   cloud: [
     "Download Ollama from ollama.com",
     "Launch it and download an AI model",
     "Create an API key in your Ollama Dashboard",
-    "Paste it below and start using it in Atomic Bot",
+    "Paste it below and start using it in Atomic Claw",
   ],
 };
 

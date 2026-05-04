@@ -8,7 +8,7 @@ export function useAppIconUrl(): string {
 }
 
 export function Brand({
-  text = "ATOMIC BOT",
+  text = "ATOMIC CLAW",
   iconSrc,
   iconAlt = "",
 }: {

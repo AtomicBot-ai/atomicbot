@@ -8,7 +8,7 @@ export function LoadingScreen({ state: _state }: { state: GatewayState | null })
     <FullscreenShell role="status" aria-label="Loading">
       <div className="UiLoadingStage" aria-live="polite">
         <div className="UiLoadingCenter">
-          <SpinningSplashLogo iconAlt="Atomic Bot" />
+          <SpinningSplashLogo iconAlt="Atomic Claw" />
           <div>
             <div className="UiLoadingTitle">Your Agent is Loading...</div>
             <div className="UiLoadingSubtitle">

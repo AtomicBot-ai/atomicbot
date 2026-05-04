@@ -171,7 +171,7 @@ export function ExecApprovalOverlay() {
           setQueue((prev) => addToQueue(prev, entry));
           setError(null);
           notifyInBackground({
-            title: "Atomic Bot",
+            title: "Atomic Claw",
             body: buildApprovalNotificationBody(entry.request.command),
           });
           // Auto-remove when the request expires

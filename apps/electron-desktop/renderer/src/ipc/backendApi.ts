@@ -1,5 +1,5 @@
 /**
- * HTTP client for the atomic-bot-backend API.
+ * HTTP client for the atomic-claw-backend API.
  * Used in paid "Do everything for me" mode for auth, billing, and key management.
  */
 

@@ -29,7 +29,7 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-APP_NAME=$(/usr/libexec/PlistBuddy -c "Print CFBundleName" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "Atomic Bot")
+APP_NAME=$(/usr/libexec/PlistBuddy -c "Print CFBundleName" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "Atomic Claw")
 DMG_VOLUME_NAME="${DMG_VOLUME_NAME:-$APP_NAME}"
 
 # Background image and icon for the DMG window

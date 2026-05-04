@@ -152,7 +152,7 @@ vi.mock("@shared/billing/AnimatedBalance", () => ({
 vi.mock("@ui/app/UpgradePaywallContent", () => ({
   UpgradePaywallContent: () => (
     <div>
-      <span>Atomic Bot Subscription</span>
+      <span>Atomic Claw Subscription</span>
       <button type="button">Subscribe $5/mo</button>
     </div>
   ),
@@ -268,7 +268,7 @@ describe("AccountTab logout confirmation", () => {
 
     render(<AccountTab />);
     await waitFor(() => {
-      expect(screen.getByText("Atomic Bot Subscription")).not.toBeNull();
+      expect(screen.getByText("Atomic Claw Subscription")).not.toBeNull();
       expect(screen.getByText(/Subscribe \$/)).not.toBeNull();
     });
 

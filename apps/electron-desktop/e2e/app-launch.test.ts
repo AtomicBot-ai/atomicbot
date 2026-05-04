@@ -56,7 +56,7 @@ test("transitions to consent screen for a fresh user", async () => {
   const consentEl = page.locator('[role="dialog"][aria-label="User agreement"]');
   await consentEl.waitFor({ state: "visible", timeout: 60_000 });
 
-  await expect(page.getByText("Welcome to Atomic Bot")).toBeVisible();
+  await expect(page.getByText("Welcome to Atomic Claw")).toBeVisible();
   await expect(page.getByText("Create a new AI agent")).toBeVisible();
   await expect(page.getByText("Import an existing setup")).toBeVisible();
 });

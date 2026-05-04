@@ -252,7 +252,7 @@ export class GatewayClient {
       maxProtocol: 9999,
       client: {
         id: "openclaw-control-ui",
-        displayName: "Atomic Bot",
+        displayName: "Atomic Claw",
         version: "0.0.0",
         platform: "electron",
         mode: "ui",

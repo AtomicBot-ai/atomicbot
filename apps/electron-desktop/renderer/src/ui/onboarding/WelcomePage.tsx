@@ -40,7 +40,7 @@ function WelcomeAutoStart(props: {
       <FullscreenShell role="status" aria-label="Setting up">
         <div className="UiLoadingStage" aria-live="polite">
           <div className="UiLoadingCenter">
-            <SpinningSplashLogo iconAlt="Atomic Bot" />
+            <SpinningSplashLogo iconAlt="Atomic Claw" />
             <div>
               <div className="UiLoadingTitle">Setting up your agent...</div>
             </div>

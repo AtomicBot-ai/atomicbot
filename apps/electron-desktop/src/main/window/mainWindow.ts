@@ -5,7 +5,7 @@ export async function createMainWindow(params: {
   rendererIndex: string;
   iconPath?: string;
 }): Promise<BrowserWindow> {
-  const windowTitle = `Atomic Bot v${app.getVersion()}`;
+  const windowTitle = `Atomic Claw v${app.getVersion()}`;
 
   const win = new BrowserWindow({
     width: 950,

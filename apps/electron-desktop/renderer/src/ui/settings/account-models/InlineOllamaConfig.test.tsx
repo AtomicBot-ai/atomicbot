@@ -85,7 +85,7 @@ describe("InlineOllamaConfig", () => {
 
     expect(screen.getByText("Download Ollama from ollama.com")).not.toBeNull();
     expect(screen.getByText("Launch it and download an AI model")).not.toBeNull();
-    expect(screen.getByText("Test the connection and start using it in Atomic Bot")).not.toBeNull();
+    expect(screen.getByText("Test the connection and start using it in Atomic Claw")).not.toBeNull();
   });
 
   it("shows base URL input with default value", () => {
@@ -109,7 +109,7 @@ describe("InlineOllamaConfig", () => {
     fireEvent.click(screen.getByText("Cloud + Local"));
 
     expect(screen.getByText("Create an API key in your Ollama Dashboard")).not.toBeNull();
-    expect(screen.getByText("Paste it below and start using it in Atomic Bot")).not.toBeNull();
+    expect(screen.getByText("Paste it below and start using it in Atomic Claw")).not.toBeNull();
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     expect(passwordInputs.length).toBe(1);
   });
@@ -350,7 +350,7 @@ describe("InlineOllamaConfig", () => {
       render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
       expect(
-        screen.getByText("Test the connection and start using it in Atomic Bot")
+        screen.getByText("Test the connection and start using it in Atomic Claw")
       ).not.toBeNull();
 
       const passwordInputs = document.querySelectorAll('input[type="password"]');
@@ -361,7 +361,7 @@ describe("InlineOllamaConfig", () => {
       render(<InlineOllamaConfig provider={ollamaProvider} busy={false} onSave={onSave} />);
 
       expect(
-        screen.getByText("Test the connection and start using it in Atomic Bot")
+        screen.getByText("Test the connection and start using it in Atomic Claw")
       ).not.toBeNull();
     });
   });

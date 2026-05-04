@@ -30,11 +30,11 @@ export function createTray(opts: {
   }
 
   const tray = new Tray(trayImage);
-  tray.setToolTip("Atomic Bot");
+  tray.setToolTip("Atomic Claw");
 
   const menu = Menu.buildFromTemplate([
     {
-      label: "Show Atomic Bot",
+      label: "Show Atomic Claw",
       click: () => {
         opts.onShow();
       },

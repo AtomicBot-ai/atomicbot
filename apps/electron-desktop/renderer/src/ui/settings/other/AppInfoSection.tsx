@@ -50,7 +50,7 @@ export function AppInfoSection({ onError }: { onError: (msg: string | null) => v
         <div className={s.UiSettingsOtherCard}>
           <div className={s.UiSettingsOtherRow}>
             <span className={s.UiSettingsOtherRowLabel}>Version</span>
-            <span className={s.UiSettingsOtherAppRowValue}>Atomic Bot v{APP_VERSION}</span>
+            <span className={s.UiSettingsOtherAppRowValue}>Atomic Claw v{APP_VERSION}</span>
           </div>
           <div className={s.UiSettingsOtherRow}>
             <span className={s.UiSettingsOtherRowLabel}>Auto start</span>
@@ -93,7 +93,7 @@ export function AppInfoSection({ onError }: { onError: (msg: string | null) => v
         </div>
         <div className={s.UiSettingsOtherLinksRow}>
           <span className={s.UiSettingsOtherFooterCopy}>
-            &copy; {new Date().getFullYear()} Atomic Bot
+            &copy; {new Date().getFullYear()} Atomic Claw
           </span>
           <button
             type="button"
