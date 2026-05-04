@@ -5,7 +5,7 @@ import {
 } from "openclaw/plugin-sdk/plugin-entry";
 
 const DEFAULT_OVERLAY_COLOR = "AEFF00";
-const DEFAULT_OVERLAY_LABEL = "Atomic Bot";
+const DEFAULT_OVERLAY_LABEL = "Atomic Claw";
 
 export default definePluginEntry({
   id: "computer-use",
