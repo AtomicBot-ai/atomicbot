@@ -563,6 +563,63 @@ function installExtensionRuntimeDeps() {
   ], { cwd: outDir });
 }
 
+function pruneDesktopOnlyOpenClawPackages() {
+  const targets = [
+    path.join(outDir, "dist", "extensions", "tlon"),
+    path.join(outDir, "extensions", "tlon"),
+
+    path.join(nmDir, "@openclaw", "tlon"),
+
+    path.join(nmDir, "@tloncorp", "tlon-skill"),
+    path.join(nmDir, "@tloncorp", "tlon-skill-darwin-arm64"),
+    path.join(nmDir, "@tloncorp", "tlon-skill-darwin-x64"),
+    path.join(nmDir, "@tloncorp", "tlon-skill-linux-arm64"),
+    path.join(nmDir, "@tloncorp", "tlon-skill-linux-x64"),
+  ];
+
+  let removed = 0;
+  for (const target of targets) {
+    if (!fs.existsSync(target)) continue;
+    fs.rmSync(target, { recursive: true, force: true });
+    removed++;
+  }
+
+  const pnpmStore = path.join(nmDir, ".pnpm");
+  if (fs.existsSync(pnpmStore)) {
+    const pnpmPrefixes = [
+      "@openclaw+tlon@",
+      "@tloncorp+tlon-skill@",
+      "@tloncorp+tlon-skill-darwin-arm64@",
+      "@tloncorp+tlon-skill-darwin-x64@",
+      "@tloncorp+tlon-skill-linux-arm64@",
+      "@tloncorp+tlon-skill-linux-x64@",
+    ];
+
+    for (const entry of fs.readdirSync(pnpmStore)) {
+      if (entry === "node_modules" || entry === "lock.yaml") continue;
+      if (!pnpmPrefixes.some((prefix) => entry.startsWith(prefix))) continue;
+      fs.rmSync(path.join(pnpmStore, entry), { recursive: true, force: true });
+      removed++;
+    }
+
+    const hoistedDir = path.join(pnpmStore, "node_modules");
+    if (fs.existsSync(hoistedDir)) {
+      tryRemove(path.join(hoistedDir, "@openclaw", "tlon"));
+      tryRemove(path.join(hoistedDir, "@tloncorp", "tlon-skill"));
+      tryRemove(path.join(hoistedDir, "@tloncorp", "tlon-skill-darwin-arm64"));
+      tryRemove(path.join(hoistedDir, "@tloncorp", "tlon-skill-darwin-x64"));
+      tryRemove(path.join(hoistedDir, "@tloncorp", "tlon-skill-linux-arm64"));
+      tryRemove(path.join(hoistedDir, "@tloncorp", "tlon-skill-linux-x64"));
+    }
+  }
+
+  if (removed > 0) {
+    console.log(`[electron-desktop] Pruned desktop-incompatible OpenClaw packages (tlon): ${removed}`);
+  } else {
+    console.log("[electron-desktop] No desktop-incompatible OpenClaw packages needed pruning");
+  }
+}
+
 async function main() {
   rmrfStrict(outDir);
   ensureDir(path.dirname(outDir));
@@ -573,6 +630,7 @@ async function main() {
   run(PNPM, ["-C", repoRoot, "--filter", "openclaw", "--prod", "--legacy", "deploy", outDir]);
 
   installExtensionRuntimeDeps();
+  pruneDesktopOnlyOpenClawPackages();
   hoistPnpmVirtualStoreToRoot();
   pruneKnownUnneededPackages();
 
