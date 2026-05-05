@@ -58,6 +58,10 @@ type CdpCommand = {
   method: string;
   params?: unknown;
   sessionId?: string;
+  /** Forwarded from the Python shim: identifies which Eclipse chat this CDP
+   *  command belongs to so the extension can route it to the chat's dedicated
+   *  tab rather than whichever tab happens to be first-connected. */
+  eclipseSessionKey?: string;
 };
 
 type CdpResponse = {
@@ -76,7 +80,7 @@ type CdpEvent = {
 type ExtensionForwardCommandMessage = {
   id: number;
   method: "forwardCDPCommand";
-  params: { method: string; params?: unknown; sessionId?: string };
+  params: { method: string; params?: unknown; sessionId?: string; eclipseSessionKey?: string };
 };
 
 type ExtensionResponseMessage = {
@@ -267,7 +271,12 @@ export async function startHermesRelayServer(params: {
         return await sendToExtension({
           id,
           method: "forwardCDPCommand",
-          params: { method: cmd.method, sessionId: cmd.sessionId, params: cmd.params },
+          params: {
+            method: cmd.method,
+            sessionId: cmd.sessionId,
+            params: cmd.params,
+            ...(cmd.eclipseSessionKey ? { eclipseSessionKey: cmd.eclipseSessionKey } : {}),
+          },
         });
       }
     }
@@ -574,6 +583,10 @@ export async function startHermesRelayServer(params: {
       }
       if (!cmd || typeof cmd !== "object") {return;}
       if (typeof cmd.id !== "number" || typeof cmd.method !== "string") {return;}
+
+      console.log(
+        `${logPrefix} CDP cmd id=${cmd.id} method=${cmd.method} sessionId=${cmd.sessionId ?? "<none>"} eclipseSessionKey=${cmd.eclipseSessionKey ?? "<none>"}`,
+      );
 
       if (!extensionOpen()) {
         sendCdpResponse(ws, {
