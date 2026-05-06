@@ -52,6 +52,12 @@ import { WebSocketServer, type WebSocket } from "ws";
 const RELAY_TOKEN_CONTEXT = "openclaw-extension-relay-v1";
 const PING_INTERVAL_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 30_000;
+// How long the relay buffers an inbound CDP command while it waits for the
+// extension to (re)connect. Sized to cover the worst-case cold-start window:
+//   discovery poll (≤5s) + WS upgrade + handshake.
+// If the extension never shows up — really disabled, incognito, force-killed —
+// the request fails honestly with "extension not connected" after this.
+const EXTENSION_WAIT_MS = 5_000;
 
 type CdpCommand = {
   id: number;
@@ -174,18 +180,63 @@ export async function startHermesRelayServer(params: {
 
   // Per-side state.
   let extensionWs: WebSocket | null = null;
+  let extensionHandshakeOk = false;
   const cdpClients = new Set<WebSocket>();
   const connectedTargets = new Map<string, ConnectedTarget>();
   const pendingExtension = new Map<number, Pending>();
+  // Inbound CDP commands that arrived before the extension had finished its
+  // handshake. Resolved en masse from the wssExtension "connection" handler
+  // once handshake succeeds; rejected by the per-waiter timeout otherwise.
+  const extensionReadyWaiters: Array<() => void> = [];
   let nextExtensionId = 1;
   let pingTimer: NodeJS.Timeout | null = null;
 
   const extensionOpen = (): boolean =>
-    extensionWs !== null && extensionWs.readyState === 1;
+    extensionWs !== null && extensionWs.readyState === 1 && extensionHandshakeOk;
+
+  const waitForExtension = (timeoutMs: number): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const onReady = (): void => {
+        if (settled) {return;}
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      };
+      const timer = setTimeout(() => {
+        if (settled) {return;}
+        settled = true;
+        const idx = extensionReadyWaiters.indexOf(onReady);
+        if (idx >= 0) {extensionReadyWaiters.splice(idx, 1);}
+        reject(new Error("timeout"));
+      }, timeoutMs);
+      extensionReadyWaiters.push(onReady);
+    });
+
+  const flushExtensionReadyWaiters = (): void => {
+    if (extensionReadyWaiters.length === 0) {return;}
+    const waiters = extensionReadyWaiters.splice(0, extensionReadyWaiters.length);
+    for (const w of waiters) {
+      try {w();} catch {/* ignore */}
+    }
+  };
 
   const sendToExtension = async (
     payload: ExtensionForwardCommandMessage,
   ): Promise<unknown> => {
+    if (!extensionOpen()) {
+      // Cold-start race: launcher just spawned us, Hermes shim is already
+      // hammering CDP commands, but the extension is still in its discovery
+      // poll. Buffer briefly instead of failing the user-visible tool call.
+      console.log(
+        `${logPrefix} buffering CDP cmd ${payload.params.method}, waiting for extension (waiters=${extensionReadyWaiters.length + 1})`,
+      );
+      try {
+        await waitForExtension(EXTENSION_WAIT_MS);
+      } catch {
+        throw new Error("extension not connected");
+      }
+    }
     const ws = extensionWs;
     if (!ws || ws.readyState !== 1) {
       throw new Error("extension not connected");
@@ -385,6 +436,7 @@ export async function startHermesRelayServer(params: {
 
   wssExtension.on("connection", (ws) => {
     extensionWs = ws;
+    extensionHandshakeOk = false;
     console.log(`${logPrefix} extension connected`);
 
     // Step 1: connect.challenge → wait for connect.req → reply ok.
@@ -448,11 +500,18 @@ export async function startHermesRelayServer(params: {
           return;
         }
         handshakeOk = true;
+        extensionHandshakeOk = true;
         clearTimeout(handshakeTimer);
         try {
           ws.send(JSON.stringify({ type: "res", id: msg.id, ok: true }));
         } catch {/* ignore */}
-        console.log(`${logPrefix} extension handshake ok`);
+        console.log(
+          `${logPrefix} extension handshake ok` +
+            (extensionReadyWaiters.length > 0
+              ? ` (releasing ${extensionReadyWaiters.length} buffered cmd(s))`
+              : ""),
+        );
+        flushExtensionReadyWaiters();
         return;
       }
 
@@ -536,6 +595,7 @@ export async function startHermesRelayServer(params: {
       clearTimeout(handshakeTimer);
       if (extensionWs === ws) {
         extensionWs = null;
+        extensionHandshakeOk = false;
         connectedTargets.clear();
         for (const [, p] of pendingExtension) {
           clearTimeout(p.timer);
@@ -588,14 +648,10 @@ export async function startHermesRelayServer(params: {
         `${logPrefix} CDP cmd id=${cmd.id} method=${cmd.method} sessionId=${cmd.sessionId ?? "<none>"} eclipseSessionKey=${cmd.eclipseSessionKey ?? "<none>"}`,
       );
 
-      if (!extensionOpen()) {
-        sendCdpResponse(ws, {
-          id: cmd.id,
-          sessionId: cmd.sessionId,
-          error: { message: "extension not connected" },
-        });
-        return;
-      }
+      // No early `extensionOpen()` check here on purpose: locally-handled
+      // methods (Browser.getVersion, Target.getTargets etc.) succeed even
+      // without an extension, and forwarded methods are gated inside
+      // `sendToExtension`, which buffers up to EXTENSION_WAIT_MS.
       try {
         const result = await routeCdpCommand(cmd);
         sendCdpResponse(ws, { id: cmd.id, sessionId: cmd.sessionId, result });
