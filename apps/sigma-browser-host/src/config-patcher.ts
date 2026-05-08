@@ -65,6 +65,20 @@ const SIGMA_BROWSER_FOCUS_DENY = [
   "nodes",
   "gateway",
 ] as const;
+// All provider IDs that may have been written into openclaw.json as cloud
+// entries.  Used on cloud-off to sweep stale providers regardless of which
+// preset was previously active.
+const KNOWN_CLOUD_PROVIDER_KEYS = [
+  "anthropic",
+  "aimlapi",
+  "openrouter",
+  "openai",
+  "groq",
+  "gemini",
+  "deepseek",
+  "custom",
+] as const;
+
 export async function patchSigmaLocalProvider(params: {
   configPath: string;
   llamaPort: number;
@@ -228,45 +242,65 @@ export async function patchSigmaLocalProvider(params: {
   // config and force the user to delete it by hand. The browser-profile
   // patch above still ran, so relay routing is kept in sync regardless.
   if (isCloud) {
-    // Cloud mode: write an anthropic provider and route the primary agent to it.
+    // Cloud mode: write the provider entry and route the primary agent to it.
+    // The API family depends on the provider: Anthropic uses its native
+    // Messages API; all other providers use the OpenAI-compat completions API.
     const models = ensureObject(cfg, "models");
     const providers = ensureObject(models, "providers");
     const resolvedCloudModel = cloudModelId ?? "claude-sonnet-4-5-20250929";
-    const resolvedCloudUrl = (cloudBaseUrl ?? "https://api.anthropic.com/v1").replace(/\/$/, "");
-    const existingAnthropic = asPlainObject(providers["anthropic"]);
-    const expectedAnthropicEntry = {
+    const resolvedCloudUrl = (cloudBaseUrl ?? "").replace(/\/$/, "");
+    const providerKey = cloudProvider!;
+    const apiFamily =
+      providerKey === "anthropic" ? "anthropic-messages" : "openai-completions";
+
+    const existingEntry = asPlainObject(providers[providerKey]);
+    const expectedEntry = {
       baseUrl: resolvedCloudUrl,
       apiKey: cloudApiKey!,
-      api: "anthropic-messages",
+      api: apiFamily,
       models: [{ id: resolvedCloudModel, name: resolvedCloudModel, contextWindow: 200000 }],
     };
-    if (!existingAnthropic ||
-        existingAnthropic.baseUrl !== resolvedCloudUrl ||
-        existingAnthropic.apiKey !== cloudApiKey ||
-        !Array.isArray(existingAnthropic.models) ||
-        (existingAnthropic.models as unknown[])[0] == null ||
-        (asPlainObject((existingAnthropic.models as unknown[])[0]) as {id?: unknown} | undefined)?.id !== resolvedCloudModel) {
-      providers["anthropic"] = expectedAnthropicEntry;
+    if (!existingEntry ||
+        existingEntry.baseUrl !== resolvedCloudUrl ||
+        existingEntry.apiKey !== cloudApiKey ||
+        existingEntry.api !== apiFamily ||
+        !Array.isArray(existingEntry.models) ||
+        (existingEntry.models as unknown[])[0] == null ||
+        (asPlainObject((existingEntry.models as unknown[])[0]) as {id?: unknown} | undefined)?.id !== resolvedCloudModel) {
+      providers[providerKey] = expectedEntry;
       changed = true;
     }
 
-    // Flip default agent model to anthropic.
+    // Remove stale entries from previously active providers so openclaw.json
+    // stays clean when the user switches provider.
+    for (const k of KNOWN_CLOUD_PROVIDER_KEYS) {
+      if (k !== providerKey && Object.prototype.hasOwnProperty.call(providers, k)) {
+        delete providers[k];
+        changed = true;
+      }
+    }
+
+    // Flip default agent model to the active cloud provider.
     const agents = ensureObject(cfg, "agents");
     const defaults = ensureObject(agents, "defaults");
-    const primaryKey = `anthropic/${resolvedCloudModel}`;
+    const primaryKey = `${providerKey}/${resolvedCloudModel}`;
     const model = asPlainObject(defaults.model);
     if (!model || model.primary !== primaryKey) {
       defaults.model = { ...model, primary: primaryKey };
       changed = true;
     }
   } else {
-    // Remove stale anthropic provider if cloud was previously active.
+    // Remove ALL known cloud provider entries so cloud-off is a clean slate.
     const models = asPlainObject(cfg.models);
     if (models) {
       const providers = asPlainObject(models.providers);
-      if (providers && Object.prototype.hasOwnProperty.call(providers, "anthropic")) {
-        delete providers["anthropic"];
-        changed = true;
+      if (providers) {
+        for (const k of KNOWN_CLOUD_PROVIDER_KEYS) {
+          if (Object.prototype.hasOwnProperty.call(providers, k)) {
+            delete providers[k];
+            changed = true;
+          }
+        }
       }
     }
   }

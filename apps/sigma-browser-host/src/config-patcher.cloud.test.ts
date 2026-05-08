@@ -155,4 +155,129 @@ describe("config-patcher cloud routing", () => {
     // And anthropic should be wired.
     expect(providers).toHaveProperty("anthropic");
   });
+
+  it("AIMLAPI provider uses openai-completions api family", async () => {
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "aimlapi",
+      cloudApiKey: "test-aimlapi-key",
+      cloudModelId: "claude-sonnet-4-5",
+      cloudBaseUrl: "https://api.aimlapi.com/v1",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).toHaveProperty("aimlapi");
+    expect(providers).not.toHaveProperty("anthropic");
+    const entry = providers["aimlapi"] as Record<string, unknown>;
+    expect(entry.api).toBe("openai-completions");
+    expect(entry.baseUrl).toBe("https://api.aimlapi.com/v1");
+    expect(entry.apiKey).toBe("test-aimlapi-key");
+
+    const defaults = ((cfg.agents as Record<string, unknown>).defaults as Record<string, unknown>);
+    expect((defaults.model as Record<string, unknown>).primary).toBe(
+      "aimlapi/claude-sonnet-4-5",
+    );
+  });
+
+  it("OpenRouter provider uses openai-completions and correct key", async () => {
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "openrouter",
+      cloudApiKey: "sk-or-v1-test",
+      cloudModelId: "anthropic/claude-sonnet-4-5",
+      cloudBaseUrl: "https://openrouter.ai/api/v1",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).toHaveProperty("openrouter");
+    const entry = providers["openrouter"] as Record<string, unknown>;
+    expect(entry.api).toBe("openai-completions");
+    expect((defaults(cfg).model as Record<string, unknown>).primary).toBe(
+      "openrouter/anthropic/claude-sonnet-4-5",
+    );
+  });
+
+  it("custom provider uses openai-completions and caller-supplied baseUrl", async () => {
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "custom",
+      cloudApiKey: "my-local-key",
+      cloudModelId: "my-model-id",
+      cloudBaseUrl: "http://localhost:11434/v1",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).toHaveProperty("custom");
+    const entry = providers["custom"] as Record<string, unknown>;
+    expect(entry.api).toBe("openai-completions");
+    expect(entry.baseUrl).toBe("http://localhost:11434/v1");
+    expect((defaults(cfg).model as Record<string, unknown>).primary).toBe("custom/my-model-id");
+  });
+
+  it("cloud-off cleans up ALL known cloud providers in one pass", async () => {
+    // Pre-seed the config with multiple cloud provider entries as if two
+    // consecutive provider switches happened without a clean-off in between.
+    const cfg = readConfig();
+    const providers = ((cfg.models as Record<string, unknown>).providers as Record<string, unknown>);
+    providers["anthropic"] = { api: "anthropic-messages", baseUrl: "x", apiKey: "x", models: [] };
+    providers["aimlapi"]   = { api: "openai-completions", baseUrl: "x", apiKey: "x", models: [] };
+    providers["openrouter"]= { api: "openai-completions", baseUrl: "x", apiKey: "x", models: [] };
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2), "utf-8");
+
+    // Disable cloud.
+    await patchSigmaLocalProvider({ configPath, llamaPort: 8787 });
+
+    const after = readConfig();
+    const afterProviders = ((after.models as Record<string, unknown>).providers as Record<string, unknown>);
+    expect(afterProviders).not.toHaveProperty("anthropic");
+    expect(afterProviders).not.toHaveProperty("aimlapi");
+    expect(afterProviders).not.toHaveProperty("openrouter");
+    expect(afterProviders).toHaveProperty("sigma-local");
+  });
+
+  it("switching from anthropic to aimlapi removes stale anthropic entry", async () => {
+    // Enable anthropic first.
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "anthropic",
+      cloudApiKey: "sk-ant-key",
+      cloudModelId: "claude-sonnet-4-5-20250929",
+      cloudBaseUrl: "https://api.anthropic.com/v1",
+    });
+
+    // Now switch to aimlapi.
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "aimlapi",
+      cloudApiKey: "aimlapi-key",
+      cloudModelId: "deepseek-chat",
+      cloudBaseUrl: "https://api.aimlapi.com/v1",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).not.toHaveProperty("anthropic");
+    expect(providers).toHaveProperty("aimlapi");
+    expect((defaults(cfg).model as Record<string, unknown>).primary).toBe("aimlapi/deepseek-chat");
+  });
 });
+
+function defaults(cfg: Record<string, unknown>): Record<string, unknown> {
+  return ((cfg.agents as Record<string, unknown>).defaults as Record<string, unknown>);
+}
