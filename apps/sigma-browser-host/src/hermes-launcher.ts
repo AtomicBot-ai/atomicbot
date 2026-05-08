@@ -45,6 +45,17 @@ const DEFAULT_DISCOVERY_PORT = 19998;
 const DEFAULT_HERMES_RPC_PORT = 10602;
 const LOG_PREFIX = "[hermes-launcher]";
 
+// Verbose tracing is opt-in via env var so release builds stay quiet on
+// stdout/stderr (Chromium pipes these through to the parent terminal).
+// Set SIGMA_LAUNCHER_VERBOSE=1 to re-enable per-step diagnostics.
+const VERBOSE =
+  process.env.SIGMA_LAUNCHER_VERBOSE === "1" ||
+  process.env.SIGMA_LAUNCHER_VERBOSE === "true";
+
+function verbose(...args: unknown[]): void {
+  if (VERBOSE) {console.log(...args);}
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -99,8 +110,8 @@ async function main(): Promise<void> {
   mirrorStdoutToFile(launcherLog);
 
   console.log(`${LOG_PREFIX} starting pid=${process.pid} node=${process.version}`);
-  console.log(`${LOG_PREFIX} packDir=${packDir}`);
-  console.log(`${LOG_PREFIX} stateDir=${stateDir}`);
+  verbose(`${LOG_PREFIX} packDir=${packDir}`);
+  verbose(`${LOG_PREFIX} stateDir=${stateDir}`);
 
   // Resolve the actual RPC port now (before discovery / config writes /
   // Python spawn) so every downstream consumer — health-check URL,
@@ -111,7 +122,7 @@ async function main(): Promise<void> {
   // don't care which integer it ended up being.
   const hermesRpcPort = await pickFreePort(preferredHermesRpcPort);
   if (hermesRpcPort !== preferredHermesRpcPort) {
-    console.log(
+    verbose(
       `${LOG_PREFIX} preferred rpc port :${preferredHermesRpcPort} busy, ` +
         `using :${hermesRpcPort} instead`,
     );
@@ -132,7 +143,7 @@ async function main(): Promise<void> {
       },
       llamaPort: llamaPort > 0 ? llamaPort : null,
     });
-    console.log(`${LOG_PREFIX} discovery listening on 127.0.0.1:${discovery.port}`);
+    verbose(`${LOG_PREFIX} discovery listening on 127.0.0.1:${discovery.port}`);
   } catch (err) {
     console.error(`${LOG_PREFIX} failed to bind discovery:`, err);
     process.exit(2);
@@ -146,7 +157,7 @@ async function main(): Promise<void> {
   const stop = async (reason: string) => {
     if (stopping) {return;}
     stopping = true;
-    console.log(`${LOG_PREFIX} stopping (${reason})`);
+    verbose(`${LOG_PREFIX} stopping (${reason})`);
     try {
       child?.stop("SIGTERM");
       // Give Python a brief moment to drain. SIGKILL fallback is the OS
@@ -170,7 +181,7 @@ async function main(): Promise<void> {
     // Stay alive in "not_installed" state. The C++ supervisor / the
     // extension UI surfaces an Install button that triggers the pack
     // download. When the download completes the supervisor relaunches us.
-    console.log(`${LOG_PREFIX} pack not installed at ${packDir}; idling.`);
+    verbose(`${LOG_PREFIX} pack not installed at ${packDir}; idling.`);
     return;
   }
 
@@ -217,7 +228,7 @@ async function main(): Promise<void> {
         stateDir,
       },
     });
-    console.log(`${LOG_PREFIX} wrote config -> ${configPath}`);
+    verbose(`${LOG_PREFIX} wrote config -> ${configPath}`);
   } catch (err) {
     console.error(`${LOG_PREFIX} failed to write hermes config:`, err);
     discovery.update({
@@ -249,7 +260,7 @@ async function main(): Promise<void> {
       },
       extraEnv: cloudExtraEnv,
     });
-    console.log(`${LOG_PREFIX} spawned hermes child pid=${child.process.pid}`);
+    verbose(`${LOG_PREFIX} spawned hermes child pid=${child.process.pid}`);
   } catch (err) {
     console.error(`${LOG_PREFIX} failed to spawn hermes:`, err);
     discovery.update({
@@ -293,7 +304,8 @@ async function main(): Promise<void> {
     logsDir,
   });
   discovery.setHermesRpcUrl(`http://127.0.0.1:${hermesRpcPort}/`);
-  console.log(`${LOG_PREFIX} ready (relay=${relayUrl}, rpc=:${hermesRpcPort})`);
+  console.log(`${LOG_PREFIX} ready (rpc=:${hermesRpcPort})`);
+  verbose(`${LOG_PREFIX} ready relay=${relayUrl}`);
 
   // 7. If the child exits unexpectedly, mark failed so the UI surfaces it.
   void child.exited.then((code) => {

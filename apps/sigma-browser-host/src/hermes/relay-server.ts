@@ -50,6 +50,16 @@ import { createHmac, randomBytes } from "node:crypto";
 import { WebSocketServer, type WebSocket } from "ws";
 
 const RELAY_TOKEN_CONTEXT = "openclaw-extension-relay-v1";
+
+// Verbose tracing is opt-in via env var so release builds stay quiet on
+// stdout/stderr. Set SIGMA_LAUNCHER_VERBOSE=1 to re-enable.
+const VERBOSE =
+  process.env.SIGMA_LAUNCHER_VERBOSE === "1" ||
+  process.env.SIGMA_LAUNCHER_VERBOSE === "true";
+
+function verbose(...args: unknown[]): void {
+  if (VERBOSE) {console.log(...args);}
+}
 const PING_INTERVAL_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 30_000;
 // How long the relay buffers an inbound CDP command while it waits for the
@@ -437,7 +447,7 @@ export async function startHermesRelayServer(params: {
   wssExtension.on("connection", (ws) => {
     extensionWs = ws;
     extensionHandshakeOk = false;
-    console.log(`${logPrefix} extension connected`);
+    verbose(`${logPrefix} extension connected`);
 
     // Step 1: connect.challenge → wait for connect.req → reply ok.
     const nonce = randomBytes(16).toString("hex");
@@ -505,7 +515,7 @@ export async function startHermesRelayServer(params: {
         try {
           ws.send(JSON.stringify({ type: "res", id: msg.id, ok: true }));
         } catch {/* ignore */}
-        console.log(
+        verbose(
           `${logPrefix} extension handshake ok` +
             (extensionReadyWaiters.length > 0
               ? ` (releasing ${extensionReadyWaiters.length} buffered cmd(s))`
@@ -676,7 +686,7 @@ export async function startHermesRelayServer(params: {
   const cdpWsUrl = `ws://127.0.0.1:${port}/cdp?token=${expectedUrlToken}`;
   const baseWsUrl = `ws://127.0.0.1:${port}`;
 
-  console.log(
+  verbose(
     `${logPrefix} listening port=${port} extensionUrl=ws://127.0.0.1:${port}/extension cdpUrl=${cdpWsUrl}`,
   );
 
