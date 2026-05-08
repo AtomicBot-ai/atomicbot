@@ -54,18 +54,6 @@ const DEFAULT_GATEWAY_PORT = 10500;
 const DEFAULT_DISCOVERY_PORT = 19999;
 const LOG_PREFIX = "[sigma-browser-host]";
 
-// Verbose tracing is opt-in via env var so release builds stay quiet on
-// stdout/stderr (Chromium routes our stdout into the parent terminal). Set
-// SIGMA_LAUNCHER_VERBOSE=1 (or SIGMA_LAUNCHER_VERBOSE=true) to re-enable
-// chatty per-step logging for debugging.
-const VERBOSE =
-  process.env.SIGMA_LAUNCHER_VERBOSE === "1" ||
-  process.env.SIGMA_LAUNCHER_VERBOSE === "true";
-
-function verbose(...args: unknown[]): void {
-  if (VERBOSE) {console.log(...args);}
-}
-
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -120,9 +108,9 @@ async function main(): Promise<void> {
   mirrorStdoutToFile(launcherLogPath);
 
   console.log(`${LOG_PREFIX} starting pid=${process.pid} node=${process.version}`);
-  verbose(`${LOG_PREFIX} stateDir=${stateDir}`);
-  verbose(`${LOG_PREFIX} openclawDir=${openclawDir}`);
-  verbose(`${LOG_PREFIX} nodeBin=${nodeBin}`);
+  console.log(`${LOG_PREFIX} stateDir=${stateDir}`);
+  console.log(`${LOG_PREFIX} openclawDir=${openclawDir}`);
+  console.log(`${LOG_PREFIX} nodeBin=${nodeBin}`);
 
   // 1. Orphan cleanup.
   //
@@ -138,13 +126,13 @@ async function main(): Promise<void> {
   try {
     const killedLauncherPid = killOrphanedLauncher(stateDir);
     if (killedLauncherPid != null) {
-      verbose(
+      console.log(
         `${LOG_PREFIX} killed orphan launcher pid=${killedLauncherPid}`
       );
     }
     const killedPid = killOrphanedGateway(stateDir);
     if (killedPid != null) {
-      verbose(`${LOG_PREFIX} killed orphan gateway pid=${killedPid}`);
+      console.log(`${LOG_PREFIX} killed orphan gateway pid=${killedPid}`);
     }
     removeStaleGatewayLock(configPath);
   } catch (err) {
@@ -158,7 +146,7 @@ async function main(): Promise<void> {
   // 2. Pick the actual gateway port (prefer the requested one, fall back to
   //    a random free port).
   const port = await pickPort(preferredGatewayPort);
-  verbose(`${LOG_PREFIX} gateway port resolved: ${port}`);
+  console.log(`${LOG_PREFIX} gateway port resolved: ${port}`);
 
   // 3. Config bootstrap + migrations.
   const token =
@@ -181,7 +169,7 @@ async function main(): Promise<void> {
     cloudModelId: isCloud ? cloudModelId : undefined,
     cloudBaseUrl: isCloud ? cloudBaseUrl : undefined,
   });
-  verbose(
+  console.log(
     `${LOG_PREFIX} sigma-local config patched -> llamaPort=${llamaPort} gatewayPort=${port}`
   );
 
@@ -192,7 +180,7 @@ async function main(): Promise<void> {
       preferredPort: preferredDiscoveryPort,
       llamaPort: llamaPort > 0 ? llamaPort : null,
     });
-    verbose(`${LOG_PREFIX} discovery listening on 127.0.0.1:${discovery.port}`);
+    console.log(`${LOG_PREFIX} discovery listening on 127.0.0.1:${discovery.port}`);
   } catch (err) {
     console.warn(`${LOG_PREFIX} discovery server failed to start:`, err);
   }
@@ -204,15 +192,13 @@ async function main(): Promise<void> {
 
   events.on("state", (gwState: GatewayState) => {
     discovery?.update(gwState);
-    if (gwState.kind === "ready") {
-      console.log(`${LOG_PREFIX} gateway state: ready ${gwState.url}`);
-    } else if (gwState.kind === "failed") {
-      console.warn(
-        `${LOG_PREFIX} gateway state: failed: ${gwState.details.slice(0, 200)}`,
-      );
-    } else {
-      verbose(`${LOG_PREFIX} gateway state: starting port=${gwState.port}`);
-    }
+    const summary =
+      gwState.kind === "ready"
+        ? `ready ${gwState.url}`
+        : gwState.kind === "failed"
+          ? `failed: ${gwState.details.slice(0, 200)}`
+          : `starting port=${gwState.port}`;
+    console.log(`${LOG_PREFIX} gateway state: ${summary}`);
   });
 
   const start = createCleanGatewayStarter({
@@ -236,7 +222,7 @@ async function main(): Promise<void> {
     if (stopping) {return;}
     stopping = true;
     state.isQuitting = true;
-    verbose(`${LOG_PREFIX} stopping (${reason})`);
+    console.log(`${LOG_PREFIX} stopping (${reason})`);
     try {
       await stopGatewayChild(state, getPlatform());
     } catch (err) {

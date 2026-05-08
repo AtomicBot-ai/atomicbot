@@ -2,17 +2,6 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-// Verbose tracing is opt-in via env var so release builds stay quiet on
-// stdout/stderr. Set SIGMA_LAUNCHER_VERBOSE=1 to re-enable per-step
-// pre-spawn diagnostics (xattr/codesign/PYTHONPATH/cwd).
-const VERBOSE =
-  process.env.SIGMA_LAUNCHER_VERBOSE === "1" ||
-  process.env.SIGMA_LAUNCHER_VERBOSE === "true";
-
-function verbose(...args: unknown[]): void {
-  if (VERBOSE) {console.log(...args);}
-}
-
 /**
  * Pre-spawn macOS sanity-fixups.  Strips any quarantine xattr that survived
  * the C++ downloader's pass (we've seen Gatekeeper re-stamp it after the
@@ -30,7 +19,7 @@ function macosPreSpawnFixup(packDir: string): void {
     });
     const beforeOut = (xattrCheck.stdout ?? "") + (xattrCheck.stderr ?? "");
     const wasQuarantined = /com\.apple\.quarantine/.test(beforeOut);
-    verbose(
+    console.log(
       `[hermes-spawn] pre-spawn xattr (python3.11): ${beforeOut.trim() || "<none>"}`,
     );
     if (wasQuarantined) {
@@ -45,7 +34,7 @@ function macosPreSpawnFixup(packDir: string): void {
           `[hermes-spawn] xattr -dr failed code=${strip.status} stderr=${strip.stderr}`,
         );
       } else {
-        verbose(`[hermes-spawn] stripped com.apple.quarantine from ${packDir}`);
+        console.log(`[hermes-spawn] stripped com.apple.quarantine from ${packDir}`);
       }
     }
     const codesignCheck = spawnSync(
@@ -55,7 +44,7 @@ function macosPreSpawnFixup(packDir: string): void {
     );
     const csOut = ((codesignCheck.stdout ?? "") + (codesignCheck.stderr ?? "")).trim();
     const flagsLine = csOut.split("\n").find((l) => l.includes("flags=")) ?? "<no flags>";
-    verbose(`[hermes-spawn] pre-spawn codesign (python3.11): ${flagsLine}`);
+    console.log(`[hermes-spawn] pre-spawn codesign (python3.11): ${flagsLine}`);
   } catch (err) {
     console.warn(`[hermes-spawn] pre-spawn fixup failed: ${err}`);
   }
@@ -211,13 +200,15 @@ export function spawnHermesChild(params: {
   // through *our* `pythonBin`, so the pack stays relocatable across
   // user machines without a post-install fixup.
   const args = ["-m", "sigma_hermes_shim.server"];
-  verbose(
+  console.log(
     `[hermes-spawn] launching python: ${pythonBin} ${args.join(" ")}`,
   );
-  verbose(`[hermes-spawn] PYTHONPATH=${env.PYTHONPATH}`);
-  verbose(`[hermes-spawn] HERMES_CONFIG=${env.HERMES_CONFIG}`);
-  verbose(`[hermes-spawn] cwd=${paths.packDir}`);
-  verbose(`[hermes-spawn] child stdout/stderr → ${logFile}`);
+  console.log(
+    `[hermes-spawn] PYTHONPATH=${env.PYTHONPATH}`,
+  );
+  console.log(`[hermes-spawn] HERMES_CONFIG=${env.HERMES_CONFIG}`);
+  console.log(`[hermes-spawn] cwd=${paths.packDir}`);
+  console.log(`[hermes-spawn] child stdout/stderr → ${logFile}`);
   const child = spawn(pythonBin, args, {
     cwd: paths.packDir,
     env,
