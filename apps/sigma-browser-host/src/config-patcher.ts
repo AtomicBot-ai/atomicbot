@@ -70,8 +70,15 @@ export async function patchSigmaLocalProvider(params: {
   llamaPort: number;
   gatewayPort?: number;
   modelId?: string;
+  cloudProvider?: string;
+  cloudApiKey?: string;
+  cloudModelId?: string;
+  cloudBaseUrl?: string;
 }): Promise<void> {
-  const { configPath, llamaPort, gatewayPort, modelId } = params;
+  const { configPath, llamaPort, gatewayPort, modelId,
+          cloudProvider, cloudApiKey, cloudModelId, cloudBaseUrl } = params;
+  const isCloud = !!cloudProvider && cloudProvider !== "none" &&
+                  !!cloudApiKey && cloudApiKey.length > 0;
   if (!fs.existsSync(configPath)) {return;}
 
   // Try to discover the actually-loaded model + its server-side n_ctx from
@@ -220,6 +227,50 @@ export async function patchSigmaLocalProvider(params: {
   // llama-server port — writing `http://127.0.0.1:0/v1` would poison the
   // config and force the user to delete it by hand. The browser-profile
   // patch above still ran, so relay routing is kept in sync regardless.
+  if (isCloud) {
+    // Cloud mode: write an anthropic provider and route the primary agent to it.
+    const models = ensureObject(cfg, "models");
+    const providers = ensureObject(models, "providers");
+    const resolvedCloudModel = cloudModelId ?? "claude-sonnet-4-5-20250929";
+    const resolvedCloudUrl = (cloudBaseUrl ?? "https://api.anthropic.com/v1").replace(/\/$/, "");
+    const existingAnthropic = asPlainObject(providers["anthropic"]);
+    const expectedAnthropicEntry = {
+      baseUrl: resolvedCloudUrl,
+      apiKey: cloudApiKey!,
+      api: "anthropic-messages",
+      models: [{ id: resolvedCloudModel, name: resolvedCloudModel, contextWindow: 200000 }],
+    };
+    if (!existingAnthropic ||
+        existingAnthropic.baseUrl !== resolvedCloudUrl ||
+        existingAnthropic.apiKey !== cloudApiKey ||
+        !Array.isArray(existingAnthropic.models) ||
+        (existingAnthropic.models as unknown[])[0] == null ||
+        (asPlainObject((existingAnthropic.models as unknown[])[0]) as {id?: unknown} | undefined)?.id !== resolvedCloudModel) {
+      providers["anthropic"] = expectedAnthropicEntry;
+      changed = true;
+    }
+
+    // Flip default agent model to anthropic.
+    const agents = ensureObject(cfg, "agents");
+    const defaults = ensureObject(agents, "defaults");
+    const primaryKey = `anthropic/${resolvedCloudModel}`;
+    const model = asPlainObject(defaults.model);
+    if (!model || model.primary !== primaryKey) {
+      defaults.model = { ...model, primary: primaryKey };
+      changed = true;
+    }
+  } else {
+    // Remove stale anthropic provider if cloud was previously active.
+    const models = asPlainObject(cfg.models);
+    if (models) {
+      const providers = asPlainObject(models.providers);
+      if (providers && Object.prototype.hasOwnProperty.call(providers, "anthropic")) {
+        delete providers["anthropic"];
+        changed = true;
+      }
+    }
+  }
+
   if (llamaPort > 0) {
   const models = ensureObject(cfg, "models");
   const providers = ensureObject(models, "providers");
@@ -310,7 +361,9 @@ export async function patchSigmaLocalProvider(params: {
   // Force the primary agent model to match the live llama-server model. If we
   // only set it when missing, a stale `sigma-local/gemma-3-1b-it` would keep
   // the agent routing to a model that's no longer served.
-  if (!model || model.primary !== primaryKey) {
+  // Only update defaults.model when NOT in cloud mode (cloud block above
+  // already set it to `anthropic/<model>`).
+  if (!isCloud && (!model || model.primary !== primaryKey)) {
     defaults.model = { ...model, primary: primaryKey };
     changed = true;
   }

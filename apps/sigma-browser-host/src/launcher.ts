@@ -65,6 +65,9 @@ async function main(): Promise<void> {
       "gateway-port": { type: "string", default: String(DEFAULT_GATEWAY_PORT) },
       "discovery-port": { type: "string", default: String(DEFAULT_DISCOVERY_PORT) },
       "log-level": { type: "string", default: "info" },
+      "cloud-provider": { type: "string" },
+      "cloud-base-url": { type: "string" },
+      "cloud-model": { type: "string" },
       help: { type: "boolean", default: false },
     },
     strict: true,
@@ -83,6 +86,18 @@ async function main(): Promise<void> {
   const browserExecutablePath = values["browser-path"];
   const preferredGatewayPort = parseIntOr(values["gateway-port"], DEFAULT_GATEWAY_PORT);
   const preferredDiscoveryPort = parseIntOr(values["discovery-port"], DEFAULT_DISCOVERY_PORT);
+
+  // Cloud routing config (passed via CLI; API key comes from env).
+  const cloudProvider = values["cloud-provider"] ?? "";
+  const cloudBaseUrl = values["cloud-base-url"] ?? "";
+  const cloudModelId = values["cloud-model"] ?? "";
+  const cloudApiKey = process.env.SIGMA_CLOUD_API_KEY ?? "";
+  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && cloudApiKey !== "";
+  if (isCloud) {
+    console.log(
+      `${LOG_PREFIX} cloud=${cloudProvider} model=${cloudModelId} base=${cloudBaseUrl}`,
+    );
+  }
 
   ensureDir(stateDir);
   const configPath = path.join(stateDir, "openclaw.json");
@@ -145,7 +160,15 @@ async function main(): Promise<void> {
   //    Run even without --llama-port so the browser-profile half still executes
   //    (e.g. cloud-model setups where the extension still needs the relay).
   const llamaPort = llamaPortArg ? parseIntOr(llamaPortArg, 0) : 0;
-  await patchSigmaLocalProvider({ configPath, llamaPort, gatewayPort: port });
+  await patchSigmaLocalProvider({
+    configPath,
+    llamaPort,
+    gatewayPort: port,
+    cloudProvider: isCloud ? cloudProvider : undefined,
+    cloudApiKey: isCloud ? cloudApiKey : undefined,
+    cloudModelId: isCloud ? cloudModelId : undefined,
+    cloudBaseUrl: isCloud ? cloudBaseUrl : undefined,
+  });
   console.log(
     `${LOG_PREFIX} sigma-local config patched -> llamaPort=${llamaPort} gatewayPort=${port}`
   );
@@ -262,6 +285,10 @@ function printHelp(): void {
       "  --browser-path=PATH       Sigma browser executable (for browser-tool)",
       "  --gateway-port=N          Preferred Gateway port (default 10500)",
       "  --discovery-port=N        Discovery HTTP port (default 19999)",
+      "  --cloud-provider=NAME     Cloud LLM provider: 'anthropic' or empty/none",
+      "  --cloud-base-url=URL      Cloud provider base URL",
+      "  --cloud-model=ID          Cloud model ID",
+      "  (env) SIGMA_CLOUD_API_KEY API key for the cloud provider",
       "  --help                    Print this help and exit",
       "",
     ].join(os.EOL)

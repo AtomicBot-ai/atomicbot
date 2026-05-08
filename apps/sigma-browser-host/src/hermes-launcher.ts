@@ -55,6 +55,9 @@ async function main(): Promise<void> {
       "relay-port": { type: "string", default: String(DEFAULT_RELAY_PORT) },
       "discovery-port": { type: "string", default: String(DEFAULT_DISCOVERY_PORT) },
       "hermes-rpc-port": { type: "string", default: String(DEFAULT_HERMES_RPC_PORT) },
+      "cloud-provider": { type: "string" },
+      "cloud-base-url": { type: "string" },
+      "cloud-model": { type: "string" },
       help: { type: "boolean", default: false },
     },
     strict: true,
@@ -76,6 +79,18 @@ async function main(): Promise<void> {
     values["hermes-rpc-port"],
     DEFAULT_HERMES_RPC_PORT,
   );
+
+  // Cloud routing config. API key comes from env to avoid leaking it in `ps`.
+  const cloudProvider = values["cloud-provider"] ?? "";
+  const cloudBaseUrl = values["cloud-base-url"] ?? "";
+  const cloudModel = values["cloud-model"] ?? "";
+  const cloudApiKey = process.env.SIGMA_CLOUD_API_KEY ?? "";
+  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && cloudApiKey !== "";
+  if (isCloud) {
+    console.log(
+      `${LOG_PREFIX} cloud=${cloudProvider} model=${cloudModel} base=${cloudBaseUrl}`,
+    );
+  }
 
   fs.mkdirSync(stateDir, { recursive: true });
   const logsDir = path.join(stateDir, "logs");
@@ -217,6 +232,13 @@ async function main(): Promise<void> {
 
   // 5. Spawn Python Hermes.
   try {
+    const cloudExtraEnv: Record<string, string> = {};
+    if (isCloud) {
+      cloudExtraEnv.SIGMA_HERMES_PROVIDER = cloudProvider;
+      cloudExtraEnv.SIGMA_HERMES_BASE_URL = cloudBaseUrl;
+      cloudExtraEnv.SIGMA_HERMES_MODEL = cloudModel;
+      cloudExtraEnv.SIGMA_HERMES_API_KEY = cloudApiKey;
+    }
     child = spawnHermesChild({
       paths: { packDir, stateDir, configPath },
       config: {
@@ -225,6 +247,7 @@ async function main(): Promise<void> {
         modelId,
         cdpWsUrl: cdpUrl,
       },
+      extraEnv: cloudExtraEnv,
     });
     console.log(`${LOG_PREFIX} spawned hermes child pid=${child.process.pid}`);
   } catch (err) {
@@ -379,6 +402,10 @@ function printHelp(): void {
       "  --discovery-port=N     Discovery HTTP port (default 19998)",
       "  --hermes-rpc-port=N    Preferred JSON-RPC port for the Hermes child",
       "                         (default 10602; falls back to ephemeral if busy)",
+      "  --cloud-provider=NAME  Cloud LLM provider: 'anthropic' or empty/none",
+      "  --cloud-base-url=URL   Base URL for cloud provider (e.g. https://api.anthropic.com/v1/)",
+      "  --cloud-model=ID       Cloud model ID (e.g. claude-sonnet-4-5-20250929)",
+      "  (env) SIGMA_CLOUD_API_KEY  API key for the cloud provider",
       "  --help                 Print this help and exit",
       "",
     ].join(os.EOL),
