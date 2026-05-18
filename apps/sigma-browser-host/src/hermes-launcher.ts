@@ -117,6 +117,16 @@ async function main(): Promise<void> {
     );
   }
 
+  // 0. Reap any leaked previous-session launcher holding our discovery port.
+  //    If the previous Sigma exited via SIGKILL/crash before SIGTERM could
+  //    propagate, the old node-launcher (and its Python sigma_hermes_shim
+  //    child) get reparented to PID 1 and keep listening. We'd then fail to
+  //    bind :19998, the C++ supervisor would phantom-flip to "running", and
+  //    the extension would talk to the zombie. Self-heal by probing the
+  //    discovery URL: if a Hermes-shaped payload comes back with a foreign
+  //    pid, SIGKILL it before binding.
+  await reapOrphanLauncher(preferredDiscoveryPort);
+
   // 1. Discovery server up front so the extension can observe progress
   //    even while the pack download / spawn is in flight.
   const packInstalled = isHermesPackInstalled(packDir);
@@ -165,6 +175,32 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => void stop("SIGTERM"));
   process.on("SIGINT", () => void stop("SIGINT"));
   process.on("SIGHUP", () => void stop("SIGHUP"));
+
+  // Parent-death watcher. If Sigma crashes, gets killed with SIGKILL, or
+  // exits before its SIGTERM handler can fire, we get reparented to PID 1
+  // (init / launchd) and silently keep running — holding the loopback
+  // discovery (:19998) and relay (:19897) ports plus a Python child still
+  // wired to the now-dead browser's llama-server port. The next Sigma
+  // launch then can't bind discovery, the C++ supervisor sees a "phantom
+  // running" launcher, and the extension talks to our zombie instead of
+  // the freshly-spawned one — surfacing as "All connection attempts
+  // failed" on the user's first chat. Detect orphaning via ppid==1 and
+  // self-terminate so the next browser run gets clean ports.
+  const initialPpid = process.ppid;
+  if (initialPpid !== 1) {
+    const watcher = setInterval(() => {
+      if (stopping) {return;}
+      const ppid = process.ppid;
+      if (ppid === 1) {
+        console.warn(
+          `${LOG_PREFIX} parent process exited (ppid 1, was ${initialPpid}) — shutting down`,
+        );
+        clearInterval(watcher);
+        void stop("parent-died");
+      }
+    }, 2000);
+    watcher.unref();
+  }
 
   if (!packInstalled) {
     // Stay alive in "not_installed" state. The C++ supervisor / the
@@ -307,6 +343,62 @@ async function main(): Promise<void> {
     });
     console.warn(`${LOG_PREFIX} hermes exited code=${code}`);
   });
+}
+
+/**
+ * Detect and SIGKILL a leaked previous-session hermes-launcher that's still
+ * holding the discovery port. The probe is shaped to be safe in three ways:
+ *
+ *   - We only kill if /hermes-status responds AND the JSON has the launcher's
+ *     `pid` field — anything else (curl, an unrelated process bound to the
+ *     same port) gets left alone.
+ *   - We never kill our own pid (defensive against weird supervisor races
+ *     that re-launch us in the same process group).
+ *   - Total timeout is bounded (~1.5s) so a stuck probe can never wedge boot.
+ *
+ * Returning a free port is best-effort: if SIGKILL fails (permission denied,
+ * pid already gone, kernel slow to release the socket) the subsequent
+ * discovery bind retries 6×250ms anyway.
+ */
+async function reapOrphanLauncher(discoveryPort: number): Promise<void> {
+  const url = `http://127.0.0.1:${discoveryPort}/hermes-status`;
+  let payload: { pid?: unknown } | null = null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(750) });
+    if (!res.ok) {return;}
+    payload = (await res.json()) as { pid?: unknown };
+  } catch {
+    // No one listening (good) or non-Hermes process (we don't touch it).
+    return;
+  }
+  const orphanPid =
+    typeof payload?.pid === "number" && Number.isInteger(payload.pid) ? payload.pid : 0;
+  if (orphanPid <= 0 || orphanPid === process.pid) {return;}
+
+  console.warn(
+    `${LOG_PREFIX} found orphan launcher pid=${orphanPid} on :${discoveryPort}, killing`,
+  );
+  try {
+    process.kill(orphanPid, "SIGKILL");
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | null)?.code;
+    if (code !== "ESRCH") {
+      console.warn(`${LOG_PREFIX} kill orphan ${orphanPid} failed:`, err);
+    }
+    return;
+  }
+
+  // Wait up to ~750ms for the kernel to release the listening socket.
+  // SIGKILL is synchronous to the process but TCP sockets can linger briefly.
+  const deadline = Date.now() + 750;
+  while (Date.now() < deadline) {
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(150) });
+    } catch {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
 }
 
 async function waitForRpcReady(params: {

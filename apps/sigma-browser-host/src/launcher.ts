@@ -250,6 +250,27 @@ async function main(): Promise<void> {
   process.on("SIGINT", () => void stop("SIGINT"));
   process.on("SIGHUP", () => void stop("SIGHUP"));
 
+  // Parent-death watcher. Same rationale as in hermes-launcher.ts: if Sigma
+  // exits without delivering SIGTERM (crash, kill -9, debug-build abort) we
+  // get reparented to PID 1 and silently keep holding the loopback gateway/
+  // discovery ports — the next browser launch then collides with us and the
+  // extension talks to our zombie. ppid==1 means "parent died on POSIX".
+  const initialPpid = process.ppid;
+  if (initialPpid !== 1) {
+    const watcher = setInterval(() => {
+      if (stopping) {return;}
+      const ppid = process.ppid;
+      if (ppid === 1) {
+        console.warn(
+          `${LOG_PREFIX} parent process exited (ppid 1, was ${initialPpid}) — shutting down`,
+        );
+        clearInterval(watcher);
+        void stop("parent-died");
+      }
+    }, 2000);
+    watcher.unref();
+  }
+
   // 8. Launch Gateway.
   try {
     await start();
