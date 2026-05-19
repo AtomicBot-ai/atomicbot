@@ -100,7 +100,17 @@ export async function patchSigmaLocalProvider(params: {
   // (e.g. the user swaps gemma-3-1b-it for gemma-4-26B-A4B-it) without
   // requiring a manual patcher change. Falls back gracefully if the server is
   // not reachable (first-launch / port contention).
-  const live = await probeLlamaServer(llamaPort);
+  //
+  // In cloud mode we intentionally skip this probe. The Sigma Hermes manager
+  // (and the gateway manager) still pass `--llama-port=<N>` so a later flip
+  // back to local mode works without a relaunch, but in cloud mode that port
+  // is guaranteed-dead (llama-server is killed when Private Mode is OFF).
+  // The probe would always fail with `ECONNREFUSED` and dump a 7-line
+  // stacktrace on every cloud relaunch, which is pure noise — the sigma-local
+  // provider block below is non-destructive when `live` is null (it preserves
+  // whatever is already in the config or falls back to defaults), so the
+  // skip is behavior-equivalent in cloud mode.
+  const live = isCloud ? null : await probeLlamaServer(llamaPort);
 
   let cfg: Record<string, unknown>;
   try {
