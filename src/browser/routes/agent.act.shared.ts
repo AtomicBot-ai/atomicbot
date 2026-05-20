@@ -2,6 +2,10 @@ export const ACT_KINDS = [
   "batch",
   "click",
   "close",
+  // Resolve a pending JavaScript dialog (alert/confirm/prompt). The
+  // dialog supervisor in src/browser/cdp-dialog-supervisor.ts queues
+  // them; this kind drains an entry by id or oldest-first.
+  "dialog",
   "drag",
   "evaluate",
   "fill",

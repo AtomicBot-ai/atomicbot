@@ -65,15 +65,50 @@ export type SnapshotAriaNode = {
   depth: number;
 };
 
+/**
+ * JavaScript dialog (`alert/confirm/prompt/beforeunload`) currently
+ * blocking the page. Surfaced in snapshot output so the agent can decide
+ * whether to accept/dismiss before its next action — see
+ * `src/browser/cdp-dialog-supervisor.ts`.
+ */
+export type PendingDialogInfo = {
+  id: string;
+  type: string;
+  message: string;
+  defaultPrompt?: string;
+  url: string;
+  openedAt: string;
+};
+
+/**
+ * Frame in the page's frame tree. `frame_id` is a stable per-snapshot id
+ * derived from the DFS index of the frame (`f0` is the main frame). The
+ * agent can pass `frame_id` back into `act` to target a specific OOPIF.
+ * See `src/browser/frame-tree.ts` for details and limitations.
+ */
+export type FrameTreeNode = {
+  frame_id: string;
+  parent_frame_id: string | null;
+  url: string;
+  name: string;
+  is_main_frame: boolean;
+  depth: number;
+};
+
+type SnapshotPageExtras = {
+  pending_dialogs?: PendingDialogInfo[];
+  frame_tree?: FrameTreeNode[];
+};
+
 export type SnapshotResult =
-  | {
+  | ({
       ok: true;
       format: "aria";
       targetId: string;
       url: string;
       nodes: SnapshotAriaNode[];
-    }
-  | {
+    } & SnapshotPageExtras)
+  | ({
       ok: true;
       format: "ai";
       targetId: string;
@@ -92,7 +127,7 @@ export type SnapshotResult =
       labelsSkipped?: number;
       imagePath?: string;
       imageType?: "png" | "jpeg";
-    };
+    } & SnapshotPageExtras);
 
 function buildProfileQuery(profile?: string): string {
   return profile ? `?profile=${encodeURIComponent(profile)}` : "";

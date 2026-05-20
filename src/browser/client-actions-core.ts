@@ -18,6 +18,11 @@ export type BrowserActRequest =
       ref?: string;
       selector?: string;
       targetId?: string;
+      // Optional stable frame id from a recent snapshot's frame_tree —
+      // when set, the locator is scoped to that frame so the action
+      // hits an OOPIF instead of the main frame. See
+      // src/browser/frame-tree.ts for limitations.
+      frame_id?: string;
       doubleClick?: boolean;
       button?: string;
       modifiers?: string[];
@@ -30,6 +35,7 @@ export type BrowserActRequest =
       selector?: string;
       text: string;
       targetId?: string;
+      frame_id?: string;
       submit?: boolean;
       slowly?: boolean;
       timeoutMs?: number;
@@ -40,6 +46,7 @@ export type BrowserActRequest =
       ref?: string;
       selector?: string;
       targetId?: string;
+      frame_id?: string;
       timeoutMs?: number;
     }
   | {
@@ -47,6 +54,7 @@ export type BrowserActRequest =
       ref?: string;
       selector?: string;
       targetId?: string;
+      frame_id?: string;
       timeoutMs?: number;
     }
   | {
@@ -56,6 +64,7 @@ export type BrowserActRequest =
       endRef?: string;
       endSelector?: string;
       targetId?: string;
+      frame_id?: string;
       timeoutMs?: number;
     }
   | {
@@ -64,6 +73,7 @@ export type BrowserActRequest =
       selector?: string;
       values: string[];
       targetId?: string;
+      frame_id?: string;
       timeoutMs?: number;
     }
   | {
@@ -87,6 +97,17 @@ export type BrowserActRequest =
     }
   | { kind: "evaluate"; fn: string; ref?: string; targetId?: string; timeoutMs?: number }
   | { kind: "close"; targetId?: string }
+  // Resolve a pending JavaScript dialog (alert/confirm/prompt) by id,
+  // or the oldest pending one when `dialogId` is omitted. The pending
+  // queue is populated by the persistent dialog supervisor and surfaced
+  // in snapshot output as `pending_dialogs`.
+  | {
+      kind: "dialog";
+      dialogId?: string;
+      accept: boolean;
+      promptText?: string;
+      targetId?: string;
+    }
   | {
       kind: "batch";
       actions: BrowserActRequest[];

@@ -11,12 +11,15 @@ import {
   buildAiSnapshotFromChromeMcpSnapshot,
   flattenChromeMcpSnapshotToAriaNodes,
 } from "../chrome-mcp.snapshot.js";
+import { getPendingDialogs } from "../cdp-dialog-supervisor.js";
+import { getFrameTree } from "../frame-tree.js";
 import {
   assertBrowserNavigationAllowed,
   assertBrowserNavigationResultAllowed,
 } from "../navigation-guard.js";
 import { withBrowserNavigationPolicy } from "../navigation-guard.js";
 import { getBrowserProfileCapabilities } from "../profile-capabilities.js";
+import { getPageForTargetId } from "../pw-session.js";
 import {
   DEFAULT_BROWSER_SCREENSHOT_MAX_BYTES,
   DEFAULT_BROWSER_SCREENSHOT_MAX_SIDE,
@@ -41,6 +44,32 @@ import type { BrowserResponse, BrowserRouteRegistrar } from "./types.js";
 import { jsonError, toBoolean, toStringOrEmpty } from "./utils.js";
 
 const CHROME_MCP_OVERLAY_ATTR = "data-openclaw-mcp-overlay";
+
+/**
+ * Best-effort collection of cross-cutting page extras to merge into the
+ * snapshot response — `pending_dialogs` (so the agent can see any
+ * `alert/confirm/prompt` that's currently blocking the page) and
+ * `frame_tree` (so the agent can target specific frames in subsequent
+ * acts via `frame_id`).
+ *
+ * Both fields are best-effort: failures are swallowed and the snapshot
+ * still returns successfully. The chrome-mcp profile path doesn't have
+ * a Playwright `Page`, so we return empty arrays for it (dialogs there
+ * are handled via in-page JS hooks; OOPIF targeting via chrome-mcp is
+ * out of scope).
+ */
+async function collectPageExtras(cdpUrl: string, targetId: string) {
+  const empty = { pending_dialogs: [], frame_tree: [] };
+  try {
+    const page = await getPageForTargetId({ cdpUrl, targetId });
+    return {
+      pending_dialogs: getPendingDialogs(page),
+      frame_tree: getFrameTree(page),
+    };
+  } catch {
+    return empty;
+  }
+}
 
 async function clearChromeMcpOverlay(params: {
   profileName: string;
@@ -414,6 +443,11 @@ export function registerBrowserAgentSnapshotRoutes(
             format: "aria",
             targetId: tab.targetId,
             url: tab.url,
+            // chrome-mcp profiles don't expose a Playwright Page, so we
+            // can't observe dialogs / frames the same way — return empty
+            // arrays for shape consistency with the Playwright branches.
+            pending_dialogs: [],
+            frame_tree: [],
             nodes: flattenChromeMcpSnapshotToAriaNodes(snapshot, plan.limit),
           });
         }
@@ -460,6 +494,8 @@ export function registerBrowserAgentSnapshotRoutes(
               labelsSkipped: labelResult.skipped,
               imagePath: path.resolve(saved.path),
               imageType: normalized.contentType?.includes("jpeg") ? "jpeg" : "png",
+              pending_dialogs: [],
+              frame_tree: [],
               ...built,
             });
           } finally {
@@ -474,6 +510,8 @@ export function registerBrowserAgentSnapshotRoutes(
           format: "ai",
           targetId: tab.targetId,
           url: tab.url,
+          pending_dialogs: [],
+          frame_tree: [],
           ...built,
         });
       }
@@ -494,6 +532,14 @@ export function registerBrowserAgentSnapshotRoutes(
             maxDepth: plan.depth ?? undefined,
           },
         };
+
+        // Collect cross-cutting page extras in parallel with the snapshot
+        // (cheap CDP roundtrip via Playwright Page) — see
+        // collectPageExtras for rationale.
+        const extrasPromise = collectPageExtras(
+          profileCtx.profile.cdpUrl,
+          tab.targetId,
+        );
 
         const snap = plan.wantsRoleSnapshot
           ? await pw.snapshotRoleViaPlaywright(roleSnapshotArgs)
@@ -531,6 +577,7 @@ export function registerBrowserAgentSnapshotRoutes(
             DEFAULT_BROWSER_SCREENSHOT_MAX_BYTES,
           );
           const imageType = normalized.contentType?.includes("jpeg") ? "jpeg" : "png";
+          const extras = await extrasPromise;
           return res.json({
             ok: true,
             format: plan.format,
@@ -541,15 +588,18 @@ export function registerBrowserAgentSnapshotRoutes(
             labelsSkipped: labeled.skipped,
             imagePath: path.resolve(saved.path),
             imageType,
+            ...extras,
             ...snap,
           });
         }
 
+        const extras = await extrasPromise;
         return res.json({
           ok: true,
           format: plan.format,
           targetId: tab.targetId,
           url: tab.url,
+          ...extras,
           ...snap,
         });
       }
@@ -578,11 +628,22 @@ export function registerBrowserAgentSnapshotRoutes(
       if (!resolved) {
         return;
       }
+      // Page extras (pending_dialogs, frame_tree) are only meaningful for
+      // Playwright-driven snapshots. The aria branch may use the raw CDP
+      // helper (`snapshotAria`) which doesn't go through Playwright at
+      // all — collectPageExtras still works there because it connects via
+      // the same cached Playwright `Browser`. For chrome-mcp profiles
+      // we deliberately return empty arrays (handled above).
+      const extras = await collectPageExtras(
+        profileCtx.profile.cdpUrl,
+        tab.targetId,
+      );
       return res.json({
         ok: true,
         format: plan.format,
         targetId: tab.targetId,
         url: tab.url,
+        ...extras,
         ...resolved,
       });
     } catch (err) {

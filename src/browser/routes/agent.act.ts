@@ -9,9 +9,11 @@ import {
   pressChromeMcpKey,
   resizeChromeMcpPage,
 } from "../chrome-mcp.js";
+import { handlePendingDialog } from "../cdp-dialog-supervisor.js";
 import type { BrowserActRequest, BrowserFormField } from "../client-actions-core.js";
 import { normalizeBrowserFormField } from "../form-fields.js";
 import { getBrowserProfileCapabilities } from "../profile-capabilities.js";
+import { getPageForTargetId } from "../pw-session.js";
 import type { BrowserRouteContext } from "../server-context.js";
 import { matchBrowserUrlPattern } from "../url-pattern.js";
 import { registerBrowserAgentActDownloadRoutes } from "./agent.act.download.js";
@@ -218,11 +220,13 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
       );
       const timeoutMs = toNumber(raw.timeoutMs);
       const targetId = toStringOrEmpty(raw.targetId) || undefined;
+      const frameId = toStringOrEmpty(raw.frame_id) || undefined;
       return {
         kind,
         ...(ref ? { ref } : {}),
         ...(selector ? { selector } : {}),
         ...(targetId ? { targetId } : {}),
+        ...(frameId ? { frame_id: frameId } : {}),
         ...(doubleClick !== undefined ? { doubleClick } : {}),
         ...(button ? { button } : {}),
         ...(parsedModifiers.modifiers ? { modifiers: parsedModifiers.modifiers } : {}),
@@ -241,6 +245,7 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
         throw new Error("type requires text");
       }
       const targetId = toStringOrEmpty(raw.targetId) || undefined;
+      const frameId = toStringOrEmpty(raw.frame_id) || undefined;
       const submit = toBoolean(raw.submit);
       const slowly = toBoolean(raw.slowly);
       const timeoutMs = toNumber(raw.timeoutMs);
@@ -250,6 +255,7 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
         ...(selector ? { selector } : {}),
         text,
         ...(targetId ? { targetId } : {}),
+        ...(frameId ? { frame_id: frameId } : {}),
         ...(submit !== undefined ? { submit } : {}),
         ...(slowly !== undefined ? { slowly } : {}),
         ...(timeoutMs !== undefined ? { timeoutMs } : {}),
@@ -277,12 +283,14 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
         throw new Error(`${kind} requires ref or selector`);
       }
       const targetId = toStringOrEmpty(raw.targetId) || undefined;
+      const frameId = toStringOrEmpty(raw.frame_id) || undefined;
       const timeoutMs = toNumber(raw.timeoutMs);
       return {
         kind,
         ...(ref ? { ref } : {}),
         ...(selector ? { selector } : {}),
         ...(targetId ? { targetId } : {}),
+        ...(frameId ? { frame_id: frameId } : {}),
         ...(timeoutMs !== undefined ? { timeoutMs } : {}),
       };
     }
@@ -425,6 +433,25 @@ function normalizeBatchAction(value: unknown): BrowserActRequest {
         ...(targetId ? { targetId } : {}),
       };
     }
+    case "dialog": {
+      // dialog drains the pending-dialog queue; no ref/selector. We
+      // accept it inside batch so the agent can chain "click submit;
+      // accept resulting confirm" in one round-trip.
+      const accept = toBoolean(raw.accept);
+      if (accept === undefined) {
+        throw new Error("dialog requires accept (true|false)");
+      }
+      const dialogId = toStringOrEmpty(raw.dialogId) || undefined;
+      const promptText = toStringOrEmpty(raw.promptText) || undefined;
+      const targetId = toStringOrEmpty(raw.targetId) || undefined;
+      return {
+        kind,
+        accept,
+        ...(dialogId ? { dialogId } : {}),
+        ...(promptText ? { promptText } : {}),
+        ...(targetId ? { targetId } : {}),
+      };
+    }
     case "batch": {
       const actions = Array.isArray(raw.actions) ? raw.actions.map(normalizeBatchAction) : [];
       if (!actions.length) {
@@ -542,6 +569,10 @@ export function registerBrowserAgentActRoutes(
             if (selector) {
               clickRequest.selector = selector;
             }
+            const frameId = toStringOrEmpty(body.frame_id) || undefined;
+            if (frameId) {
+              clickRequest.frameId = frameId;
+            }
             if (button) {
               clickRequest.button = button;
             }
@@ -616,6 +647,10 @@ export function registerBrowserAgentActRoutes(
             }
             if (selector) {
               typeRequest.selector = selector;
+            }
+            const frameId = toStringOrEmpty(body.frame_id) || undefined;
+            if (frameId) {
+              typeRequest.frameId = frameId;
             }
             if (timeoutMs) {
               typeRequest.timeoutMs = timeoutMs;
@@ -1048,6 +1083,44 @@ export function registerBrowserAgentActRoutes(
             }
             await pw.closePageViaPlaywright({ cdpUrl, targetId: tab.targetId });
             return res.json({ ok: true, targetId: tab.targetId });
+          }
+          case "dialog": {
+            // Resolve a pending alert/confirm/prompt queued by the dialog
+            // supervisor. chrome-mcp profiles don't have a Playwright Page,
+            // so the supervisor isn't installed there — fall back to the
+            // legacy arm/wait hook semantics by returning a clear error
+            // that points to /hooks/dialog. The agent's `browserArmDialog`
+            // tool action stays the back-compat path for that profile.
+            if (isExistingSession) {
+              return jsonError(
+                res,
+                501,
+                "act:dialog is not supported on existing-session profiles. " +
+                  "Use the browser_dialog tool action (arm/wait semantics) instead.",
+              );
+            }
+            const accept = toBoolean(body.accept);
+            if (accept === undefined) {
+              return jsonError(res, 400, "accept (true|false) is required");
+            }
+            const dialogId = toStringOrEmpty(body.dialogId) || undefined;
+            const promptText = toStringOrEmpty(body.promptText) || undefined;
+            const page = await getPageForTargetId({ cdpUrl, targetId: tab.targetId });
+            const result = await handlePendingDialog({
+              page,
+              ...(dialogId ? { dialogId } : {}),
+              accept,
+              ...(promptText !== undefined ? { promptText } : {}),
+            });
+            return res.json({
+              ok: true,
+              targetId: tab.targetId,
+              result: {
+                handled: result.handled,
+                ...(result.dialogId ? { dialogId: result.dialogId } : {}),
+                ...(result.reason ? { reason: result.reason } : {}),
+              },
+            });
           }
           case "batch": {
             if (isExistingSession) {

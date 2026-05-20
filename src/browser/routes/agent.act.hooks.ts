@@ -1,5 +1,7 @@
 import { evaluateChromeMcpScript, uploadChromeMcpFile } from "../chrome-mcp.js";
+import { getPendingDialogs, handlePendingDialog } from "../cdp-dialog-supervisor.js";
 import { getBrowserProfileCapabilities } from "../profile-capabilities.js";
+import { getPageForTargetId } from "../pw-session.js";
 import type { BrowserRouteContext } from "../server-context.js";
 import {
   readBody,
@@ -180,6 +182,31 @@ export function registerBrowserAgentActHookRoutes(
         const pw = await requirePwAi(res, "dialog hook");
         if (!pw) {
           return;
+        }
+        // Try the pending-dialog path first: if the page already raised
+        // an alert/confirm/prompt and the dialog supervisor has it
+        // queued, resolve it inline so the caller doesn't have to know
+        // whether the dialog appeared before or after the arm call.
+        try {
+          const page = await getPageForTargetId({ cdpUrl, targetId: tab.targetId });
+          if (getPendingDialogs(page).length > 0) {
+            const handled = await handlePendingDialog({
+              page,
+              accept,
+              ...(promptText !== undefined ? { promptText } : {}),
+            });
+            if (handled.handled) {
+              return res.json({
+                ok: true,
+                handled: true,
+                ...(handled.dialogId ? { dialogId: handled.dialogId } : {}),
+              });
+            }
+          }
+        } catch {
+          // Best-effort — fall through to the legacy arm/wait path if
+          // anything goes wrong on the supervisor side. We don't want
+          // to regress existing callers that rely on arm/wait.
         }
         await pw.armDialogViaPlaywright({
           cdpUrl,

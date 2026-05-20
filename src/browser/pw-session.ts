@@ -9,6 +9,7 @@ import type {
 import { chromium } from "playwright-core";
 import { formatErrorMessage } from "../infra/errors.js";
 import type { SsrFPolicy } from "../infra/net/ssrf.js";
+import { installDialogSupervisor } from "./cdp-dialog-supervisor.js";
 import { withNoProxyForCdpUrl } from "./cdp-proxy-bypass.js";
 import {
   appendCdpPath,
@@ -323,6 +324,11 @@ export function ensurePageState(page: Page): PageState {
       pageStates.delete(page);
       observedPages.delete(page);
     });
+    // Passively queue any `alert()` / `confirm()` / `prompt()` dialogs so
+    // the snapshot route can surface them. Without this listener Playwright
+    // auto-dismisses dialogs and the agent never sees them. The supervisor
+    // module is idempotent and silently no-ops on mocks (see its docstring).
+    installDialogSupervisor(page);
   }
 
   return state;

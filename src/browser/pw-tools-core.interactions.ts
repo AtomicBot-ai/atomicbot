@@ -1,5 +1,7 @@
+import type { Page } from "playwright-core";
 import type { BrowserActRequest, BrowserFormField } from "./client-actions-core.js";
 import { DEFAULT_FILL_FIELD_TYPE } from "./form-fields.js";
+import { findFrameByStableId } from "./frame-tree.js";
 import { DEFAULT_UPLOAD_DIR, resolveStrictExistingPathsWithinRoot } from "./paths.js";
 import {
   ensurePageState,
@@ -45,6 +47,31 @@ async function getRestoredPageForTarget(opts: TargetOpts) {
   return page;
 }
 
+/**
+ * Resolve a selector against a specific frame (when `frameId` was passed
+ * via `frame_id` in the act request) or the whole page. Role-based refs
+ * (`e1`/`ax3`) are bound to the snapshot's frame already, so this helper
+ * is only relevant for selector-targeted acts; callers using `ref` keep
+ * going through `refLocator`.
+ *
+ * Throws when the stable frame id can't be resolved (frame detached or
+ * shifted since the snapshot). The thrown message tells the agent to
+ * re-snapshot — same UX as the "Unknown ref" error from `refLocator`.
+ */
+function selectorLocatorInFrame(page: Page, selector: string, frameId?: string) {
+  if (!frameId) {
+    return page.locator(selector);
+  }
+  const frame = findFrameByStableId(page, frameId);
+  if (!frame) {
+    throw new Error(
+      `Unknown frame_id "${frameId}". Run a new snapshot — the frame_tree may have ` +
+        `changed (iframe attached/detached or re-mounted).`,
+    );
+  }
+  return frame.locator(selector);
+}
+
 function resolveInteractionTimeoutMs(timeoutMs?: number): number {
   return Math.max(500, Math.min(60_000, Math.floor(timeoutMs ?? 8000)));
 }
@@ -84,6 +111,10 @@ export async function clickViaPlaywright(opts: {
   targetId?: string;
   ref?: string;
   selector?: string;
+  // Stable frame id from a recent snapshot's frame_tree. Only honored
+  // for selector-based clicks; ref-based clicks always go through
+  // refLocator which already scopes via the snapshot's frame selector.
+  frameId?: string;
   doubleClick?: boolean;
   button?: "left" | "right" | "middle";
   modifiers?: Array<"Alt" | "Control" | "ControlOrMeta" | "Meta" | "Shift">;
@@ -97,7 +128,7 @@ export async function clickViaPlaywright(opts: {
     const label = resolved.ref ?? resolved.selector!;
     const locator = resolved.ref
       ? refLocator(page, requireRef(resolved.ref))
-      : page.locator(resolved.selector!);
+      : selectorLocatorInFrame(page, resolved.selector!, opts.frameId);
     const timeout = resolveInteractionTimeoutMs(opts.timeoutMs);
     try {
       const delayMs = resolveBoundedDelayMs(opts.delayMs, "click delayMs", MAX_CLICK_DELAY_MS);
@@ -144,6 +175,7 @@ export async function hoverViaPlaywright(opts: {
   targetId?: string;
   ref?: string;
   selector?: string;
+  frameId?: string;
   timeoutMs?: number;
 }): Promise<void> {
   const resolved = requireRefOrSelector(opts.ref, opts.selector);
@@ -151,7 +183,7 @@ export async function hoverViaPlaywright(opts: {
   const label = resolved.ref ?? resolved.selector!;
   const locator = resolved.ref
     ? refLocator(page, requireRef(resolved.ref))
-    : page.locator(resolved.selector!);
+    : selectorLocatorInFrame(page, resolved.selector!, opts.frameId);
   try {
     await locator.hover({
       timeout: resolveInteractionTimeoutMs(opts.timeoutMs),
@@ -238,6 +270,7 @@ export async function typeViaPlaywright(opts: {
   targetId?: string;
   ref?: string;
   selector?: string;
+  frameId?: string;
   text: string;
   submit?: boolean;
   slowly?: boolean;
@@ -251,7 +284,7 @@ export async function typeViaPlaywright(opts: {
     const label = resolved.ref ?? resolved.selector!;
     const locator = resolved.ref
       ? refLocator(page, requireRef(resolved.ref))
-      : page.locator(resolved.selector!);
+      : selectorLocatorInFrame(page, resolved.selector!, opts.frameId);
     const timeout = resolveInteractionTimeoutMs(opts.timeoutMs);
     try {
       if (opts.slowly) {
@@ -466,6 +499,7 @@ export async function scrollIntoViewViaPlaywright(opts: {
   targetId?: string;
   ref?: string;
   selector?: string;
+  frameId?: string;
   timeoutMs?: number;
 }): Promise<void> {
   const resolved = requireRefOrSelector(opts.ref, opts.selector);
@@ -475,7 +509,7 @@ export async function scrollIntoViewViaPlaywright(opts: {
   const label = resolved.ref ?? resolved.selector!;
   const locator = resolved.ref
     ? refLocator(page, requireRef(resolved.ref))
-    : page.locator(resolved.selector!);
+    : selectorLocatorInFrame(page, resolved.selector!, opts.frameId);
   try {
     await locator.scrollIntoViewIfNeeded({ timeout });
   } catch (err) {

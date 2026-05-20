@@ -13,6 +13,9 @@ const BROWSER_ACT_KINDS = [
   "wait",
   "evaluate",
   "close",
+  // Resolve a pending JavaScript dialog (alert/confirm/prompt). See
+  // src/browser/cdp-dialog-supervisor.ts.
+  "dialog",
 ] as const;
 
 const BROWSER_TOOL_ACTIONS = [
@@ -50,6 +53,9 @@ const BrowserActSchema = Type.Object({
   // Common fields
   targetId: Type.Optional(Type.String()),
   ref: Type.Optional(Type.String()),
+  // Optional frame_id from a recent snapshot's frame_tree. Scopes
+  // selector-based interactions to a specific OOPIF.
+  frame_id: Type.Optional(Type.String()),
   // click
   doubleClick: Type.Optional(Type.Boolean()),
   button: Type.Optional(Type.String()),
@@ -80,6 +86,10 @@ const BrowserActSchema = Type.Object({
   timeoutMs: Type.Optional(Type.Number()),
   // evaluate
   fn: Type.Optional(Type.String()),
+  // dialog
+  dialogId: Type.Optional(Type.String()),
+  accept: Type.Optional(Type.Boolean()),
+  promptText: Type.Optional(Type.String()),
 });
 
 // IMPORTANT: OpenAI function tool schemas must have a top-level `type: "object"`.
@@ -116,6 +126,8 @@ export const BrowserToolSchema = Type.Object({
   promptText: Type.Optional(Type.String()),
   // Legacy flattened act params (preferred: request={...})
   kind: Type.Optional(stringEnum(BROWSER_ACT_KINDS)),
+  frame_id: Type.Optional(Type.String()),
+  dialogId: Type.Optional(Type.String()),
   doubleClick: Type.Optional(Type.Boolean()),
   button: Type.Optional(Type.String()),
   modifiers: Type.Optional(Type.Array(Type.String())),
