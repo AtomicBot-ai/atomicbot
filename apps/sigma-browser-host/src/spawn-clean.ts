@@ -83,8 +83,35 @@ export function spawnGatewayClean(params: {
       : {}),
   };
 
+  // IMPORTANT — do NOT use `openclawDir` as cwd here.
+  //
+  // In release builds `openclawDir` resolves to
+  //   Sigma.app/Contents/Frameworks/Sigma Framework.framework/Versions/<ver>/
+  //     Resources/openclaw
+  // (passed as `--openclaw-dir` from the C++ supervisor). Sparkle auto-updates
+  // replace the entire .app bundle while the launcher is still running, so
+  // that path either:
+  //   * disappears before this `spawn` is even reached (synchronous ENOENT
+  //     during `posix_spawn` chdir), or
+  //   * disappears mid-session, after which the next `process.cwd()` inside
+  //     the OpenClaw agent (libuv `uv_cwd`) dies with
+  //       "ENOENT: no such file or directory, uv_cwd"
+  //     which OpenClaw surfaces to the user as
+  //       "⚠️ Agent failed before reply: ENOENT: ... uv_cwd"
+  //     (agent-runner-execution.ts).
+  //
+  // The C++ supervisor already pins the launcher's own cwd to stateDir for
+  // the same reason (sigma_gateway_manager.cc / sigma_hermes_manager.cc) —
+  // we mirror that here for the gateway child. stateDir is per-profile, we
+  // own + create it (ensureDir above), and it survives any browser
+  // self-update or `git checkout` of sigma-eclipse-agent in dev.
+  //
+  // `cwd` carries no semantic meaning for the gateway: every path it needs
+  // is already supplied explicitly via env (OPENCLAW_STATE_DIR,
+  // OPENCLAW_CONFIG_PATH, ...) or absolute CLI args, and `script` above is
+  // resolved to an absolute path before this call.
   const child = spawn(nodeBin, args, {
-    cwd: openclawDir,
+    cwd: stateDir,
     env,
     stdio: ["ignore", "pipe", "pipe"],
     detached: getPlatform().gatewaySpawnOptions().detached,
