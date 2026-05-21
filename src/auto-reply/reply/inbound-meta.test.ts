@@ -206,6 +206,41 @@ describe("buildInboundUserContextPrefix", () => {
     expect(senderInfo["id"]).toBe("+15551234567");
   });
 
+  it("suppresses sender metadata block for internal webchat surface", () => {
+    // For the internal webchat surface (Sigma side panel / home page) the
+    // sender is always the local UI process, so emitting the JSON block
+    // labeled "Sender (untrusted metadata)" right next to the user query
+    // both wastes tokens and — worse — confuses small models (Gemma 4B
+    // sometimes parses an ambiguous query like "open wiki" as a
+    // continuation of the sender's `label`/`name`/`username` fields and
+    // refuses to route it to a tool).
+    const text = buildInboundUserContextPrefix({
+      ChatType: "direct",
+      Surface: "webchat",
+      Provider: "webchat",
+      SenderName: "Sigma Eclipse",
+      SenderUsername: "Sigma Eclipse",
+      SenderId: "openclaw-control-ui",
+    } as TemplateContext);
+
+    expect(text).not.toContain("Sender (untrusted metadata)");
+    expect(text).toBe("");
+  });
+
+  it("suppresses sender metadata block when only Provider is webchat", () => {
+    // Surface can be undefined when the channel routes through a generic
+    // provider; the gate must also fire on Provider=webchat so we don't
+    // re-introduce the same noise on alternative entry paths.
+    const text = buildInboundUserContextPrefix({
+      ChatType: "direct",
+      Provider: "webchat",
+      SenderName: "Sigma Eclipse",
+      SenderId: "openclaw-control-ui",
+    } as TemplateContext);
+
+    expect(text).not.toContain("Sender (untrusted metadata)");
+  });
+
   it("includes formatted timestamp in conversation info when provided", () => {
     const text = buildInboundUserContextPrefix({
       ChatType: "group",

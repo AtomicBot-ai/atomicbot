@@ -149,7 +149,19 @@ export function buildInboundUserContextPrefix(ctx: TemplateContext): string {
     tag: safeTrim(ctx.SenderTag),
     e164: safeTrim(ctx.SenderE164),
   };
-  if (senderInfo?.label) {
+  // Sender metadata is only meaningful for external chat surfaces (Telegram,
+  // Slack, WhatsApp, Email, …) where messages arrive from a real human the
+  // agent needs to disambiguate. For the internal webchat surface (Sigma
+  // side panel / home page) the sender is always the local UI process, so
+  // emitting a JSON block labeled "Sender (untrusted metadata)" right next
+  // to the user query is pure noise — and worse: small/local models
+  // (notably Gemma 4B) sometimes parse an ambiguous user query as a
+  // continuation of the sender's `label`/`name`/`username` fields and
+  // refuse to route it to a tool. Suppress for webchat so the prompt stays
+  // focused on the actual instruction.
+  const isInternalWebchat =
+    safeTrim(ctx.Surface) === "webchat" || safeTrim(ctx.Provider) === "webchat";
+  if (senderInfo?.label && !isInternalWebchat) {
     blocks.push(
       ["Sender (untrusted metadata):", "```json", JSON.stringify(senderInfo, null, 2), "```"].join(
         "\n",
