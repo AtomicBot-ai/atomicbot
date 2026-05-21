@@ -96,12 +96,50 @@ export interface HermesSpawnConfig {
   cdpWsUrl?: string;
 }
 
+function getHermesPythonCandidates(packDir: string): string[] {
+  const binDir = path.join(packDir, "python", "bin");
+  return process.platform === "win32"
+    ? [
+        path.join(binDir, "python.exe"),
+        path.join(binDir, "python3.11.exe"),
+        path.join(binDir, "python3.exe"),
+        path.join(packDir, "python", "python.exe"),
+        path.join(binDir, "python"),
+      ]
+    : [path.join(binDir, "python")];
+}
+
+function getHermesPythonBin(packDir: string): string {
+  const candidates = getHermesPythonCandidates(packDir);
+  for (const candidate of candidates) {
+    try {
+      if (fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    } catch {
+      // Try the next platform-specific executable name.
+    }
+  }
+  return candidates[0];
+}
+
 export function isHermesPackInstalled(packDir: string): boolean {
   try {
     const manifestPath = path.join(packDir, "manifest.json");
-    const pythonBin = path.join(packDir, "python", "bin", "python");
-    return fs.statSync(manifestPath).isFile() && fs.statSync(pythonBin).isFile();
-  } catch {
+    const pythonBin = getHermesPythonBin(packDir);
+    const manifestOk = fs.statSync(manifestPath).isFile();
+    const pythonOk = fs.statSync(pythonBin).isFile();
+    const installed = manifestOk && pythonOk;
+    console.log(
+      `[hermes-spawn] pack check installed=${installed} platform=${process.platform} ` +
+        `manifest=${manifestPath} manifestOk=${manifestOk} python=${pythonBin} pythonOk=${pythonOk}`,
+    );
+    return installed;
+  } catch (err) {
+    console.warn(
+      `[hermes-spawn] pack check failed platform=${process.platform} packDir=${packDir} ` +
+        `candidates=${getHermesPythonCandidates(packDir).join("; ")} error=${err}`,
+    );
     return false;
   }
 }
@@ -125,6 +163,17 @@ export function readHermesPackManifest(packDir: string): {
   }
 }
 
+function prependPath(env: Record<string, string>, entries: string[]): void {
+  const key = Object.keys(env).find((k) => k.toLowerCase() === "path") ?? "PATH";
+  const current = env[key] ?? "";
+  env[key] = [...entries, current].filter(Boolean).join(path.delimiter);
+}
+
+function quoteCmdArg(arg: string): string {
+  // Windows cmd.exe quoting: wrap in quotes and escape embedded quotes.
+  return `"${arg.replace(/"/g, '\\"')}"`;
+}
+
 export function spawnHermesChild(params: {
   paths: HermesPackPaths;
   /** Ports / model id consumed by the bundled sigma_hermes_shim server. */
@@ -135,7 +184,7 @@ export function spawnHermesChild(params: {
   logFile?: string;
 }): HermesChildHandles {
   const { paths, config, extraEnv } = params;
-  const pythonBin = path.join(paths.packDir, "python", "bin", "python");
+  const pythonBin = getHermesPythonBin(paths.packDir);
   if (!fs.existsSync(pythonBin)) {
     throw new Error(`hermes pack not installed: missing ${pythonBin}`);
   }
@@ -143,7 +192,7 @@ export function spawnHermesChild(params: {
   const logsDir = path.join(paths.stateDir, "logs");
   fs.mkdirSync(logsDir, { recursive: true });
   const logFile = params.logFile ?? path.join(logsDir, "hermes.log");
-  const logStream = fs.openSync(logFile, "a");
+  const logFd = fs.openSync(logFile, "a");
 
   const env: Record<string, string> = {
     ...process.env,
@@ -163,6 +212,14 @@ export function spawnHermesChild(params: {
     // log file and cleanliness > styling for postmortems.
     NO_COLOR: "1",
   };
+  if (process.platform === "win32") {
+    const pythonBinDir = path.dirname(pythonBin);
+    const pythonRoot = path.join(paths.packDir, "python");
+    // python-build-standalone on Windows may keep DLLs under python/ while
+    // python.exe lives under python/bin/. Put both ahead of the inherited PATH
+    // so CreateProcess can resolve python311.dll and bundled extension DLLs.
+    prependPath(env, [pythonBinDir, pythonRoot]);
+  }
   if (config.modelId && config.modelId.trim().length > 0) {
     env.SIGMA_LLAMA_MODEL = config.modelId.trim();
   }
@@ -209,12 +266,38 @@ export function spawnHermesChild(params: {
   console.log(`[hermes-spawn] HERMES_CONFIG=${env.HERMES_CONFIG}`);
   console.log(`[hermes-spawn] cwd=${paths.packDir}`);
   console.log(`[hermes-spawn] child stdout/stderr → ${logFile}`);
-  const child = spawn(pythonBin, args, {
-    cwd: paths.packDir,
-    env,
-    stdio: ["ignore", logStream, logStream],
-    detached: false,
-  });
+  if (process.platform === "win32") {
+    console.log(
+      `[hermes-spawn] PATH prefix=${path.dirname(pythonBin)};${path.join(paths.packDir, "python")}`,
+    );
+  }
+
+  let child: ChildProcess;
+  try {
+    child = spawn(pythonBin, args, {
+      cwd: paths.packDir,
+      env,
+      stdio: ["ignore", logFd, logFd],
+      detached: false,
+      windowsHide: true,
+    });
+  } catch (err) {
+    if (process.platform !== "win32") {
+      throw err;
+    }
+    const comspec = process.env.ComSpec || "cmd.exe";
+    const cmdLine = [quoteCmdArg(pythonBin), ...args.map(quoteCmdArg)].join(" ");
+    console.warn(
+      `[hermes-spawn] direct python spawn failed (${err}); retrying via ${comspec} /c ${cmdLine}`,
+    );
+    child = spawn(comspec, ["/d", "/s", "/c", cmdLine], {
+      cwd: paths.packDir,
+      env,
+      stdio: ["ignore", logFd, logFd],
+      detached: false,
+      windowsHide: true,
+    });
+  }
   child.once("error", (err) => {
     console.warn(`[hermes-spawn] failed to spawn python: ${err}`);
   });
@@ -234,6 +317,8 @@ export function spawnHermesChild(params: {
     const reason =
       signal === "SIGKILL"
         ? " (SIGKILL — likely macOS Gatekeeper quarantine; check `xattr -l <python>` and code signature)"
+        : process.platform === "win32" && code === 0xc0000135
+          ? " (0xC0000135 — Windows loader could not find a required DLL; check python311.dll / vcruntime*.dll and PATH)"
         : "";
     console.log(
       `[hermes-spawn] python exited code=${code} signal=${signal}${reason}`,
@@ -255,7 +340,7 @@ export function spawnHermesChild(params: {
 
   void exited.finally(() => {
     try {
-      fs.closeSync(logStream);
+      fs.closeSync(logFd);
     } catch {
       // ignore — log file already closed
     }
