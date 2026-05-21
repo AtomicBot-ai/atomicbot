@@ -22,6 +22,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
 
+import { writeCwdGuardSync } from "./cwd-guard";
 import { writeHermesConfig } from "./hermes/config";
 import { startHermesDiscoveryServer, type HermesDiscoveryServer } from "./hermes/discovery";
 import { startHermesRelayServer, type HermesRelayServer } from "./hermes/relay-server";
@@ -98,7 +99,25 @@ async function main(): Promise<void> {
   const launcherLog = path.join(logsDir, "hermes-launcher.log");
   mirrorStdoutToFile(launcherLog);
 
+  // Materialise the cwd-guard preload into hermes stateDir as defense-in-
+  // depth. Hermes' child is a Python process and won't honor NODE_OPTIONS,
+  // so the guard isn't currently wired into the python spawn — but having
+  // the file present means any future Node child spawned from here can
+  // pick it up via `--require`, and the launcher process itself stays
+  // symmetrical with openclaw-launcher.
+  writeCwdGuardSync(stateDir);
+
   console.log(`${LOG_PREFIX} starting pid=${process.pid} node=${process.version}`);
+  // Diagnostic: surface our own cwd + parent for postmortems (mirrors the
+  // openclaw-launcher log line; helps when bug reports come without a
+  // matching openclaw log to triangulate state).
+  try {
+    console.log(
+      `${LOG_PREFIX} cwd=${process.cwd()} ppid=${process.ppid} platform=${process.platform}`,
+    );
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} process.cwd() failed at startup:`, err);
+  }
   console.log(`${LOG_PREFIX} packDir=${packDir}`);
   console.log(`${LOG_PREFIX} stateDir=${stateDir}`);
 

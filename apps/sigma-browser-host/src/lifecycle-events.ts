@@ -112,6 +112,8 @@ export interface GatewayStarterDeps {
   openclawDir: string;
   nodeBin: string;
   browserExecutablePath?: string;
+  /** Absolute path to <stateDir>/cwd-guard.cjs (see cwd-guard.ts). */
+  cwdGuardPath?: string;
 }
 
 /** Factory returning an idempotent start function. */
@@ -142,6 +144,7 @@ export function createCleanGatewayStarter(
       openclawDir: deps.openclawDir,
       nodeBin: deps.nodeBin,
       browserExecutablePath: deps.browserExecutablePath,
+      cwdGuardPath: deps.cwdGuardPath,
       stderrTail,
     });
 

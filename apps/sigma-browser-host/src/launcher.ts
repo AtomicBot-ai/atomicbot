@@ -47,6 +47,7 @@ import {
   stopGatewayChild,
 } from "./lifecycle-events";
 import { patchSigmaLocalProvider } from "./config-patcher";
+import { writeCwdGuardSync } from "./cwd-guard";
 import { startDiscoveryServer, type DiscoveryServer } from "./discovery-server";
 import type { GatewayState } from "./types";
 
@@ -104,17 +105,33 @@ async function main(): Promise<void> {
   const logsDir = path.join(stateDir, "logs");
   ensureDir(logsDir);
 
+  // Materialise the cwd-guard preload into stateDir so any node child we
+  // spawn (or accidentally re-exec) can be launched with NODE_OPTIONS=
+  // `--require <cwdGuardPath>` to recover from uv_cwd ENOENT crashes.
+  // See cwd-guard.ts for rationale.
+  const cwdGuardPath = writeCwdGuardSync(stateDir);
+
   const launcherLogPath = path.join(logsDir, "launcher.log");
   mirrorStdoutToFile(launcherLogPath);
 
   console.log(`${LOG_PREFIX} starting pid=${process.pid} node=${process.version}`);
+  // Diagnostic: surface our own cwd + parent so we can spot future "phantom
+  // launcher" scenarios (stale process from a previous Sigma install holding
+  // the discovery port, mismatched ppid after parent crash, etc.).
+  try {
+    console.log(
+      `${LOG_PREFIX} cwd=${process.cwd()} ppid=${process.ppid} platform=${process.platform}`
+    );
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} process.cwd() failed at startup:`, err);
+  }
   console.log(`${LOG_PREFIX} stateDir=${stateDir}`);
   console.log(`${LOG_PREFIX} openclawDir=${openclawDir}`);
   console.log(`${LOG_PREFIX} nodeBin=${nodeBin}`);
 
   // 1. Orphan cleanup.
   //
-  // Two layers:
+  // Three layers:
   //   a) a previous *launcher* process (this binary) may still be alive and
   //      holding the discovery port (19999). If we don't kill it, `listen`
   //      below fails with EADDRINUSE and the extension can never discover
@@ -123,11 +140,17 @@ async function main(): Promise<void> {
   //      own PID file, because (a) kills the launcher tree which normally
   //      takes the gateway with it, but a crashed launcher may leak the
   //      child too.
+  //   c) PID-file based detection misses orphans whose PID-file is gone
+  //      (e.g. a previous Sigma install in /Applications/Sigma.app removed
+  //      its launcher.pid on graceful shutdown signal but the process survived
+  //      because Sparkle replaced the bundle mid-shutdown). Probe :19999
+  //      directly — if a launcher-shaped /gateway-status responds with a
+  //      foreign pid, SIGKILL it. Mirrors hermes-launcher's reapOrphanLauncher.
   try {
     const killedLauncherPid = killOrphanedLauncher(stateDir);
     if (killedLauncherPid != null) {
       console.log(
-        `${LOG_PREFIX} killed orphan launcher pid=${killedLauncherPid}`
+        `${LOG_PREFIX} killed orphan launcher pid=${killedLauncherPid} (via PID-file)`
       );
     }
     const killedPid = killOrphanedGateway(stateDir);
@@ -138,6 +161,14 @@ async function main(): Promise<void> {
   } catch (err) {
     console.warn(`${LOG_PREFIX} orphan cleanup failed:`, err);
   }
+
+  // 1c. Port-based orphan reap (independent of PID-file).
+  const reapedByPort = await reapOrphanLauncherByPort(preferredDiscoveryPort);
+  console.log(
+    `${LOG_PREFIX} orphan-reap port=${preferredDiscoveryPort} pid=${
+      reapedByPort ?? "none"
+    }`,
+  );
 
   // Record our own PID so the *next* launcher can detect us if we die
   // uncleanly.
@@ -182,7 +213,19 @@ async function main(): Promise<void> {
     });
     console.log(`${LOG_PREFIX} discovery listening on 127.0.0.1:${discovery.port}`);
   } catch (err) {
-    console.warn(`${LOG_PREFIX} discovery server failed to start:`, err);
+    const code = (err as NodeJS.ErrnoException | null)?.code;
+    if (code === "EADDRINUSE") {
+      // The reaper above failed to clear the port (foreign process not
+      // matching our /gateway-status shape, or unkillable). The extension
+      // will still hit 127.0.0.1:19999 — which means it's about to talk to
+      // that foreign process, not us. Surface loudly so the next bug report
+      // has the smoking gun in the log.
+      console.error(
+        `${LOG_PREFIX} WARNING: discovery port :${preferredDiscoveryPort} held by FOREIGN process — extension will talk to it, NOT us. OpenClaw will be unreachable until the foreign process is killed.`,
+      );
+    } else {
+      console.warn(`${LOG_PREFIX} discovery server failed to start:`, err);
+    }
   }
 
   // 6. Wire up gateway lifecycle.
@@ -214,6 +257,7 @@ async function main(): Promise<void> {
     openclawDir,
     nodeBin,
     browserExecutablePath,
+    cwdGuardPath,
   });
 
   // 7. SIGTERM/SIGINT handler — graceful shutdown.
@@ -343,6 +387,75 @@ function mirrorStdoutToFile(logPath: string): void {
   } catch (err) {
     console.warn(`${LOG_PREFIX} mirrorStdoutToFile failed:`, err);
   }
+}
+
+/**
+ * Detect and SIGKILL a leaked previous-session openclaw-launcher that's
+ * still holding the discovery port. Independent of the PID-file (which is
+ * removed on graceful shutdown signal — but the process may survive that
+ * signal in odd cases like a Sparkle bundle replace mid-quit, leaving a
+ * zombie that PID-file based cleanup can never find).
+ *
+ * Safety:
+ *   - Only kills if /gateway-status responds AND the JSON has a numeric
+ *     `pid` field matching our discovery payload shape. Any unrelated
+ *     process on :19999 (curl, dev server, foreign sigma sibling) is left
+ *     alone.
+ *   - Never kills our own pid (defensive against weird race where we got
+ *     reparented).
+ *   - Bounded total timeout (~1.5s) so a slow probe can never wedge boot.
+ *
+ * Returns the PID we killed, or null if there was nothing matching.
+ *
+ * Mirrors hermes-launcher's reapOrphanLauncher (see hermes-launcher.ts).
+ */
+async function reapOrphanLauncherByPort(
+  discoveryPort: number,
+): Promise<number | null> {
+  const url = `http://127.0.0.1:${discoveryPort}/gateway-status`;
+  let payload: { pid?: unknown } | null = null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(750) });
+    if (!res.ok) {return null;}
+    payload = (await res.json()) as { pid?: unknown };
+  } catch {
+    // No one listening (good) or non-OpenClaw process (we don't touch it).
+    return null;
+  }
+  const orphanPid =
+    typeof payload?.pid === "number" && Number.isInteger(payload.pid)
+      ? payload.pid
+      : 0;
+  if (orphanPid <= 0 || orphanPid === process.pid) {return null;}
+
+  console.warn(
+    `${LOG_PREFIX} found orphan launcher pid=${orphanPid} on :${discoveryPort}, killing (SIGKILL)`,
+  );
+  try {
+    process.kill(orphanPid, "SIGKILL");
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | null)?.code;
+    if (code !== "ESRCH") {
+      console.warn(`${LOG_PREFIX} kill orphan ${orphanPid} failed:`, err);
+      return null;
+    }
+  }
+
+  // Wait up to ~750ms for the kernel to release the listening socket.
+  // SIGKILL is synchronous to the process but TCP sockets can linger
+  // briefly.
+  const deadline = Date.now() + 750;
+  while (Date.now() < deadline) {
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(150) });
+    } catch {
+      return orphanPid;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  // Socket still up after 750ms — best-effort. Discovery bind retries
+  // 6x250ms anyway (discovery-server.ts).
+  return orphanPid;
 }
 
 void main().catch((err) => {

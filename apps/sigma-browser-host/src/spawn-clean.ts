@@ -6,6 +6,10 @@ import { ensureDir } from "@electron-main/util/fs";
 import { getPlatform } from "@electron-main/platform";
 import type { TailBuffer } from "@electron-main/util/net";
 
+import { buildNodeOptionsWithGuard } from "./cwd-guard";
+
+const SPAWN_LOG_PREFIX = "[gateway-spawn]";
+
 /**
  * Clean fork of apps/electron-desktop/src/main/gateway/spawn.ts:
  *   - no whisper/ffmpeg dependencies (those live in Electron bundle only)
@@ -24,6 +28,8 @@ export function spawnGatewayClean(params: {
   openclawDir: string;
   nodeBin: string;
   browserExecutablePath?: string;
+  /** Absolute path to <stateDir>/cwd-guard.cjs (see cwd-guard.ts). */
+  cwdGuardPath?: string;
   stderrTail: TailBuffer;
 }): ChildProcess {
   const {
@@ -35,6 +41,7 @@ export function spawnGatewayClean(params: {
     openclawDir,
     nodeBin,
     browserExecutablePath,
+    cwdGuardPath,
     stderrTail,
   } = params;
 
@@ -64,6 +71,15 @@ export function spawnGatewayClean(params: {
   const ghConfigDir = path.join(stateDir, "gh");
   ensureDir(ghConfigDir);
 
+  // Defense-in-depth against uv_cwd ENOENT (see cwd-guard.ts): preload a
+  // tiny CommonJS guard that proactively chdir's into OPENCLAW_STATE_DIR
+  // and wraps `process.cwd` to self-heal if libuv ever surfaces an
+  // ENOENT/uv_cwd. The path lives next to stateDir so it always exists
+  // even if the .app bundle gets swapped out.
+  const nodeOptionsWithGuard = cwdGuardPath
+    ? buildNodeOptionsWithGuard(cwdGuardPath, process.env.NODE_OPTIONS)
+    : process.env.NODE_OPTIONS;
+
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     OPENCLAW_STATE_DIR: stateDir,
@@ -76,6 +92,7 @@ export function spawnGatewayClean(params: {
     // Prevent self-restart via SIGUSR1 — keeps the same PID so the C++
     // supervisor can always kill the gateway on quit.
     OPENCLAW_NO_RESPAWN: "1",
+    ...(nodeOptionsWithGuard ? { NODE_OPTIONS: nodeOptionsWithGuard } : {}),
     // Point browser-tool at the running Sigma binary (resolved by the C++
     // supervisor from base::FILE_EXE, so it works in both dev and packaged runs).
     ...(browserExecutablePath
@@ -110,12 +127,25 @@ export function spawnGatewayClean(params: {
   // is already supplied explicitly via env (OPENCLAW_STATE_DIR,
   // OPENCLAW_CONFIG_PATH, ...) or absolute CLI args, and `script` above is
   // resolved to an absolute path before this call.
+  console.log(
+    `${SPAWN_LOG_PREFIX} cwd=${stateDir} openclawDir=${openclawDir} script=${script} node=${nodeBin}`,
+  );
+  if (nodeOptionsWithGuard && cwdGuardPath) {
+    console.log(`${SPAWN_LOG_PREFIX} cwdGuardPath=${cwdGuardPath}`);
+  } else if (!cwdGuardPath) {
+    console.warn(
+      `${SPAWN_LOG_PREFIX} cwdGuardPath missing — gateway child will run without uv_cwd self-heal`,
+    );
+  }
+
   const child = spawn(nodeBin, args, {
     cwd: stateDir,
     env,
     stdio: ["ignore", "pipe", "pipe"],
     detached: getPlatform().gatewaySpawnOptions().detached,
   });
+
+  console.log(`${SPAWN_LOG_PREFIX} spawned pid=${child.pid ?? "?"}`);
 
   child.stderr?.on("data", (chunk: Buffer) => {
     try {
