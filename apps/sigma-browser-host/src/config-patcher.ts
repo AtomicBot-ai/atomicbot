@@ -91,8 +91,14 @@ export async function patchSigmaLocalProvider(params: {
 }): Promise<void> {
   const { configPath, llamaPort, gatewayPort, modelId,
           cloudProvider, cloudApiKey, cloudModelId, cloudBaseUrl } = params;
+  // Custom provider supports key-less local servers — see launcher.ts for
+  // the full rationale. Preset providers (anthropic / openai / etc.)
+  // continue to require a real key.
+  const isCustomProvider = cloudProvider === "custom";
+  const hasKey = !!cloudApiKey && cloudApiKey.length > 0;
+  const hasUrl = !!cloudBaseUrl && cloudBaseUrl.length > 0;
   const isCloud = !!cloudProvider && cloudProvider !== "none" &&
-                  !!cloudApiKey && cloudApiKey.length > 0;
+                  (isCustomProvider ? hasUrl : hasKey);
   if (!fs.existsSync(configPath)) {return;}
 
   // Try to discover the actually-loaded model + its server-side n_ctx from
@@ -262,17 +268,25 @@ export async function patchSigmaLocalProvider(params: {
     const providerKey = cloudProvider!;
     const apiFamily =
       providerKey === "anthropic" ? "anthropic-messages" : "openai-completions";
+    // Mirror the convention used for `sigma-local` (the local llama-server
+    // entry written further down): when there's no API key, write the
+    // sentinel "no-key" so OpenClaw still has a non-empty Bearer string
+    // to send. Local OpenAI-compatible servers ignore the Authorization
+    // header. Empty-string apiKey can trip provider SDKs that validate
+    // the field is non-empty before issuing the request.
+    const resolvedApiKey =
+      providerKey === "custom" && !hasKey ? "no-key" : cloudApiKey!;
 
     const existingEntry = asPlainObject(providers[providerKey]);
     const expectedEntry = {
       baseUrl: resolvedCloudUrl,
-      apiKey: cloudApiKey!,
+      apiKey: resolvedApiKey,
       api: apiFamily,
       models: [{ id: resolvedCloudModel, name: resolvedCloudModel, contextWindow: 200000 }],
     };
     if (!existingEntry ||
         existingEntry.baseUrl !== resolvedCloudUrl ||
-        existingEntry.apiKey !== cloudApiKey ||
+        existingEntry.apiKey !== resolvedApiKey ||
         existingEntry.api !== apiFamily ||
         !Array.isArray(existingEntry.models) ||
         (existingEntry.models as unknown[])[0] == null ||

@@ -223,7 +223,52 @@ describe("config-patcher cloud routing", () => {
     const entry = providers["custom"] as Record<string, unknown>;
     expect(entry.api).toBe("openai-completions");
     expect(entry.baseUrl).toBe("http://localhost:11434/v1");
+    expect(entry.apiKey).toBe("my-local-key");
     expect((defaults(cfg).model as Record<string, unknown>).primary).toBe("custom/my-model-id");
+  });
+
+  it("custom provider activates without API key for local servers and writes no-key sentinel", async () => {
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "custom",
+      cloudApiKey: "",
+      cloudModelId: "local-model",
+      cloudBaseUrl: "http://0.0.0.0:1337/v1",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).toHaveProperty("custom");
+    const entry = providers["custom"] as Record<string, unknown>;
+    expect(entry.api).toBe("openai-completions");
+    expect(entry.baseUrl).toBe("http://0.0.0.0:1337/v1");
+    // Sentinel mirrors the convention used for sigma-local — non-empty
+    // Bearer that local OpenAI-compatible servers ignore, but that
+    // satisfies provider SDKs which validate apiKey.length > 0.
+    expect(entry.apiKey).toBe("no-key");
+    expect((defaults(cfg).model as Record<string, unknown>).primary).toBe("custom/local-model");
+  });
+
+  it("custom provider with empty baseUrl is treated as cloud-off", async () => {
+    await patchSigmaLocalProvider({
+      configPath,
+      llamaPort: 8787,
+      cloudProvider: "custom",
+      cloudApiKey: "",
+      cloudModelId: "local-model",
+      cloudBaseUrl: "",
+    });
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+
+    expect(providers).not.toHaveProperty("custom");
+    const primary = (defaults(cfg).model as Record<string, unknown>).primary as string;
+    expect(primary.startsWith("sigma-local/")).toBe(true);
   });
 
   it("cloud-off cleans up ALL known cloud providers in one pass", async () => {

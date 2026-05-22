@@ -89,11 +89,19 @@ async function main(): Promise<void> {
   const preferredDiscoveryPort = parseIntOr(values["discovery-port"], DEFAULT_DISCOVERY_PORT);
 
   // Cloud routing config (passed via CLI; API key comes from env).
+  // For provider=custom we treat the API key as optional — local
+  // OpenAI-compatible servers (llama-server, LM Studio, vLLM, ollama,
+  // etc.) typically run unauthenticated. config-patcher.ts will
+  // substitute a "no-key" sentinel when the env var is empty so
+  // OpenClaw still has a non-empty Bearer to send. All preset providers
+  // (anthropic / openai / etc.) still require a real key.
   const cloudProvider = values["cloud-provider"] ?? "";
   const cloudBaseUrl = values["cloud-base-url"] ?? "";
   const cloudModelId = values["cloud-model"] ?? "";
   const cloudApiKey = process.env.SIGMA_CLOUD_API_KEY ?? "";
-  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && cloudApiKey !== "";
+  const isCustomProvider = cloudProvider === "custom";
+  const hasCloudCreds = isCustomProvider ? cloudBaseUrl !== "" : cloudApiKey !== "";
+  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && hasCloudCreds;
   if (isCloud) {
     console.log(
       `${LOG_PREFIX} cloud=${cloudProvider} model=${cloudModelId} base=${cloudBaseUrl}`,
