@@ -82,11 +82,25 @@ async function main(): Promise<void> {
   );
 
   // Cloud routing config. API key comes from env to avoid leaking it in `ps`.
+  //
+  // For provider=custom we treat the API key as optional — local
+  // OpenAI-compatible servers (llama-server, LM Studio, vLLM, ollama, etc.)
+  // typically run unauthenticated. The Hermes Python shim (`_chat_base_url`
+  // in agent_loop.py) already skips the Authorization header when
+  // SIGMA_HERMES_API_KEY is empty, so we only need to gate on baseUrl
+  // being present for the custom case. All preset providers (anthropic /
+  // openai / aimlapi / etc.) still require a real key.
+  //
+  // Mirrors the same gating in src/launcher.ts so flipping the provider
+  // dropdown in Settings produces consistent behavior across Hermes and
+  // the OpenClaw gateway.
   const cloudProvider = values["cloud-provider"] ?? "";
   const cloudBaseUrl = values["cloud-base-url"] ?? "";
   const cloudModel = values["cloud-model"] ?? "";
   const cloudApiKey = process.env.SIGMA_CLOUD_API_KEY ?? "";
-  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && cloudApiKey !== "";
+  const isCustomProvider = cloudProvider === "custom";
+  const hasCloudCreds = isCustomProvider ? cloudBaseUrl !== "" : cloudApiKey !== "";
+  const isCloud = cloudProvider !== "" && cloudProvider !== "none" && hasCloudCreds;
   if (isCloud) {
     console.log(
       `${LOG_PREFIX} cloud=${cloudProvider} model=${cloudModel} base=${cloudBaseUrl}`,
