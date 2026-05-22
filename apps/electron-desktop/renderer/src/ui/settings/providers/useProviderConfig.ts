@@ -18,6 +18,35 @@ export type ProviderConfigDeps = {
   onProviderConfigured?: (provider: ModelProvider) => void;
 };
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+
+  if (err && typeof err === "object") {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+
+    const error = (err as { error?: unknown }).error;
+    if (error && typeof error === "object") {
+      const nestedMessage = (error as { message?: unknown }).message;
+      if (typeof nestedMessage === "string") return nestedMessage;
+    }
+  }
+
+  return String(err);
+}
+
+function isGatewayRestartLikeError(err: unknown): boolean {
+  const message = getErrorMessage(err);
+
+  return (
+    message.includes("1012") ||
+    message.includes("service restart") ||
+    message.includes("gateway closed") ||
+    message.includes("WebSocket") ||
+    message.includes("closed")
+  );
+}
+
 export function useProviderConfig(
   deps: ProviderConfigDeps,
   state: {
@@ -233,41 +262,67 @@ export function useProviderConfig(
       state.setModelsError(null);
       state.setOptimisticModelId(modelId);
       state.setModelBusy(true);
+
       try {
         const baseHash = await loadFreshBaseHash();
-        await deps.gw.request("config.patch", {
-          baseHash,
-          raw: JSON.stringify(
-            {
-              agents: {
-                defaults: {
-                  model: {
-                    primary: modelId,
-                  },
-                  models: {
-                    [modelId]: {},
+
+        try {
+          await deps.gw.request("config.patch", {
+            baseHash,
+            raw: JSON.stringify(
+              {
+                agents: {
+                  defaults: {
+                    model: {
+                      primary: modelId,
+                    },
+                    models: {
+                      [modelId]: {},
+                    },
                   },
                 },
               },
-            },
-            null,
-            2
-          ),
-          note: "Settings: set default model",
-        });
+              null,
+              2
+            ),
+            note: "Settings: set default model",
+          });
+        } catch (err) {
+          if (!isGatewayRestartLikeError(err)) {
+            throw err;
+          }
+
+          console.info("[model-providers] model config.patch triggered gateway restart; keeping optimistic model", {
+            modelId,
+          });
+        }
+
         await Promise.all([
           deps.reload().catch((err) => console.warn("[model-providers] reload after model change:", err)),
           clearSessionModelOverrides(),
         ]);
       } catch (err) {
+        if (isGatewayRestartLikeError(err)) {
+          console.info("[model-providers] model change interrupted by gateway restart; keeping optimistic model", {
+            modelId,
+          });
+          return;
+        }
+
         deps.onError(errorToMessage(err));
         state.setOptimisticModelId(null);
       } finally {
-        state.setOptimisticModelId(null);
         state.setModelBusy(false);
       }
     },
-    [deps, loadFreshBaseHash, clearSessionModelOverrides, state.setModelsError, state.setOptimisticModelId, state.setModelBusy]
+    [
+      deps,
+      loadFreshBaseHash,
+      clearSessionModelOverrides,
+      state.setModelsError,
+      state.setOptimisticModelId,
+      state.setModelBusy,
+    ]
   );
 
   const pasteFromClipboard = React.useCallback(async (): Promise<string> => {

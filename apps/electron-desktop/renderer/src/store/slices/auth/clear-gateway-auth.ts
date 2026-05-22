@@ -5,6 +5,7 @@
 import type { DesktopApi } from "@ipc/desktopApi";
 import type { ConfigSnapshot } from "./auth-types";
 import { getBaseHash } from "./auth-slice-helpers";
+import { patchConfigToleratingGatewayRestart } from "./patch-config.js";
 
 type RequestFn = <T = unknown>(method: string, params?: unknown) => Promise<T>;
 
@@ -31,11 +32,12 @@ export async function clearGatewayAuth(
         agents: { defaults: { model: { primary: "" } } },
         ...extraPatch,
       };
-      await request("config.patch", {
-        baseHash,
-        raw: JSON.stringify(patch, null, 2),
-        note: note ?? "Mode switch: clear gateway config",
-      });
+
+      await patchConfigToleratingGatewayRestart(
+        request,
+        patch,
+        note ?? "Mode switch: clear gateway config"
+      );
     }
   } catch (err) {
     console.warn("[mode-switch] Failed to clear gateway config:", err);

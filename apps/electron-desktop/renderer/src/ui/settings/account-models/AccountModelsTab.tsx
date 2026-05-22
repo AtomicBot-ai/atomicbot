@@ -90,6 +90,17 @@ export function AccountModelsTab(props: {
     [configSnap?.config]
   );
 
+  const activeProviderFromModel = React.useMemo<ModelProvider | null>(() => {
+    const raw = activeModelId?.trim();
+    if (!raw) return null;
+
+    const idx = raw.indexOf("/");
+    if (idx <= 0) return null;
+
+    const provider = raw.slice(0, idx).trim().toLowerCase() as ModelProvider;
+    return MODEL_PROVIDER_BY_ID[provider] ? provider : null;
+  }, [activeModelId]);
+
   React.useEffect(() => {
     if (authMode === "local-model" || tabMode === "local-model") {
       void dispatch(fetchLlamacppServerStatus());
@@ -104,7 +115,7 @@ export function AccountModelsTab(props: {
     }
   }, [activeProviderKey, isPaidMode, providerFilter, setProviderFilter]);
 
-  const selectedProvider = providerFilter;
+  const selectedProvider = providerFilter ?? (!isPaidMode ? activeProviderFromModel : null);
   const selectedProviderInfo = selectedProvider
     ? (MODEL_PROVIDER_BY_ID[selectedProvider] ?? null)
     : null;
@@ -122,7 +133,8 @@ export function AccountModelsTab(props: {
   );
 
   const isSelectedProviderConfigured = selectedProvider
-    ? state.isProviderConfigured(selectedProvider)
+    ? state.isProviderConfigured(selectedProvider) ||
+      (activeProviderFromModel === selectedProvider && Boolean(activeModelId))
     : false;
 
   const modelOptions: RichOption<string>[] = React.useMemo(() => {
@@ -168,6 +180,30 @@ export function AccountModelsTab(props: {
       });
   }, [isPaidMode, selectedProvider, sortedModels]);
 
+  const visibleModelOptions: RichOption<string>[] = React.useMemo(() => {
+    if (!activeModelId) return modelOptions;
+
+    const activeBelongsToSelectedProvider =
+      isPaidMode || (selectedProvider != null && activeProviderFromModel === selectedProvider);
+
+    if (!activeBelongsToSelectedProvider) {
+      return modelOptions;
+    }
+
+    if (modelOptions.some((opt) => opt.value === activeModelId)) {
+      return modelOptions;
+    }
+
+    return [
+      {
+        value: activeModelId,
+        label: formatModelIdForStatusBar(activeModelId),
+        icon: activeProviderFromModel ? getProviderIconUrl(activeProviderFromModel) : undefined,
+      },
+      ...modelOptions,
+    ];
+  }, [activeModelId, activeProviderFromModel, isPaidMode, modelOptions, selectedProvider]);
+
   const handleProviderChange = React.useCallback(
     (value: ModelProvider) => {
       setProviderFilter(value);
@@ -181,18 +217,6 @@ export function AccountModelsTab(props: {
     },
     [saveDefaultModel]
   );
-
-  React.useEffect(() => {
-    if (
-      !isPaidMode &&
-      authMode !== "local-model" &&
-      selectedProvider &&
-      modelOptions.length > 0 &&
-      !modelOptions.some((opt) => opt.value === activeModelId)
-    ) {
-      handleModelChange(modelOptions[0]!.value);
-    }
-  }, [activeModelId, authMode, handleModelChange, isPaidMode, modelOptions, selectedProvider]);
 
   const handleOAuthSuccess = React.useCallback(() => {
     void reload();
@@ -337,14 +361,21 @@ export function AccountModelsTab(props: {
       {canShowModels && tabMode === "paid" && (
         <>
           <div className={s.dropdownGroup}>
-            <div className={s.dropdownLabel}>Model</div>
+            <div className={s.dropdownLabel}>
+              Model{" "}
+              {modelBusy ? (
+                <span className={s.savingHint}>Saving…</span>
+              ) : modelsLoading ? (
+                <span className={s.savingHint}>Refreshing…</span>
+              ) : null}
+            </div>
             <RichSelect
               value={activeModelId ?? null}
               onChange={handleModelChange}
-              options={modelOptions}
-              placeholder={modelOptions.length === 0 ? "No models available" : "Select model…"}
-              disabled={modelsLoading || modelBusy || modelOptions.length === 0}
-              disabledStyles={modelOptions.length === 0}
+              options={visibleModelOptions}
+              placeholder={visibleModelOptions.length === 0 ? "No models available" : "Select model…"}
+              disabled={visibleModelOptions.length === 0}
+              disabledStyles={visibleModelOptions.length === 0}
               onlySelectedIcon
             />
           </div>
@@ -361,7 +392,7 @@ export function AccountModelsTab(props: {
           selectedProvider={selectedProvider}
           selectedProviderInfo={selectedProviderInfo}
           providerOptions={providerOptions}
-          modelOptions={modelOptions}
+          modelOptions={visibleModelOptions}
           activeModelId={activeModelId ?? null}
           modelsLoading={modelsLoading}
           modelBusy={modelBusy}

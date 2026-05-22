@@ -122,11 +122,17 @@ export function ProviderModelSection(props: ProviderModelSectionProps) {
             onChange={onProviderChange}
             options={providerOptions}
             placeholder="Select provider…"
-            disabled={modelsLoading}
           />
         </div>
         <div className={s.dropdownGroup}>
-          <div className={s.dropdownLabel}>Model</div>
+          <div className={s.dropdownLabel}>
+            Model{" "}
+            {modelBusy ? (
+              <span className={s.savingHint}>Saving…</span>
+            ) : modelsLoading ? (
+              <span className={s.savingHint}>Refreshing…</span>
+            ) : null}
+          </div>
           <RichSelect
             value={activeModelId ?? null}
             onChange={onModelChange}
@@ -138,7 +144,7 @@ export function ProviderModelSection(props: ProviderModelSectionProps) {
                   ? "Enter API key to choose a model"
                   : "Select model…"
             }
-            disabled={!selectedProvider || modelsLoading || modelBusy || modelOptions.length === 0}
+            disabled={!selectedProvider || modelsLoading || modelOptions.length === 0}
             disabledStyles={!selectedProvider || modelOptions.length === 0}
             onlySelectedIcon
           />

@@ -3,7 +3,6 @@ import React from "react";
 
 import type { ModelProvider } from "@shared/models/providers";
 import type { ModelEntry } from "@shared/models/modelPresentation";
-import { errorToMessage } from "@shared/toast";
 import type { ConfigSnapshot, GatewayRpcLike } from "../../onboarding/hooks/types";
 import { useProviderFiltering } from "./useProviderFiltering";
 import { useProviderConfig } from "./useProviderConfig";
@@ -43,6 +42,13 @@ export function useModelProvidersState(props: {
     optimisticModelId,
     modalProvider,
   });
+
+  React.useEffect(() => {
+    if (!optimisticModelId) return;
+    if (filtering.configModelId === optimisticModelId) {
+      setOptimisticModelId(null);
+    }
+  }, [filtering.configModelId, optimisticModelId]);
 
   // ── Config / save actions ──
   const config = useProviderConfig(

@@ -7,6 +7,7 @@ import { clearGatewayAuth } from "./clear-gateway-auth";
 import type { ConfigSnapshot, SelfManagedBackup } from "./auth-types";
 import { readBackup, saveBackup, clearBackup } from "./auth-persistence";
 import { extractAuth, extractModel, getBaseHash } from "./auth-slice-helpers";
+import { patchConfigToleratingGatewayRestart } from "./patch-config.js";
 
 export const selfManagedHandler: ModeHandler = {
   async saveBackup(ctx: SwitchContext): Promise<void> {
@@ -85,11 +86,11 @@ export const selfManagedHandler: ModeHandler = {
             },
           },
         };
-        await ctx.request("config.patch", {
-          baseHash,
-          raw: JSON.stringify(patch, null, 2),
-          note: "Switch to self-managed: restore config from backup",
-        });
+        await patchConfigToleratingGatewayRestart(
+          ctx.request,
+          patch,
+          "Switch to self-managed: restore config from backup"
+        );
       }
     } catch (err) {
       console.warn("[selfManagedHandler] Failed to restore config:", err);

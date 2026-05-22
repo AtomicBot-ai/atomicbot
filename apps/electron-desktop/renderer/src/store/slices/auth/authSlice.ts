@@ -184,18 +184,14 @@ export const handleLogout = createAsyncThunk(
       const snap = await request<ConfigSnapshot>("config.get", {});
       const baseHash = getBaseHash(snap);
       if (baseHash) {
-        await request("config.patch", {
-          baseHash,
-          raw: JSON.stringify(
-            {
-              auth: { profiles: null, order: null },
-              agents: { defaults: { model: { primary: "" } } },
-            },
-            null,
-            2
-          ),
-          note: "Logout: clear auth config",
-        });
+        await patchConfigToleratingGatewayRestart(
+          request,
+          {
+            auth: { profiles: null, order: null },
+            agents: { defaults: { model: { primary: "" } } },
+          },
+          "Logout: clear auth config"
+        );
       }
     } catch (err) {
       console.warn("[authSlice] Failed to clear config on logout:", err);

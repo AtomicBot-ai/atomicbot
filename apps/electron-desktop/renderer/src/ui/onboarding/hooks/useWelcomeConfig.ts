@@ -52,22 +52,19 @@ export function useWelcomeConfig({
 
     const authToken = typeof gatewayAuth.token === "string" ? gatewayAuth.token.trim() : "";
     const authMode = typeof gatewayAuth.mode === "string" ? gatewayAuth.mode.trim() : "";
-    const port =
-      typeof gateway.port === "number" && Number.isFinite(gateway.port) ? gateway.port : null;
     const bind = typeof gateway.bind === "string" ? gateway.bind.trim() : "";
     const mode = typeof gateway.mode === "string" ? gateway.mode.trim() : "";
     const needsGateway =
       mode !== "local" ||
       bind !== "loopback" ||
-      port !== state.port ||
       authMode !== "token" ||
       authToken !== state.token;
+
     if (needsGateway) {
       patch.gateway = {
         ...gateway,
         mode: "local",
         bind: "loopback",
-        port: state.port,
         auth: {
           ...gatewayAuth,
           mode: "token",
@@ -164,7 +161,7 @@ export function useWelcomeConfig({
       }
     }
     setStatus("Config updated.");
-  }, [gw, loadConfig, setError, setStatus, state.port, state.token]);
+  }, [gw, loadConfig, setError, setStatus, state.token]);
 
   const refreshProviderFlags = React.useCallback(async () => {
     try {

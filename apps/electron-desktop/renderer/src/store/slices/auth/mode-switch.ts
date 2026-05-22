@@ -20,6 +20,7 @@ import { paidHandler } from "./mode-handler-paid";
 import { selfManagedHandler } from "./mode-handler-self-managed";
 import { localModelHandler } from "./mode-handler-local-model";
 import { resetSessionModelSelection } from "../session-model-reset";
+import { isGatewayRestartError, waitForGatewayReady } from "./patch-config.js";
 
 // ── Types ──
 
@@ -96,6 +97,7 @@ export const switchMode = createAsyncThunk(
     // Phase 3: setup target mode
     debugLog("mode-switch", `phase 3: setup(${target})`);
     const result = await handlers[target].setup(ctx);
+    await waitForGatewayReady(request);
     debugLog("mode-switch", "setup result:", result);
 
     // Phase 4: finalize
@@ -111,12 +113,37 @@ export const switchMode = createAsyncThunk(
       await request("secrets.reload", {});
       debugLog("mode-switch", "secrets.reload OK");
     } catch (err) {
-      debugWarn("mode-switch", "secrets.reload failed:", err);
+      if (isGatewayRestartError(err)) {
+        debugWarn("mode-switch", "secrets.reload interrupted by gateway restart; waiting");
+        await waitForGatewayReady(request);
+      } else {
+        debugWarn("mode-switch", "secrets.reload failed:", err);
+      }
     }
 
     debugLog("mode-switch", "resetting session model selection");
-    await resetSessionModelSelection(request);
-    await dispatch(reloadConfig({ request }));
+    try {
+      await resetSessionModelSelection(request);
+    } catch (err) {
+      if (isGatewayRestartError(err)) {
+        debugWarn("mode-switch", "resetSessionModelSelection interrupted by gateway restart; waiting");
+        await waitForGatewayReady(request);
+      } else {
+        throw err;
+      }
+    }
+
+    try {
+      await dispatch(reloadConfig({ request })).unwrap();
+    } catch (err) {
+      if (isGatewayRestartError(err)) {
+        debugWarn("mode-switch", "reloadConfig interrupted by gateway restart; waiting and retrying");
+        await waitForGatewayReady(request);
+        await dispatch(reloadConfig({ request })).unwrap();
+      } else {
+        throw err;
+      }
+    }
 
     debugLog("mode-switch", `done: ${current ?? "null"} → ${target}`);
     return result;

@@ -13,6 +13,7 @@ import {
   clearPaidBackup,
 } from "./auth-persistence";
 import { extractAuth, extractModel, getBaseHash } from "./auth-slice-helpers";
+import { patchConfigToleratingGatewayRestart } from "./patch-config.js";
 
 export const paidHandler: ModeHandler = {
   async saveBackup(ctx: SwitchContext): Promise<void> {
@@ -94,6 +95,7 @@ export const paidHandler: ModeHandler = {
             order: backup.configAuth.order ?? null,
           },
         };
+
         if (backup.configModel.primary) {
           patch.agents = {
             defaults: {
@@ -102,11 +104,12 @@ export const paidHandler: ModeHandler = {
             },
           };
         }
-        await ctx.request("config.patch", {
-          baseHash,
-          raw: JSON.stringify(patch, null, 2),
-          note: "Switch to paid: restore config from backup",
-        });
+
+        await patchConfigToleratingGatewayRestart(
+          ctx.request,
+          patch,
+          "Switch to paid: restore config from backup"
+        );
       }
     } catch (err) {
       console.warn("[paidHandler] Failed to restore config:", err);

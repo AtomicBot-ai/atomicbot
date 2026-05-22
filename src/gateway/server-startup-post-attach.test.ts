@@ -158,7 +158,7 @@ describe("startGatewayPostAttachRuntime", () => {
   });
 
   it("re-enables startup-gated methods after post-attach sidecars start", async () => {
-    const unavailableGatewayMethods = new Set<string>(["chat.history", "models.list"]);
+    const unavailableGatewayMethods = new Set<string>(["chat.history"]);
     const onSidecarsReady = vi.fn();
     const log = { info: vi.fn(), warn: vi.fn() };
 
