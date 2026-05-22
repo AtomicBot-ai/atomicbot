@@ -8,7 +8,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { patchSigmaLocalProvider } from "./config-patcher";
 
 const MINIMAL_CONFIG = JSON.stringify({
@@ -290,6 +290,69 @@ describe("config-patcher cloud routing", () => {
     expect(afterProviders).not.toHaveProperty("aimlapi");
     expect(afterProviders).not.toHaveProperty("openrouter");
     expect(afterProviders).toHaveProperty("sigma-local");
+  });
+
+  it("custom provider probes /props and uses the live n_ctx as contextWindow", async () => {
+    // Stub global fetch so the patcher's /props probe sees a llama.cpp-style
+    // payload and extracts n_ctx=8192 (the default `-c` for llama-server).
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        const url = typeof input === "string" ? input : (input as URL).toString();
+        if (url.endsWith("/props")) {
+          return new Response(
+            JSON.stringify({ default_generation_settings: { n_ctx: 8192 } }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response(null, { status: 404 });
+      });
+
+    try {
+      await patchSigmaLocalProvider({
+        configPath,
+        llamaPort: 8787,
+        cloudProvider: "custom",
+        cloudApiKey: "",
+        cloudModelId: "Qwen3_5-4B_Q4_K_M",
+        cloudBaseUrl: "http://localhost:1337/v1",
+      });
+    } finally {
+      fetchSpy.mockRestore();
+    }
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+    const entry = providers["custom"] as Record<string, unknown>;
+    const models = entry.models as Array<{ id: string; contextWindow: number }>;
+    expect(models[0]?.contextWindow).toBe(8192);
+  });
+
+  it("custom provider falls back to 200000 contextWindow when /props is unreachable", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => new Response(null, { status: 404 }));
+
+    try {
+      await patchSigmaLocalProvider({
+        configPath,
+        llamaPort: 8787,
+        cloudProvider: "custom",
+        cloudApiKey: "real-cloud-key",
+        cloudModelId: "gpt-4o",
+        cloudBaseUrl: "https://api.example.com/v1",
+      });
+    } finally {
+      fetchSpy.mockRestore();
+    }
+
+    const cfg = readConfig();
+    const providers = (cfg.models as Record<string, unknown>)
+      .providers as Record<string, unknown>;
+    const entry = providers["custom"] as Record<string, unknown>;
+    const models = entry.models as Array<{ id: string; contextWindow: number }>;
+    expect(models[0]?.contextWindow).toBe(200000);
   });
 
   it("switching from anthropic to aimlapi removes stale anthropic entry", async () => {

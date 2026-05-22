@@ -277,20 +277,49 @@ export async function patchSigmaLocalProvider(params: {
     const resolvedApiKey =
       providerKey === "custom" && !hasKey ? "no-key" : cloudApiKey!;
 
+    // Resolve the model's effective context window.
+    //   - Hosted clouds (Anthropic / OpenAI / AIMLAPI / …) all advertise huge
+    //     context windows, so the legacy 200k constant is a safe upper bound:
+    //     the provider truncates internally if a request overflows the model's
+    //     real n_ctx, and OpenClaw never has visibility into that boundary
+    //     anyway.
+    //   - `custom` is the special case. It's most often pointed at a local
+    //     llama.cpp / LM Studio / vLLM running with a small `-c` (8192 by
+    //     default in llama-server). If we hand OpenClaw `contextWindow:
+    //     200000`, OpenClaw doesn't truncate the prompt and the local server
+    //     returns HTTP 400: `request (N tokens) exceeds the available context
+    //     size (8192 tokens)`. We therefore probe the configured base URL
+    //     for llama.cpp's `/props` endpoint and use the live `n_ctx` if
+    //     reachable. Real cloud APIs don't expose `/props`, so the probe
+    //     fails fast (1.5s timeout) and we fall back to the 200k default.
+    let resolvedCtx = 200000;
+    if (providerKey === "custom") {
+      const probe = await probeCloudCustomServer(resolvedCloudUrl);
+      if (probe != null && probe > 0) {
+        resolvedCtx = probe;
+      }
+    }
     const existingEntry = asPlainObject(providers[providerKey]);
     const expectedEntry = {
       baseUrl: resolvedCloudUrl,
       apiKey: resolvedApiKey,
       api: apiFamily,
-      models: [{ id: resolvedCloudModel, name: resolvedCloudModel, contextWindow: 200000 }],
+      models: [{ id: resolvedCloudModel, name: resolvedCloudModel, contextWindow: resolvedCtx }],
     };
+    const existingFirstModel =
+      existingEntry && Array.isArray(existingEntry.models)
+        ? (asPlainObject((existingEntry.models as unknown[])[0]) as
+            | { id?: unknown; contextWindow?: unknown }
+            | undefined)
+        : undefined;
     if (!existingEntry ||
         existingEntry.baseUrl !== resolvedCloudUrl ||
         existingEntry.apiKey !== resolvedApiKey ||
         existingEntry.api !== apiFamily ||
         !Array.isArray(existingEntry.models) ||
         (existingEntry.models as unknown[])[0] == null ||
-        (asPlainObject((existingEntry.models as unknown[])[0]) as {id?: unknown} | undefined)?.id !== resolvedCloudModel) {
+        existingFirstModel?.id !== resolvedCloudModel ||
+        existingFirstModel?.contextWindow !== resolvedCtx) {
       providers[providerKey] = expectedEntry;
       changed = true;
     }
@@ -435,6 +464,29 @@ export async function patchSigmaLocalProvider(params: {
 interface LiveLlamaInfo {
   modelId: string | null;
   ctxPerSlot: number | null;
+}
+
+/**
+ * Probe a custom cloud base URL for llama.cpp's `/props` endpoint to discover
+ * the live per-slot `n_ctx`. Returns null on any failure (timeout, non-200,
+ * malformed JSON, missing field) so the caller can fall back to a default.
+ *
+ * llama-server exposes `/props` at the SERVER ROOT, not under `/v1`. We strip
+ * a trailing `/v1` (with or without slash) from the user-supplied base URL
+ * before probing — that's the conventional path for the OpenAI-compat shim.
+ * Anything else (`/openai/v1`, custom prefixes) is best-effort: we just
+ * append `/props` to the trimmed root and let the probe fail-fast if the
+ * server doesn't speak llama.cpp.
+ */
+async function probeCloudCustomServer(baseUrl: string): Promise<number | null> {
+  if (!baseUrl) {return null;}
+  const root = baseUrl.replace(/\/+$/, "").replace(/\/v\d+$/, "");
+  try {
+    const propsRaw = await fetchJson(`${root}/props`, 1500);
+    return extractCtxPerSlot(propsRaw);
+  } catch {
+    return null;
+  }
 }
 
 async function probeLlamaServer(port: number): Promise<LiveLlamaInfo | null> {
