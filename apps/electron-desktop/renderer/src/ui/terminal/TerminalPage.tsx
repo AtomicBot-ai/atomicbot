@@ -19,7 +19,7 @@ interface TabInfo {
 const XTERM_THEME = {
   background: "#171717",
   foreground: "#e6edf3",
-  cursor: "#aeff00",
+  cursor: "#fd3a3a",
   cursorAccent: "#171717",
   selectionBackground: "rgba(174, 255, 0, 0.3)",
   black: "#1e1e1e",

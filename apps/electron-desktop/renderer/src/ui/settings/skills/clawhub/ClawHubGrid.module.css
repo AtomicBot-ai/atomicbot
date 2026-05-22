@@ -110,8 +110,8 @@
 }
 
 .UiClawHubInstallBtn {
-  background: var(--lime) !important;
-  color: var(--surface-secondary) !important;
+  background: var(--red) !important;
+  color: var(--text) !important;
 }
 
 .UiClawHubRemoveBtn {

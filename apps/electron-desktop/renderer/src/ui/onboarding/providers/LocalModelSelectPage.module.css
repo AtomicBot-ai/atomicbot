@@ -64,8 +64,8 @@
 }
 
 .badgeRecommended {
-  background: color-mix(in srgb, var(--lime) 15%, transparent);
-  color: var(--lime);
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
 }
 
 .badgePossible {

@@ -81,7 +81,7 @@
 }
 
 .UiSetupModeOptionSelected {
-  border-color: var(--lime);
+  border-color: var(--red);
   background: var(--surface-overlay-subtle);
 }
 
@@ -160,7 +160,7 @@
 
 .UiSetupModeFeatures li::before {
   content: "✓";
-  color: var(--lime);
+  color: var(--red);
   font-weight: 700;
   font-size: 12px;
   flex-shrink: 0;

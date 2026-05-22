@@ -273,8 +273,8 @@
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: var(--lime);
-  color: var(--bg-base);
+  background: var(--red);
+  color: var(--text);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -341,7 +341,7 @@
 
 .UiChatMicTooltipLink {
   font-size: 13px;
-  color: var(--lime);
+  color: var(--red);
   background: none;
   border: none;
   padding: 0;
@@ -366,7 +366,7 @@
 .UiChatMicTooltipProgressBar {
   height: 100%;
   border-radius: 2px;
-  background: var(--lime);
+  background: var(--red);
   transition: width 0.3s ease;
 }
 
@@ -402,23 +402,23 @@
 
 .UiChatMicButton:active:not(:disabled) {
   color: var(--bg-base);
-  background: var(--lime);
+  background: var(--red);
 }
 
 .UiChatMicButton--recording {
   color: var(--bg-base);
-  background: var(--lime);
+  background: var(--red);
   box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.35);
   animation: micPulse 1.2s ease-in-out infinite;
 }
 
 .UiChatMicButton--recording:hover:not(:disabled) {
-  background: var(--lime);
+  background: var(--red);
   opacity: 0.85;
 }
 
 .UiChatMicButton--processing {
-  color: var(--lime);
+  color: var(--red);
   cursor: wait;
   position: relative;
 }
@@ -429,7 +429,7 @@
   inset: 0;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: var(--lime);
+  border-top-color: var(--red);
   animation: micSpin 0.8s linear infinite;
 }
 

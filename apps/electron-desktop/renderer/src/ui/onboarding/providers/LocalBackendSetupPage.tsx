@@ -87,7 +87,7 @@ export function LocalBackendSetupPage(props: {
                   style={{
                     width: `${backendDownload.percent}%`,
                     height: "100%",
-                    background: "var(--lime)",
+                    background: "var(--red)",
                     borderRadius: 3,
                     transition: "width 0.3s ease",
                   }}

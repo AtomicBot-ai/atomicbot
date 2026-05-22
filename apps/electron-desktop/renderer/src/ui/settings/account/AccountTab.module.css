@@ -146,7 +146,7 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  background: var(--lime, #aeff00);
+  background: var(--red, #fd3a3a);
   color: var(--surface-primary, #121212);
   transition: opacity 150ms ease;
 }
@@ -638,7 +638,7 @@
 
 .promoFeatures li::before {
   content: "✓ ";
-  color: var(--lime, #aeff00);
+  color: var(--red, #fd3a3a);
   font-weight: 600;
 }
 

@@ -44,7 +44,7 @@
   appearance: none;
   border: none;
   background: none;
-  color: var(--lime);
+  color: var(--red);
   font-size: 0.8em;
   cursor: pointer;
   padding: 0;
@@ -127,7 +127,7 @@
   font-size: 0.88em;
   font-weight: 600;
   cursor: pointer;
-  background: var(--lime);
+  background: var(--red);
   color: #000;
   transition: opacity 0.15s ease;
 }

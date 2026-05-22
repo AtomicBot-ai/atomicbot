@@ -52,7 +52,7 @@
   bottom: -1px;
   height: 2px;
   border-radius: 1px;
-  background: var(--lime);
+  background: var(--red);
 }
 
 .UiTerminalTabDead .UiTerminalTabLabel {
@@ -118,7 +118,7 @@
 
 .UiTerminalNewTab:hover {
   background: rgba(163, 230, 53, 0.06);
-  color: var(--lime);
+  color: var(--red);
 }
 
 /* ── Terminal pane container ─────────────────────────────────────── */

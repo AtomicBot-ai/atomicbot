@@ -52,7 +52,7 @@
   bottom: -1px;
   height: 2px;
   border-radius: 1px;
-  background: var(--lime);
+  background: var(--red);
 }
 
 .UiTerminalTabDead .UiTerminalTabLabel {

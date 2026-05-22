@@ -34,12 +34,12 @@
 }
 
 .VoiceProviderOption--active {
-  border-color: var(--lime-soft, #a3e635);
+  border-color: var(--red-soft, #a3e635);
   background: rgba(163, 230, 53, 0.06);
 }
 
 .VoiceProviderOption--active:hover {
-  border-color: var(--lime-soft, #a3e635);
+  border-color: var(--red-soft, #a3e635);
 }
 
 .VoiceProviderTitle {
@@ -62,7 +62,7 @@
 
 .VoiceProviderStatus {
   font-size: 12px;
-  color: var(--lime, #a3e635);
+  color: var(--red, #a3e635);
   margin-top: 2px;
 }
 
@@ -120,7 +120,7 @@
 
 .VoiceProgressFill {
   height: 100%;
-  background: var(--lime-soft, #a3e635);
+  background: var(--red-soft, #a3e635);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -184,14 +184,14 @@
 }
 
 .VoiceModelRow--active .VoiceModelRadio {
-  border-color: var(--lime-soft, #a3e635);
+  border-color: var(--red-soft, #a3e635);
 }
 
 .VoiceModelRadioDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--lime-soft, #a3e635);
+  background: var(--red-soft, #a3e635);
   opacity: 0;
   transition: opacity var(--transition-base);
 }
@@ -231,7 +231,7 @@
 .VoiceModelCheck {
   flex-shrink: 0;
   font-size: 12px;
-  color: var(--lime, #a3e635);
+  color: var(--red, #a3e635);
 }
 
 .VoiceModelAction {
@@ -284,7 +284,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--lime, #a3e635);
+  color: var(--red, #a3e635);
 }
 
 .VoiceOnboardingScroll {

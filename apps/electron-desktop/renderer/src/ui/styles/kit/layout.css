@@ -57,7 +57,7 @@
   place-items: center;
   border-radius: var(--radius-sm);
   background: rgba(194, 255, 64, 0.18);
-  color: var(--lime);
+  color: var(--red);
   font-weight: 800;
   line-height: 1;
 }

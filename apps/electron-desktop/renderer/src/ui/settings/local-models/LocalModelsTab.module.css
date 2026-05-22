@@ -30,8 +30,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--lime) 15%, transparent);
-  color: var(--lime);
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
 }
 
 .modelList {
@@ -53,7 +53,7 @@
 }
 
 .modelRowActive {
-  border-color: var(--lime);
+  border-color: var(--red);
 }
 
 .modelIcon {
@@ -106,8 +106,8 @@
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--lime) 15%, transparent);
-  color: var(--lime);
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
 }
 
 .modelMeta {
@@ -131,7 +131,7 @@
   justify-content: center;
   min-height: 36px;
   min-width: 84px;
-  color: var(--lime);
+  color: var(--red);
   font-weight: 600;
   font-size: 14px;
   text-align: center;
@@ -215,7 +215,7 @@
 .progressFill {
   height: 100%;
   border-radius: 3px;
-  background: var(--lime);
+  background: var(--red);
   transition: width 0.3s ease;
 }
 

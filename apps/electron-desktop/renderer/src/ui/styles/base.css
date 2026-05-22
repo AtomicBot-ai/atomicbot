@@ -10,7 +10,7 @@
   --muted2: rgba(230, 237, 243, 0.65);
   --muted3: rgba(230, 237, 243, 0.45);
   --accent: #ff7a00;
-  --lime: #aeff00;
+  --red: #fd3a3a;
 
   /* ── surface colors ─── */
   --surface-primary: #121212;
@@ -31,7 +31,7 @@
   --error: #ef4444;
   --warning: #ff7a00;
   --info: #0d6fff;
-  --lime-soft: #c4ff47;
+  --red-soft: #ff6464;
 
   /* ── border variants ─── */
   --border-subtle: rgba(230, 237, 243, 0.06);

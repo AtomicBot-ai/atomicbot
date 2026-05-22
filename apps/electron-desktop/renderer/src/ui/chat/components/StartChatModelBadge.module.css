@@ -15,8 +15,8 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
-  background: var(--lime);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--lime) 55%, transparent);
+  background: var(--red);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--red) 55%, transparent);
 }
 
 .modelName {

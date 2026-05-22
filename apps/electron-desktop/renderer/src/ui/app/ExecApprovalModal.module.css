@@ -85,7 +85,7 @@
   font-family: "SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--lime);
+  color: var(--red);
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--surface-overlay-subtle);
   border-radius: var(--radius-lg);

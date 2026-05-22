@@ -116,7 +116,7 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  background: var(--lime);
+  background: var(--red);
   color: var(--surface-primary);
   transition: opacity 150ms ease;
 }

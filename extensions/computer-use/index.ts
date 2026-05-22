@@ -4,7 +4,7 @@ import {
   type OpenClawPluginToolFactory,
 } from "openclaw/plugin-sdk/plugin-entry";
 
-const DEFAULT_OVERLAY_COLOR = "AEFF00";
+const DEFAULT_OVERLAY_COLOR = "fd3a3a";
 const DEFAULT_OVERLAY_LABEL = "Atomic Claw";
 
 export default definePluginEntry({

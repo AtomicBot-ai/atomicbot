@@ -110,7 +110,7 @@
 }
 
 .UiSkillModalProviderOption--active {
-  border-color: var(--lime-soft);
+  border-color: var(--red-soft);
   color: #ffffff;
 }
 

@@ -58,7 +58,7 @@
 }
 
 .UiLink {
-  color: var(--lime-soft);
+  color: var(--red-soft);
   text-decoration: none;
   cursor: pointer;
   transition: opacity var(--transition-base);

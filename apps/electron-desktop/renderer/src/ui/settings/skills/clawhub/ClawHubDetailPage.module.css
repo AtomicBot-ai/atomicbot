@@ -16,7 +16,7 @@
   appearance: none;
   background: none;
   border: none;
-  color: var(--lime);
+  color: var(--red);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -318,7 +318,7 @@
 .UiGuidanceSummary {
   font-size: 12px;
   font-weight: 500;
-  color: var(--lime);
+  color: var(--red);
   cursor: pointer;
   transition: opacity var(--transition-fast);
 }
@@ -967,7 +967,7 @@
 
 .UiViewSource {
   font-size: 13px;
-  color: var(--lime);
+  color: var(--red);
   cursor: pointer;
   transition: opacity var(--transition-fast);
   background: none;

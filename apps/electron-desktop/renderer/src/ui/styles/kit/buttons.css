@@ -33,7 +33,7 @@
 }
 
 .UiActionButton-primary {
-  background: var(--lime-soft);
+  background: var(--red-soft);
   color: var(--surface-primary);
 }
 
@@ -53,9 +53,9 @@
   border: 0;
   border-radius: var(--radius-full);
   background:
-    linear-gradient(0deg, var(--lime), var(--lime)),
+    linear-gradient(0deg, var(--red), var(--red)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.2) 100%);
-  color: var(--surface-primary);
+  color: var(--texts);
   padding: 9px 14px;
   font-weight: 500;
   font-size: 17px;
