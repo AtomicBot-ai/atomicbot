@@ -1,7 +1,7 @@
 {
   "name": "atomicbot-desktop",
   "private": true,
-  "version": "1.0.118",
+  "version": "1.0.119",
   "description": "Atomic Claw makes things for you",
   "type": "commonjs",
   "main": "dist/main.js",
