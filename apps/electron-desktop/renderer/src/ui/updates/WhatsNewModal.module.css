@@ -128,7 +128,7 @@
   font-weight: 600;
   cursor: pointer;
   background: var(--red);
-  color: #000;
+  color: var(--text);
   transition: opacity 0.15s ease;
 }
 
